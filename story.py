@@ -96,11 +96,107 @@ class StoryManager:
                     {"text": "You find a bottle of drink and a pair of scissors under the checkout counter", "action": "random_item"},
                     {"text": "A wave of dizziness hits you. You lean against the wall to keep your balance.", "action": "lose_hp"}
                 ]
+            },
+
+            "hide_counter": {
+                "id": "hide_counter",
+                "type": "story",
+                "title": "Silent Tension",
+                "text": (
+                    "You crouch behind the counter, holding your breath. The noise outside intensifies — "
+                    "shrieks, footsteps, and something banging on the glass. Minutes crawl by like hours."
+                ),
+                "choices": [
+                    {"text": "Stay hidden a bit longer", "next": None},
+                    {"text": "Peek outside carefully", "next": "window_check"}
+                ]
+            },
+
+            "check_supplies": {
+                "id": "check_supplies",
+                "type": "story",
+                "title": "Emergency Stockpile",
+                "text": (
+                    "You quickly scan the shelves — snacks, bottled water, bandages, and a battered flashlight. "
+                    "This might be all you have to survive the next few hours."
+                ),
+                "choices": [
+                    {"text": "Take all you can carry", "action": "random_item"},
+                    {"text": "Focus on medical supplies", "action": "get_medkit"},
+                    {"text": "Head toward the freezer for food", "next": "freezer_event"}
+                ]
+            },
+
+            "lock_door": {
+                "id": "lock_door",
+                "type": "story",
+                "title": "Barricading the Front",
+                "text": (
+                    "You shove shelves and crates against the front door. The glass rattles under pressure, "
+                    "but for now, it holds. You take a moment to catch your breath."
+                ),
+                "choices": [
+                    {"text": "Look for other exits", "next": "back_door_escape"},
+                    {"text": "Search the store again", "next": "check_supplies"}
+                ]
+            },
+
+            "find_weapon": {
+                "id": "find_weapon",
+                "type": "story",
+                "title": "Improvised Arsenal",
+                "text": (
+                    "You grab a metal umbrella and a box cutter from the counter. Not ideal, but better than nothing."
+                ),
+                "choices": [
+                    {"text": "Get ready to defend yourself", "next": None},
+                    {"text": "Try to sneak out the back", "next": "back_door_escape"}
+                ]
+            },
+
+            "storage_noise": {
+                "id": "storage_noise",
+                "type": "story",
+                "title": "It Heard You",
+                "text": (
+                    "As you shout, the breathing stops — then turns into a growl. Something rushes toward the door from inside!"
+                ),
+                "choices": [
+                    {"text": "Hold the door shut!", "type": "combat", "enemy_type": "infected_staff"},
+                    {"text": "Back away slowly", "next": None}
+                ]
+            },
+
+            "ignore_door": {
+                "id": "ignore_door",
+                "type": "story",
+                "title": "Unwelcome Guest",
+                "text": (
+                    "You crouch behind a shelf, heart pounding. The girl outside continues to slam the glass, "
+                    "then suddenly stops. Did she leave — or is she still watching?"
+                ),
+                "choices": [
+                    {"text": "Risk a look outside", "next": "window_check"},
+                    {"text": "Stay hidden and wait", "next": None}
+                ]
+            },
+
+            "back_door_escape": {
+                "id": "back_door_escape",
+                "type": "story",
+                "title": "Back Alley Breakout",
+                "text": (
+                    "You slip through the back door into a narrow alley. The campus is eerily quiet now, "
+                    "but danger could be around any corner."
+                ),
+                "choices": [
+                    {"text": "Head toward the cafeteria", "next": None},
+                    {"text": "Try to find other survivors", "next": None}
+                ]
             }
         }
 
     def get_event_by_location(self, x, y, tile_type):
-        """根據位置獲取事件"""
         for event_id, event in self.events.items():
             if event.get("location") == (x, y) and event_id not in self.triggered_events:
                 return event
@@ -114,7 +210,6 @@ class StoryManager:
         return None
 
     def get_auto_event(self, x, y, tile_type):
-        """獲取自動觸發事件"""
         if x == 5 and y == 5 and "intro" not in self.triggered_events:
             return self.events.get("intro")
         if random.random() < 0.1:
@@ -122,7 +217,6 @@ class StoryManager:
         return None
 
     def trigger_event(self, event_id):
-        """觸發事件"""
         if event_id in self.events:
             self.current_event = self.events[event_id]
             self.triggered_events.add(event_id)
@@ -130,7 +224,6 @@ class StoryManager:
         return False
 
     def choose_option(self, choice_index):
-        """選擇選項"""
         if not self.current_event or choice_index >= len(self.current_event.get("choices", [])):
             return None
         choice = self.current_event["choices"][choice_index]
@@ -144,7 +237,6 @@ class StoryManager:
         return None
 
     def handle_action(self, action):
-        """處理動作"""
         if action == "get_medkit":
             return {"type": "item", "item": "medkit", "message": "你獲得了醫療包"}
         elif action == "get_food":
@@ -158,13 +250,10 @@ class StoryManager:
         return None
 
     def set_flag(self, flag_name, value=True):
-        """設置劇情標記"""
         self.story_flags[flag_name] = value
 
     def get_flag(self, flag_name):
-        """獲取劇情標記"""
         return self.story_flags.get(flag_name, False)
 
     def is_story_finished(self):
-        """查看當前劇情是否結束"""
         return self.current_event is None
