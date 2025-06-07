@@ -12,7 +12,7 @@ class Game:
     def __init__(self):
         pygame.init()
         self.screen = pygame.display.set_mode((800, 600))
-        pygame.display.set_caption("末日便利商店")
+        pygame.display.set_caption("末日第二餐廳")
         self.clock = pygame.time.Clock()
         self.running = True
         
