@@ -79,7 +79,7 @@ if __name__ == "__main__":
     # 這裡可以先加入一些道具
     from inventory import add_item
     potion = {"name": "治療藥水", "type": "heal", "amount": 30}
-    bomb = {"name": "炸彈", "type": "attack", "amount": 50}
+    bomb = {"name": "炸彈", "type": "attack", "amount": 25}
     add_item(potion)
     add_item(bomb)
 
