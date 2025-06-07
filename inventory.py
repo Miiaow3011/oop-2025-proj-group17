@@ -33,3 +33,4 @@ if __name__ == "__main__":
     use_item(player, "治療藥水")
     print("使用後玩家HP：", player["hp"])
 
+
