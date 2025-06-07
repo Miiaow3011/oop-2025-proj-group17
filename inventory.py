@@ -23,6 +23,7 @@ def use_item(player, item_name):
                     player["hp"] = 100
                 print(f"使用前玩家HP：{player['hp'] - heal_amount}")
                 print(f"你使用了 {item_name}，恢復了 {heal_amount} HP！")
+                print("使用後玩家HP：", player["hp"])
                 return True
         print(f"⚠️ 沒有可以使用的「{item_name}」。")
         return False
@@ -34,6 +35,6 @@ if __name__ == "__main__":
     add_item(bomb)  
     show_inventory()
     use_item(player, "治療藥水")
-    print("使用後玩家HP：", player["hp"])
+    
 
 
