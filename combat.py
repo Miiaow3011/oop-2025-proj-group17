@@ -82,7 +82,6 @@ if __name__ == "__main__":
     bomb = {"name": "炸彈", "type": "attack", "amount": 25}
     add_item(potion)
     add_item(bomb)
-
     result = battle(player, enemy)
     print("戰鬥結束！結果：",result)
 
