@@ -19,6 +19,9 @@ def use_item(player, item_name):
                 heal_amount = item["amount"]
                 player["hp"] += heal_amount
                 inventory.remove(item)
+                if player["hp"] > 100:
+                    player["hp"] = 100
+                print(f"使用前玩家HP：{player['hp'] - heal_amount}")
                 print(f"你使用了 {item_name}，恢復了 {heal_amount} HP！")
                 return True
         print(f"⚠️ 沒有可以使用的「{item_name}」。")
