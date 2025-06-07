@@ -452,6 +452,7 @@ if __name__ == "__main__":
     
     # 方法1：使用Enemy對象（兼容第二個版本）
     enemy = Enemy("哥布林", 30, 5)
+
     result1 = combat_system.battle(player, enemy)
     print(f"戰鬥結果：{result1}")
     

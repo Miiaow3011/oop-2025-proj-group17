@@ -175,9 +175,11 @@ class Inventory:
 
 # 測試代碼
 if __name__ == "__main__":
+
     # 創建背包和玩家
     inventory = Inventory()
     player = {"hp": 50, "max_hp": 100}
+
     
     # 添加第一個版本中的物品
     potion = {"name": "治療藥水", "type": "heal", "amount": 30}
