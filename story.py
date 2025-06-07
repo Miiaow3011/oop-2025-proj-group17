@@ -164,5 +164,5 @@ def get_flag(self, flag_name):
     return self.story_flags.get(flag_name, False)
 
 def is_story_finished(self):
-    """檢查當前劇情是否結束"""
+    """查看當前劇情是否結束"""
     return self.current_event is None
