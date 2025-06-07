@@ -54,8 +54,7 @@ if __name__ == "__main__":
     add_item(bomb)  
     show_inventory()
     use_item(player, "治療藥水")
-    show_inventory()
-    use_item(player, "炸彈")  # 嘗試使用不存在的道具
+
     
 
 
