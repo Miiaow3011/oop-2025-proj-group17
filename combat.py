@@ -10,7 +10,7 @@ class Enemy:
         return self.hp > 0
 
 def battle(player, enemy):
-    print(f"⚔️ 你遇到了 {enemy.name}!")
+    print(f"⚔️ 你遇到了 {enemy.name}！")
 
     while player["hp"] > 0 and enemy.is_alive():
         print(f"\n你的 HP:{player['hp']} | {enemy.name} HP:{enemy.hp}")
@@ -19,7 +19,7 @@ def battle(player, enemy):
         print("2. 防禦")
         print("3. 逃跑")
 
-        action = input("輸入選項(1/2/3):").strip()
+        action = input("輸入選項(1/2/3)：").strip()
 
         if action == "1":
             damage = random.randint(5, 15)
@@ -48,7 +48,7 @@ def battle(player, enemy):
         print("你被擊敗了……")
         return "失敗"
     else:
-        print(f"你打倒了 {enemy.name}!")
+        print(f"你打倒了 {enemy.name}！")
         return "勝利"
 
 if __name__ == "__main__":
@@ -56,3 +56,6 @@ if __name__ == "__main__":
     enemy = Enemy("哥布林", 30, 5)
     result = battle(player, enemy)
     print("戰鬥結束！結果：", result)
+
+
+
