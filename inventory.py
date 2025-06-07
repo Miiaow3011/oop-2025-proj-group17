@@ -27,4 +27,9 @@ if __name__ == "__main__":
     player = {"hp": 50}
     potion = {"name": "治療藥水", "type": "heal", "amount": 30}
     bomb = {"name": "炸彈", "type": "attack", "amount": 50} 
+    add_item(potion)
+    add_item(bomb)  
+    show_inventory()
+    use_item(player, "治療藥水")
+    print("使用後玩家HP：", player["hp"])
 
