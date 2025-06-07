@@ -23,5 +23,8 @@ def use_item(player, item_name):
                 return True
         print(f"⚠️ 沒有可以使用的「{item_name}」。")
         return False
-
+if __name__ == "__main__":
+    player = {"hp": 50}
+    potion = {"name": "治療藥水", "type": "heal", "amount": 30}
+    bomb = {"name": "炸彈", "type": "attack", "amount": 50} 
 
