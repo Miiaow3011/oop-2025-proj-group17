@@ -18,30 +18,31 @@ class StoryManager:
                 "location": (5, 5),
                 "type": "story",
                 "auto_trigger": True,
-                "title": "人類文明的崩壞",
+                "title": "The Fall of Civilization",
                 "text": (
-                    "你是國立陽明交通大學的一名大一學生，今天中午到便利商店買午餐時，"
-                    "忽然外面傳來一連串爆炸聲與驚慌尖叫。你從店內望出去，發現整個校園陷入混亂，"
-                    "人們奔逃、互相攻擊，還有許多人口吐白沫、瘋狂撕咬他人。"
+                    "You're a freshman at National Yang Ming Chiao Tung University. While grabbing lunch at the campus convenience store, "
+                    "a sudden series of explosions and terrified screams erupt outside. Looking out the store window, you witness chaos unfold — "
+                    "people running in panic, attacking each other, some foaming at the mouth and violently biting others."
                 ),
                 "choices": [
-                    {"text": "查看窗外發生什麼事", "next": "window_check"},
-                    {"text": "躲到櫃台後方靜觀其變", "next": "hide_counter"},
-                    {"text": "趕快檢查便利商店裡的資源", "next": "check_supplies"}
+                    {"text": "Check what's happening outside", "next": "window_check"},
+                    {"text": "Hide behind the counter and stay quiet", "next": "hide_counter"},
+                    {"text": "Quickly search the store for supplies", "next": "check_supplies"}
                 ]
             },
 
             "window_check": {
                 "id": "window_check",
                 "type": "story",
-                "title": "噩夢的起點",
+                "title": "The Nightmare Begins",
                 "text": (
-                    "你看到幾名學生被追趕、撕咬，街道上滿是血跡。一名身穿研究服的學生嘶喊著："
-                    "『疫苗在二餐三樓⋯快⋯去⋯！』隨即被撲倒。你意識到自己可能是少數倖存者之一。"
+                    "You see students being chased and mauled. Blood is everywhere. A student in a lab coat shouts, "
+                    "'The vaccine... it’s on the 3rd floor... of the cafeteria... hurry!' before being tackled by a crazed figure. "
+                    "You realize you might be one of the few left uninfected."
                 ),
                 "choices": [
-                    {"text": "立刻封死店門", "next": "lock_door", "flag": "door_locked"},
-                    {"text": "拿起可用的物品準備防身", "next": "find_weapon"}
+                    {"text": "Barricade the store entrance immediately", "next": "lock_door", "flag": "door_locked"},
+                    {"text": "Grab anything that can be used as a weapon", "next": "find_weapon"}
                 ]
             },
 
@@ -49,12 +50,12 @@ class StoryManager:
                 "id": "freezer_event",
                 "location": (16, 4),
                 "type": "story",
-                "title": "冷藏中的物資",
-                "text": "你打開冷凍櫃，裡面除了幾盒微波食品，還意外發現一個簡易醫療包。",
+                "title": "Supplies in the Freezer",
+                "text": "You open the freezer. Aside from some microwaveable meals, you find a basic first-aid kit stashed inside.",
                 "choices": [
-                    {"text": "拿取醫療包", "action": "get_medkit"},
-                    {"text": "只拿食物", "action": "get_food"},
-                    {"text": "什麼都不拿", "next": None}
+                    {"text": "Take the medkit", "action": "get_medkit"},
+                    {"text": "Just grab the food", "action": "get_food"},
+                    {"text": "Leave everything", "next": None}
                 ]
             },
 
@@ -62,12 +63,12 @@ class StoryManager:
                 "id": "storage_event",
                 "location": (3, 10),
                 "type": "story",
-                "title": "儲藏室的動靜",
-                "text": "你打開儲藏室，裡面傳來低沉的喘息聲，像是什麼東西躲藏其中。",
+                "title": "Suspicious Sounds in Storage",
+                "text": "You open the storage room door. Inside, you hear raspy breathing — something’s lurking in the shadows.",
                 "choices": [
-                    {"text": "慢慢靠近查看", "type": "combat", "enemy_type": "infected_staff"},
-                    {"text": "大聲喊出：有人在嗎？", "next": "storage_noise"},
-                    {"text": "立刻關門離開", "next": None}
+                    {"text": "Approach carefully to investigate", "type": "combat", "enemy_type": "infected_staff"},
+                    {"text": "Shout: Is anyone in there?", "next": "storage_noise"},
+                    {"text": "Close the door and walk away", "next": None}
                 ]
             },
 
@@ -75,15 +76,15 @@ class StoryManager:
                 "id": "door_event",
                 "location": (1, 12),
                 "type": "story",
-                "title": "敲門聲",
+                "title": "Knocking at the Door",
                 "text": (
-                    "便利商店的大門傳來急促的敲打聲，你透過玻璃看到一個神情痛苦的女生，"
-                    "但她的雙眼泛白，嘴角流出不明液體。她仍不停拍打玻璃，嘴裡發出低吼。"
+                    "The store's glass door shakes under frantic knocking. Outside, a girl appears in pain — "
+                    "her eyes are clouded white and strange fluids drip from her mouth. Still, she keeps pounding the glass and growling."
                 ),
                 "choices": [
-                    {"text": "開門看看", "type": "combat", "enemy_type": "zombie"},
-                    {"text": "靜靜躲起來，假裝沒人", "next": "ignore_door"},
-                    {"text": "從後門試著離開便利商店", "next": "back_door_escape"}
+                    {"text": "Open the door and see what's going on", "type": "combat", "enemy_type": "zombie"},
+                    {"text": "Stay hidden and pretend no one's inside", "next": "ignore_door"},
+                    {"text": "Try escaping through the back door", "next": "back_door_escape"}
                 ]
             },
 
@@ -91,9 +92,9 @@ class StoryManager:
                 "id": "random_encounter",
                 "type": "random",
                 "encounters": [
-                    {"text": "你聽見貨架後有東西摩擦地板的聲音...", "type": "combat", "enemy_type": "zombie"},
-                    {"text": "你在收銀台下發現一瓶飲料與一把剪刀", "action": "random_item"},
-                    {"text": "一陣頭暈目眩襲來，你靠著牆站穩。", "action": "lose_hp"}
+                    {"text": "You hear something dragging along the floor behind the shelves...", "type": "combat", "enemy_type": "zombie"},
+                    {"text": "You find a bottle of drink and a pair of scissors under the checkout counter", "action": "random_item"},
+                    {"text": "A wave of dizziness hits you. You lean against the wall to keep your balance.", "action": "lose_hp"}
                 ]
             }
         }
