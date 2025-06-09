@@ -21,16 +21,14 @@ class StoryManager:
                 "location": (5, 5),
                 "type": "story",
                 "auto_trigger": True,
-                "title": "The Fall of Civilization",
+                "title": "末日的開始",
                 "text": (
-                    "You're a freshman at National Yang Ming Chiao Tung University. While grabbing lunch at the campus convenience store, "
-                    "a sudden series of explosions and terrified screams erupt outside. Looking out the store window, you witness chaos unfold — "
-                    "people running in panic, attacking each other, some foaming at the mouth and violently biting others."
+                    "你是這家便利商店的臨時員工。突然，外面傳來巨大的爆炸聲，緊接著是尖叫聲... "
                 ),
                 "choices": [
-                    {"text": "Check what's happening outside", "next": "window_check"},
-                    {"text": "Hide behind the counter and stay quiet", "next": "hide_counter"},
-                    {"text": "Quickly search the store for supplies", "next": "check_supplies"}
+                    {"text": "查看窗外情況", "next": "window_check"},
+                    {"text": "躲在櫃台後面", "next": "hide_counter"},
+                    {"text": "躲在櫃台後面", "next": "check_supplies"}
                 ]
             },
 
@@ -202,9 +200,9 @@ class StoryManager:
                 "id": "upstairs_entry",
                 "type": "story",
                 "title": "Up the Stairs",
-                "text": "你找到一個通往二樓的樓梯口，並確認身上帶有基本生存資源。你迅速衝上樓，暫時脫離了危險。",
+                "text": "你到一個通往二樓的樓梯口，並確認身上帶有基本生存資源。你迅速衝上樓，暫時脫離了危險。",
                 "choices": [
-                    {"text": "繼續前進（進入二樓）", "next": None}
+                    {"text": "keep going", "next": None}
                 ]
             },
             #一樓事件結束
