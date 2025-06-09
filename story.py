@@ -191,7 +191,7 @@ class StoryManager:
                 ),
                 "choices": [
                     {"text": "Head toward the cafeteria", "next": None},
-                    {"text": "Try to find other survivors", "next": None}
+                    {"text": "Try to find other survivors", "next": "storage_event"}
                 ]
             }
         }
