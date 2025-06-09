@@ -202,6 +202,92 @@ class StoryManager:
                 ]
             },
             #一樓事件結束
+            "npc_second_floor": {
+                "id": "npc_second_floor",
+                "location": (5, 2),  # 走廊中央
+                "type": "story",
+                "title": "謎樣的倖存者",
+                "text": "一名神情緊張的學生攔住你，他說他藏有三樓的門禁密碼，但需要你的幫助才能逃出校園...",
+                "choices": [
+                    {"text": "答應協助他", "flag": "helped_npc"},
+                    {"text": "懷疑地拒絕他", "next": None}
+                ]
+            },
+
+            "room_h": {
+                "id": "room_h",
+                "location": (9, 1),
+                "type": "story",
+                "title": "和室的安寧",
+                "text": "這裡出奇地寧靜，角落有個簡單的供桌和急救箱。",
+                "choices": [
+                    {"text": "拿取急救箱", "action": "get_medkit"},
+                    {"text": "靜坐片刻恢復精神", "action": "restore_hp"},
+                    {"text": "什麼都不做", "next": None}
+                ]
+            },
+
+            "room_i": {
+                "id": "room_i",
+                "location": (7, 1),
+                "type": "story",
+                "title": "蘇怡沅的房間",
+                "text": "這間房間看起來是某個社團的據點，牆上貼滿塗鴉與警語。",
+                "choices": [
+                    {"text": "翻找抽屜", "action": "random_item"},
+                    {"text": "仔細查看牆上的塗鴉", "flag": "saw_clue"},
+                    {"text": "離開", "next": None}
+                ]
+            },
+
+            "room_j": {
+                "id": "room_j",
+                "location": (11, 4),
+                "type": "story",
+                "title": "水果大享",
+                "text": "整間店亂成一團，但你看到收銀台下好像有什麼東西。",
+                "choices": [
+                    {"text": "檢查收銀台", "action": "get_weapon"},
+                    {"text": "翻找後台", "next": "fruit_surprise"},
+                    {"text": "離開", "next": None}
+                ]
+            },
+
+            "fruit_surprise": {
+                "id": "fruit_surprise",
+                "type": "story",
+                "title": "鮮果陷阱",
+                "text": "後台突然衝出一隻喪屍！",
+                "choices": [
+                    {"text": "迎戰！", "type": "combat", "enemy_type": "zombie"},
+                    {"text": "逃出房間", "next": None}
+                ]
+            },
+
+            "room_k": {
+                "id": "room_k",
+                "location": (1, 1),
+                "type": "story",
+                "title": "茁壯聯合文公園",
+                "text": "你來到二樓最西邊的空間，牆上貼著疏散路線圖，看來有助於判斷三樓出口的位置。",
+                "choices": [
+                    {"text": "記下路線圖", "flag": "map_hint"},
+                    {"text": "坐下休息", "action": "restore_hp"},
+                    {"text": "離開", "next": None}
+                ]
+            },
+
+            "third_floor_entry": {
+                "id": "third_floor_entry",
+                "location": (11, 0),
+                "type": "story",
+                "title": "通往三樓",
+                "text": "你抵達了通往三樓的樓梯口。看起來樓梯已部分坍塌，必須確定身上裝備齊全且擁有樓梯通行權限。",
+                "choices": [
+                    {"text": "嘗試攀爬上去", "next": None}
+                ]
+            },
+            #二樓事件結束
             "game_over": {
                 "id": "game_over",
                 "type": "story",
@@ -223,6 +309,29 @@ class StoryManager:
                 and self.get_flag("has_weapon")
             ):
                 return self.events.get("upstairs_entry")
+        
+        # 二樓特定事件：走廊中的 NPC
+        if (x, y) == (5, 2):
+            return self.events.get("npc_second_floor")
+        
+        # 二樓房間事件
+        if (x, y) == (9, 1):
+            return self.events.get("room_h")
+        if (x, y) == (7, 1):
+            return self.events.get("room_i")
+        if (x, y) == (11, 4):
+            return self.events.get("room_j")
+        if (x, y) == (1, 1):
+            return self.events.get("room_k")
+
+        # 通往三樓條件判斷
+        if (x, y) == (11, 0):
+            if (
+                self.get_flag("helped_npc")
+                and self.get_flag("has_weapon")
+                and self.get_flag("has_medkit")
+            ):
+                return self.events.get("third_floor_entry")
 
         for event_id, event in self.events.items():
             if event.get("location") == (x, y) and event_id not in self.triggered_events:
