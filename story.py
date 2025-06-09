@@ -9,6 +9,8 @@ class StoryManager:
         self.story_flags = {}  # 劇情標記
         self.events = self.load_story_events()
         self.triggered_events = set()  # 已觸發的事件
+        self.hp = 100  # 初始生命值
+
 
     def load_story_events(self):
         """載入劇情事件"""
@@ -206,6 +208,17 @@ class StoryManager:
                 ]
             },
             #一樓事件結束
+            "game_over": {
+                "id": "game_over",
+                "type": "story",
+              "title": "Game Over",
+              "text": (
+                    "你的視線逐漸模糊，身體失去了力氣。周圍的聲音逐漸遠去。\n"
+                   "在這場災難中，你無法存活下來……"
+             ),
+              "choices": []
+            },
+
         }
 
     def get_event_by_location(self, x, y, tile_type):
