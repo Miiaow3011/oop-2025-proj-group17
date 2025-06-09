@@ -13,6 +13,7 @@ class StoryManager:
     def load_story_events(self):
         """載入劇情事件"""
         return {
+            #一樓事件
             "intro": {
                 "id": "intro",
                 "location": (5, 5),
@@ -203,7 +204,8 @@ class StoryManager:
                 "choices": [
                     {"text": "繼續前進（進入二樓）", "next": None}
                 ]
-            }
+            },
+            #一樓事件結束
         }
 
     def get_event_by_location(self, x, y, tile_type):
