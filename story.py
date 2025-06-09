@@ -193,10 +193,28 @@ class StoryManager:
                     {"text": "Head toward the cafeteria", "next": None},
                     {"text": "Try to find other survivors", "next": "storage_event"}
                 ]
+            },
+
+            "upstairs_entry": {
+                "id": "upstairs_entry",
+                "type": "story",
+                "title": "Up the Stairs",
+                "text": "你找到一個通往二樓的樓梯口，並確認身上帶有基本生存資源。你迅速衝上樓，暫時脫離了危險。",
+                "choices": [
+                    {"text": "繼續前進（進入二樓）", "next": None}
+                ]
             }
         }
 
     def get_event_by_location(self, x, y, tile_type):
+        if (x, y) == (0, 0):
+            if (
+                self.get_flag("door_locked")
+                and self.get_flag("has_medkit")
+                and self.get_flag("has_weapon")
+            ):
+                return self.events.get("upstairs_entry")
+
         for event_id, event in self.events.items():
             if event.get("location") == (x, y) and event_id not in self.triggered_events:
                 return event
@@ -227,6 +245,8 @@ class StoryManager:
         if not self.current_event or choice_index >= len(self.current_event.get("choices", [])):
             return None
         choice = self.current_event["choices"][choice_index]
+        if "flag" in choice:
+            self.set_flag(choice["flag"])
         if "next" in choice and choice["next"]:
             return self.trigger_event(choice["next"])
         elif "action" in choice:
@@ -238,12 +258,17 @@ class StoryManager:
 
     def handle_action(self, action):
         if action == "get_medkit":
+            self.set_flag("has_medkit")
             return {"type": "item", "item": "medkit", "message": "你獲得了醫療包"}
         elif action == "get_food":
             return {"type": "item", "item": "food", "message": "你獲得了食物"}
         elif action == "random_item":
             items = ["medkit", "food", "weapon"]
             item = random.choice(items)
+            if item == "medkit":
+                self.set_flag("has_medkit")
+            elif item == "weapon":
+                self.set_flag("has_weapon")
             return {"type": "item", "item": item, "message": f"你獲得了{item}"}
         elif action == "lose_hp":
             return {"type": "damage", "amount": 10, "message": "你失去了10點生命值"}
