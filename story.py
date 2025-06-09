@@ -35,15 +35,13 @@ class StoryManager:
             "window_check": {
                 "id": "window_check",
                 "type": "story",
-                "title": "The Nightmare Begins",
+                "title": "窗外的恐怖",
                 "text": (
-                    "You see students being chased and mauled. Blood is everywhere. A student in a lab coat shouts, "
-                    "'The vaccine... it’s on the 3rd floor... of the cafeteria... hurry!' before being tackled by a crazed figure. "
-                    "You realize you might be one of the few left uninfected."
+                    "Y透過窗戶你看到街道上一片混亂，有些人似乎在攻擊其他人，而且行動很怪異..."
                 ),
                 "choices": [
-                    {"text": "Barricade the store entrance immediately", "next": "lock_door", "flag": "door_locked"},
-                    {"text": "Grab anything that can be used as a weapon", "next": "find_weapon"}
+                    {"text": "立刻鎖上店門", "next": "lock_door", "flag": "door_locked"},
+                    {"text": "準備武器", "next": "find_weapon"}
                 ]
             },
 
@@ -51,12 +49,12 @@ class StoryManager:
                 "id": "freezer_event",
                 "location": (16, 4),
                 "type": "story",
-                "title": "Supplies in the Freezer",
-                "text": "You open the freezer. Aside from some microwaveable meals, you find a basic first-aid kit stashed inside.",
+                "title": "冷凍櫃中的發現",
+                "text": "你打開冷凍櫃，發現裡面除了冷凍食品外，還有一些醫療用品...",
                 "choices": [
-                    {"text": "Take the medkit", "action": "get_medkit"},
-                    {"text": "Just grab the food", "action": "get_food"},
-                    {"text": "Leave everything", "next": None}
+                    {"text": "拿取醫療用品", "action": "get_medkit"},
+                    {"text": "拿些食物", "action": "get_food"},
+                    {"text": "什麼都不拿", "next": None}
                 ]
             },
 
@@ -64,28 +62,24 @@ class StoryManager:
                 "id": "storage_event",
                 "location": (3, 10),
                 "type": "story",
-                "title": "Suspicious Sounds in Storage",
-                "text": "You open the storage room door. Inside, you hear raspy breathing — something’s lurking in the shadows.",
+                "title": "儲藏室探索",
+                "text": "儲藏室很暗，你聽到裡面有奇怪的聲音...",
                 "choices": [
-                    {"text": "Approach carefully to investigate", "type": "combat", "enemy_type": "infected_staff"},
-                    {"text": "Shout: Is anyone in there?", "next": "storage_noise"},
-                    {"text": "Close the door and walk away", "next": None}
+                    {"text": "小心進入", "type": "combat", "enemy_type": "infected_staff"},
+                    {"text": "大聲呼喊: 有人在嘛?", "next": "storage_noise"},
+                    {"text": "關上門並離開", "next": None}
                 ]
             },
-
             "door_event": {
                 "id": "door_event",
                 "location": (1, 12),
                 "type": "story",
-                "title": "Knocking at the Door",
-                "text": (
-                    "The store's glass door shakes under frantic knocking. Outside, a girl appears in pain — "
-                    "her eyes are clouded white and strange fluids drip from her mouth. Still, she keeps pounding the glass and growling."
-                ),
+                "title": "門外的訪客",
+                "text": "有人在敲門，但從窗戶看起來不太對勁...",
                 "choices": [
-                    {"text": "Open the door and see what's going on", "type": "combat", "enemy_type": "zombie"},
-                    {"text": "Stay hidden and pretend no one's inside", "next": "ignore_door"},
-                    {"text": "Try escaping through the back door", "next": "back_door_escape"}
+                    {"text": "打開門看看發生了什麼事", "type": "combat", "enemy_type": "zombie"},
+                    {"text": "躲起來假裝沒人在家", "next": "ignore_door"},
+                    {"text": "嘗試從後門逃走", "next": "back_door_escape"}
                 ]
             },
 
@@ -93,106 +87,108 @@ class StoryManager:
                 "id": "random_encounter",
                 "type": "random",
                 "encounters": [
-                    {"text": "You hear something dragging along the floor behind the shelves...", "type": "combat", "enemy_type": "zombie"},
-                    {"text": "You find a bottle of drink and a pair of scissors under the checkout counter", "action": "random_item"},
-                    {"text": "A wave of dizziness hits you. You lean against the wall to keep your balance.", "action": "lose_hp"}
+                    {"text": "你聽到有東西在架子後面拖行...", "type": "combat", "enemy_type": "zombie"},
+                    {"text": "你在櫃檯下找到一瓶飲料和一把剪刀", "action": "random_item"},
+                    {"text": "一陣眩暈襲來，你靠著牆站穩身體。", "action": "lose_hp"}
                 ]
             },
 
             "hide_counter": {
                 "id": "hide_counter",
                 "type": "story",
-                "title": "Silent Tension",
+                "title": "寂靜的緊張",
                 "text": (
-                    "You crouch behind the counter, holding your breath. The noise outside intensifies — "
-                    "shrieks, footsteps, and something banging on the glass. Minutes crawl by like hours."
+                    "你蹲在櫃檯後面，屏住呼吸。外頭的聲音越來越大——"
+                    "尖叫聲、腳步聲，還有什麼東西撞著玻璃。時間過得異常緩慢。"
                 ),
                 "choices": [
-                    {"text": "Stay hidden a bit longer", "next": None},
-                    {"text": "Peek outside carefully", "next": "window_check"}
+                    {"text": "繼續躲著", "next": None},
+                    {"text": "小心地偷看外面", "next": "window_check"}
                 ]
             },
 
             "check_supplies": {
                 "id": "check_supplies",
                 "type": "story",
-                "title": "Emergency Stockpile",
+                "title": "應急物資",
                 "text": (
-                    "You quickly scan the shelves — snacks, bottled water, bandages, and a battered flashlight. "
-                    "This might be all you have to survive the next few hours."
+                    "你快速查看貨架——零食、瓶裝水、繃帶和一支破舊的手電筒。"
+                    "這些可能是你接下來幾小時唯一的依靠。"
                 ),
                 "choices": [
-                    {"text": "Take all you can carry", "action": "random_item"},
-                    {"text": "Focus on medical supplies", "action": "get_medkit"},
-                    {"text": "Head toward the freezer for food", "next": "freezer_event"}
+                    {"text": "拿走所有能帶的物資", "action": "random_item"},
+                    {"text": "集中拿取醫療用品", "action": "get_medkit"},
+                    {"text": "前往冷凍櫃找食物", "next": "freezer_event"}
                 ]
             },
 
             "lock_door": {
                 "id": "lock_door",
                 "type": "story",
-                "title": "Barricading the Front",
+                "title": "封鎖前門",
                 "text": (
-                    "You shove shelves and crates against the front door. The glass rattles under pressure, "
-                    "but for now, it holds. You take a moment to catch your breath."
+                    "你把書架和箱子推到門口擋住門。玻璃在壓力下嘎嘎作響，"
+                    "但目前還撐得住。你喘了口氣。"
                 ),
                 "choices": [
-                    {"text": "Look for other exits", "next": "back_door_escape"},
-                    {"text": "Search the store again", "next": "check_supplies"}
+                    {"text": "尋找其他出口", "next": "back_door_escape"},
+                    {"text": "再次搜尋店內", "next": "check_supplies"}
                 ]
             },
 
             "find_weapon": {
                 "id": "find_weapon",
                 "type": "story",
-                "title": "Improvised Arsenal",
+                "title": "臨時武裝",
                 "text": (
-                    "You grab a metal umbrella and a box cutter from the counter. Not ideal, but better than nothing."
+                    "你從櫃台抓起一把金屬雨傘和一把美工刀。雖然稱不上理想，"
+                    "但總比空手好。"
                 ),
                 "choices": [
-                    {"text": "Get ready to defend yourself", "next": None},
-                    {"text": "Try to sneak out the back", "next": "back_door_escape"}
+                    {"text": "準備戰鬥", "next": None},
+                    {"text": "試著從後門溜出去", "next": "back_door_escape"}
                 ]
             },
 
             "storage_noise": {
                 "id": "storage_noise",
                 "type": "story",
-                "title": "It Heard You",
+                "title": "它聽見你了",
                 "text": (
-                    "As you shout, the breathing stops — then turns into a growl. Something rushes toward the door from inside!"
+                    "當你喊叫時，呼吸聲停止了——然後變成低吼。"
+                    "什麼東西正從裡面衝向門口！"
                 ),
                 "choices": [
-                    {"text": "Hold the door shut!", "type": "combat", "enemy_type": "infected_staff"},
-                    {"text": "Back away slowly", "next": None}
+                    {"text": "緊緊頂住門！", "type": "combat", "enemy_type": "infected_staff"},
+                    {"text": "慢慢後退", "next": None}
                 ]
             },
 
             "ignore_door": {
                 "id": "ignore_door",
                 "type": "story",
-                "title": "Unwelcome Guest",
+                "title": "不速之客",
                 "text": (
-                    "You crouch behind a shelf, heart pounding. The girl outside continues to slam the glass, "
-                    "then suddenly stops. Did she leave — or is she still watching?"
+                    "你躲在貨架後，心臟怦怦跳。外頭的女孩繼續猛敲玻璃，"
+                    "然後突然安靜下來。她走了嗎——還是正在盯著你？"
                 ),
                 "choices": [
-                    {"text": "Risk a look outside", "next": "window_check"},
-                    {"text": "Stay hidden and wait", "next": None}
+                    {"text": "冒險偷看外面", "next": "window_check"},
+                    {"text": "繼續躲藏等待", "next": None}
                 ]
             },
 
             "back_door_escape": {
                 "id": "back_door_escape",
                 "type": "story",
-                "title": "Back Alley Breakout",
+                "title": "後巷逃脫",
                 "text": (
-                    "You slip through the back door into a narrow alley. The campus is eerily quiet now, "
-                    "but danger could be around any corner."
+                    "你從後門溜出，來到一條狹窄的巷子。整個校園異常寂靜，"
+                    "但危險可能隨時出現。"
                 ),
                 "choices": [
-                    {"text": "Head toward the cafeteria", "next": None},
-                    {"text": "Try to find other survivors", "next": "storage_event"}
+                    {"text": "往餐廳方向前進", "next": None},
+                    {"text": "試著尋找其他倖存者", "next": "storage_event"}
                 ]
             },
 
