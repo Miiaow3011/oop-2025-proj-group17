@@ -1,210 +1,236 @@
-# inventory.py - 合併的背包系統
-
 class Inventory:
     def __init__(self):
-        # 使用字典存儲物品，每個物品包含數量和詳細信息
-        self.items = {}
-        self.max_capacity = 20
+        self.items = []
+        self.max_slots = 20
         
-        # 預設初始物品
-        self.add_item_with_details("食物", {"type": "heal", "amount": 15}, 3)
-        self.add_item_with_details("醫療包", {"type": "heal", "amount": 30}, 1)
-        self.add_item_with_details("手電筒", {"type": "tool", "amount": 0}, 1)
-
-    def add_item(self, item_name, quantity=1):
-        """添加簡單物品（只有名稱和數量）"""
-        if self.get_total_items() + quantity <= self.max_capacity:
-            if item_name in self.items:
-                self.items[item_name]["quantity"] += quantity
-            else:
-                self.items[item_name] = {
-                    "quantity": quantity,
-                    "type": "misc",
-                    "amount": 0
-                }
-            print(f"你獲得了道具：{item_name}")
+        # 物品類型定義
+        self.item_types = {
+            "healing": {
+                "description": "回復道具",
+                "usable": True
+            },
+            "weapon": {
+                "description": "武器",
+                "usable": False
+            },
+            "tool": {
+                "description": "工具",
+                "usable": False
+            },
+            "key": {
+                "description": "鑰匙道具",
+                "usable": True
+            },
+            "clue": {
+                "description": "線索道具",
+                "usable": True
+            },
+            "special": {
+                "description": "特殊道具",
+                "usable": True
+            }
+        }
+    
+    def add_item(self, item):
+        """添加物品到背包"""
+        # 檢查是否已有相同物品（可堆疊的情況）
+        existing_item = self.find_item(item["name"])
+        
+        if existing_item and self.is_stackable(item):
+            existing_item["quantity"] = existing_item.get("quantity", 1) + item.get("quantity", 1)
             return True
-        print("背包已滿，無法添加物品！")
-        return False
-
-    def add_item_with_details(self, item_name, item_details, quantity=1):
-        """添加詳細物品（包含類型和效果）"""
-        if self.get_total_items() + quantity <= self.max_capacity:
-            if item_name in self.items:
-                self.items[item_name]["quantity"] += quantity
-            else:
-                self.items[item_name] = {
-                    "quantity": quantity,
-                    "type": item_details.get("type", "misc"),
-                    "amount": item_details.get("amount", 0)
-                }
-            print(f"你獲得了道具：{item_name}")
-            return True
-        print("背包已滿，無法添加物品！")
-        return False
-
+        
+        # 檢查背包空間
+        if len(self.items) >= self.max_slots:
+            return False  # 背包已滿
+        
+        # 添加新物品
+        item_copy = item.copy()
+        if "quantity" not in item_copy:
+            item_copy["quantity"] = 1
+        
+        self.items.append(item_copy)
+        return True
+    
     def remove_item(self, item_name, quantity=1):
-        """移除物品"""
-        if item_name in self.items and self.items[item_name]["quantity"] >= quantity:
-            self.items[item_name]["quantity"] -= quantity
-            if self.items[item_name]["quantity"] == 0:
-                del self.items[item_name]
-            return True
-        return False
-
-    def has_item(self, item_name, quantity=1):
-        """檢查是否有指定物品"""
-        return self.items.get(item_name, {}).get("quantity", 0) >= quantity
-
-    def show_inventory(self):
-        """顯示背包內容"""
-        if not self.items:
-            print("背包是空的。")
-            return
+        """從背包移除物品"""
+        item = self.find_item(item_name)
+        if not item:
+            return False
         
-        print("\n👜 背包道具：")
-        for i, (item_name, item_data) in enumerate(self.items.items()):
-            item_type = item_data["type"]
-            quantity = item_data["quantity"]
-            if quantity > 1:
-                print(f"{i+1}. {item_name}（{item_type}）x{quantity}")
-            else:
-                print(f"{i+1}. {item_name}（{item_type}）")
-
-    def use_item(self, item_name, player, enemy=None):
-        """使用物品"""
-        if not self.has_item(item_name):
-            print(f"⚠️ 沒有可以使用的「{item_name}」。")
-            return False
-
-        item_data = self.items[item_name]
-        item_type = item_data["type"]
-        item_amount = item_data["amount"]
-
-        # 治療類物品
-        if item_type == "heal":
-            # 檢查是否需要治療
-            if hasattr(player, 'max_hp') and player.hp >= player.max_hp:
-                print("你的生命值已滿，不需要使用治療物品。")
-                return False
-            elif not hasattr(player, 'max_hp') and player.get("hp", 0) >= 100:
-                print("你的生命值已滿，不需要使用治療物品。")
-                return False
-
-            # 執行治療
-            if hasattr(player, 'heal'):  # 如果 player 是物件
-                before_hp = player.hp
-                player.heal(item_amount)
-                after_hp = player.hp
-            else:  # 如果 player 是字典
-                before_hp = player.get("hp", 0)
-                player["hp"] += item_amount
-                max_hp = player.get("max_hp", 100)
-                if player["hp"] > max_hp:
-                    player["hp"] = max_hp
-                after_hp = player["hp"]
-
-            self.remove_item(item_name)
-            print(f"使用前玩家ＨＰ：{before_hp}")
-            print(f"你使用了「{item_name}」，恢復了 {item_amount} 點ＨＰ！")
-            print(f"使用後玩家ＨＰ：{after_hp}")
-            return True
-
-        # 攻擊類物品
-        elif item_type == "attack":
-            if enemy is None:
-                print("這個攻擊道具無法在目前情況使用。")
-                return False
-            
-            # 對敵人造成傷害
-            if hasattr(enemy, 'hp'):  # 如果 enemy 是物件
-                enemy.hp -= item_amount
-                enemy_name = getattr(enemy, 'name', '敵人')
-            else:  # 如果 enemy 是字典
-                enemy["hp"] -= item_amount
-                enemy_name = enemy.get("name", "敵人")
-
-            self.remove_item(item_name)
-            print(f"你使用了「{item_name}」，對 {enemy_name} 造成了 {item_amount} 傷害！")
-            return True
-
-        # 武器類物品
-        elif item_type == "weapon" or item_name == "武器":
-            print("你裝備了武器，攻擊力提升！")
-            return True
-
-        # 工具類物品
-        elif item_type == "tool":
-            if item_name == "手電筒":
-                print("你打開了手電筒，照亮了周圍。")
-                return True
-            elif item_name == "鑰匙":
-                print("你使用了鑰匙。")
-                return True
-
-        # 其他未知類型
+        if item.get("quantity", 1) <= quantity:
+            self.items.remove(item)
         else:
-            print("這個道具的類型不支援。")
+            item["quantity"] -= quantity
+        
+        return True
+    
+    def find_item(self, item_name):
+        """尋找物品"""
+        for item in self.items:
+            if item["name"] == item_name:
+                return item
+        return None
+    
+    def has_item(self, item_name, quantity=1):
+        """檢查是否擁有物品"""
+        item = self.find_item(item_name)
+        if not item:
             return False
-
+        return item.get("quantity", 1) >= quantity
+    
+    def is_stackable(self, item):
+        """檢查物品是否可堆疊"""
+        stackable_types = ["healing", "tool"]
+        return item.get("type") in stackable_types
+    
+    def use_item(self, item_name, game_state):
+        """使用物品"""
+        item = self.find_item(item_name)
+        if not item:
+            return False, "沒有這個物品"
+        
+        item_type = item.get("type", "")
+        
+        if not self.item_types.get(item_type, {}).get("usable", False):
+            return False, "這個物品無法使用"
+        
+        # 根據物品類型執行不同效果
+        if item_type == "healing":
+            return self.use_healing_item(item, game_state)
+        elif item_type == "key":
+            return self.use_key_item(item, game_state)
+        elif item_type == "clue":
+            return self.use_clue_item(item, game_state)
+        elif item_type == "special":
+            return self.use_special_item(item, game_state)
+        
+        return False, "未知的物品類型"
+    
+    def use_healing_item(self, item, game_state):
+        """使用回復道具"""
+        heal_amount = item.get("value", 0)
+        
+        if game_state.player_stats["hp"] >= game_state.player_stats["max_hp"]:
+            return False, "血量已滿"
+        
+        game_state.heal_player(heal_amount)
+        self.remove_item(item["name"], 1)
+        
+        return True, f"回復了 {heal_amount} 點血量"
+    
+    def use_key_item(self, item, game_state):
+        """使用鑰匙道具"""
+        if item["name"] == "鑰匙卡":
+            game_state.set_flag("has_keycard", True)
+            self.remove_item(item["name"], 1)
+            return True, "獲得了進入實驗室的權限"
+        
+        return False, "這把鑰匙現在還用不上"
+    
+    def use_clue_item(self, item, game_state):
+        """使用線索道具"""
+        if item["name"] == "研究筆記":
+            game_state.set_flag("found_clue1", True)
+            return True, "閱讀了研究筆記，得到了重要線索"
+        
+        return True, f"仔細查看了 {item['name']}"
+    
+    def use_special_item(self, item, game_state):
+        """使用特殊道具"""
+        if item["name"] == "解藥":
+            game_state.set_flag("found_antidote", True)
+            game_state.set_flag("game_completed", True)
+            return True, "你找到了解藥！人類有救了！"
+        
+        return False, "這個物品很特殊，現在還不知道怎麼使用"
+    
     def get_items(self):
         """獲取所有物品"""
-        return {name: data["quantity"] for name, data in self.items.items()}
-
-    def get_total_items(self):
+        return self.items.copy()
+    
+    def get_items_by_type(self, item_type):
+        """根據類型獲取物品"""
+        return [item for item in self.items if item.get("type") == item_type]
+    
+    def get_item_count(self):
         """獲取物品總數"""
-        return sum(data["quantity"] for data in self.items.values())
-
+        return sum(item.get("quantity", 1) for item in self.items)
+    
     def is_full(self):
         """檢查背包是否已滿"""
-        return self.get_total_items() >= self.max_capacity
-
-    def get_item_descriptions(self):
+        return len(self.items) >= self.max_slots
+    
+    def get_item_description(self, item_name):
         """獲取物品描述"""
-        descriptions = {
-            "食物": "可以恢復少量生命值 (15 HP)",
-            "醫療包": "可以恢復大量生命值 (30 HP)",
-            "治療藥水": "可以恢復中等生命值 (30 HP)",
-            "手電筒": "在黑暗中提供照明",
-            "武器": "提升攻擊力",
-            "鑰匙": "可以開啟某些門",
-            "炸彈": "攻擊道具，造成大量傷害 (25 傷害)"
+        item = self.find_item(item_name)
+        if not item:
+            return "未知物品"
+        
+        base_desc = item.get("description", "")
+        item_type = item.get("type", "")
+        type_desc = self.item_types.get(item_type, {}).get("description", "")
+        
+        if base_desc:
+            return base_desc
+        elif type_desc:
+            return type_desc
+        else:
+            return "一個神秘的物品"
+    
+    def sort_items(self):
+        """整理背包 - 按類型和名稱排序"""
+        type_order = ["weapon", "healing", "tool", "key", "clue", "special"]
+        
+        def sort_key(item):
+            item_type = item.get("type", "")
+            type_index = type_order.index(item_type) if item_type in type_order else 999
+            return (type_index, item["name"])
+        
+        self.items.sort(key=sort_key)
+    
+    def clear(self):
+        """清空背包"""
+        self.items.clear()
+    
+    def save_to_dict(self):
+        """保存背包數據到字典"""
+        return {
+            "items": self.items,
+            "max_slots": self.max_slots
         }
-        return descriptions
-
-
-# 測試代碼
-if __name__ == "__main__":
-
-    # 創建背包和玩家
-    inventory = Inventory()
-    player = {"hp": 50, "max_hp": 100}
-
     
-    # 添加第一個版本中的物品
-    potion = {"name": "治療藥水", "type": "heal", "amount": 30}
-    bomb = {"name": "炸彈", "type": "attack", "amount": 25}
+    def load_from_dict(self, data):
+        """從字典載入背包數據"""
+        self.items = data.get("items", [])
+        self.max_slots = data.get("max_slots", 20)
     
-    inventory.add_item_with_details("治療藥水", {"type": "heal", "amount": 30})
-    inventory.add_item_with_details("炸彈", {"type": "attack", "amount": 25})
+    def get_healing_items(self):
+        """獲取所有回復道具"""
+        return self.get_items_by_type("healing")
     
-    # 顯示背包
-    inventory.show_inventory()
+    def get_key_items(self):
+        """獲取所有鑰匙道具"""
+        return self.get_items_by_type("key")
     
-    # 使用道具
-    print("\n=== 使用治療藥水 ===")
-    inventory.use_item("治療藥水", player)
+    def get_weapons(self):
+        """獲取所有武器"""
+        return self.get_items_by_type("weapon")
     
-    print("\n=== 顯示使用後的背包 ===")
-    inventory.show_inventory()
-    
-    print("\n=== 嘗試使用攻擊道具（沒有敵人）===")
-    inventory.use_item("炸彈", player)
-    
-    print("\n=== 創建敵人並使用攻擊道具 ===")
-    enemy = {"name": "哥布林", "hp": 50}
-    inventory.use_item("炸彈", player, enemy)
-    print(f"敵人剩餘血量：{enemy['hp']}")
-    
-    print("\n=== 最終背包狀態 ===")
-    inventory.show_inventory()
+    def auto_use_healing(self, game_state, threshold=0.3):
+        """自動使用回復道具（當血量低於閾值時）"""
+        current_hp_ratio = game_state.player_stats["hp"] / game_state.player_stats["max_hp"]
+        
+        if current_hp_ratio > threshold:
+            return False, "血量充足，無需回復"
+        
+        # 找到最小的回復道具
+        healing_items = self.get_healing_items()
+        if not healing_items:
+            return False, "沒有回復道具"
+        
+        # 按回復量排序，使用最小的
+        healing_items.sort(key=lambda x: x.get("value", 0))
+        best_item = healing_items[0]
+        
+        return self.use_item(best_item["name"], game_state)

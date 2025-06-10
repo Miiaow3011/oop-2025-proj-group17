@@ -1,0 +1,17 @@
+{
+  "醫療包": {
+    "type": "healing",
+    "value": 30,
+    "description": "回復30點血量"
+  },
+  "鑰匙卡": {
+    "type": "key",
+    "value": 1,
+    "description": "開啟特殊區域的鑰匙"
+  },
+  "解藥": {
+    "type": "special",
+    "value": 1,
+    "description": "拯救世界的神秘藥劑"
+  }
+}

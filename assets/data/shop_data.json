@@ -1,0 +1,29 @@
+{
+  "A": {
+    "name": "7-11",
+    "chinese_name": "7-11",
+    "items": [
+      {
+        "name": "醫療包",
+        "price": 50,
+        "stock": 3
+      },
+      {
+        "name": "能量飲料",
+        "price": 20,
+        "stock": 5
+      }
+    ]
+  },
+  "B": {
+    "name": "Subway",
+    "chinese_name": "Subway",
+    "items": [
+      {
+        "name": "三明治",
+        "price": 30,
+        "stock": 2
+      }
+    ]
+  }
+}

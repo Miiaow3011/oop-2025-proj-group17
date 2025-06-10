@@ -1,468 +1,347 @@
+import pygame
 import random
-
-class Enemy:
-    def __init__(self, name, hp, attack, defense=0, ai_type="basic"):
-        self.name = name
-        self.max_hp = hp
-        self.hp = hp
-        self.attack = attack
-        self.defense = defense
-        self.ai_type = ai_type
-        self.status_effects = {}  # 狀態效果：毒、麻痺等
-        self.temp_defense = 0  # 臨時防禦加成
-    
-    def take_damage(self, damage):
-        """受到傷害"""
-        actual_damage = max(1, damage - (self.defense + self.temp_defense))
-        self.hp = max(0, self.hp - actual_damage)
-        return actual_damage
-    
-    def is_alive(self):
-        """檢查是否存活"""
-        return self.hp > 0
-    
-    def get_ai_action(self, player):
-        """AI決定行動"""
-        if self.ai_type == "basic":
-            return random.choice(["attack", "defend"])
-        elif self.ai_type == "aggressive":
-            return "attack" if random.random() > 0.2 else "defend"
-        elif self.ai_type == "defensive":
-            return "defend" if self.hp < self.max_hp * 0.3 else "attack"
-        elif self.ai_type == "smart":
-            # 智能AI：根據血量和玩家狀態決定
-            if self.hp < self.max_hp * 0.2:
-                return "defend"
-            elif player["hp"] < player.get("max_hp", 100) * 0.3:
-                return "attack"  # 玩家血量低時積極攻擊
-            else:
-                return random.choice(["attack", "defend"])
-        else:
-            return "attack"
-    
-    def reset_temp_effects(self):
-        """重置臨時效果"""
-        self.temp_defense = 0
 
 class CombatSystem:
     def __init__(self):
         self.in_combat = False
         self.current_enemy = None
-        self.player = None
+        self.player_turn = True
         self.combat_log = []
-        self.turn_count = 0
-        self.combat_choices = ["攻擊", "防禦", "使用道具", "逃跑"]
-        self.enemy_templates = self.load_enemy_templates()
-        self.player_temp_defense = 0
-        self.defend_next_turn = False  # 防禦狀態標記
+        self.animation_timer = 0
+        self.combat_result = None  # "win", "lose", "escape"
+        
+        # 戰鬥動畫
+        self.shake_timer = 0
+        self.shake_intensity = 0
+        
+        # 字體
+        self.font_large = pygame.font.Font(None, 32)
+        self.font_medium = pygame.font.Font(None, 24)
+        self.font_small = pygame.font.Font(None, 18)
     
-    def load_enemy_templates(self):
-        """載入敵人模板"""
-        return {
-            "zombie": {
-                "name": "殭屍",
-                "hp": 30,
-                "attack": 8,
-                "defense": 2,
-                "ai_type": "aggressive"
-            },
-            "zombie_group": {
-                "name": "殭屍群",
-                "hp": 50,
-                "attack": 12,
-                "defense": 1,
-                "ai_type": "aggressive"
-            },
-            "infected_customer": {
-                "name": "感染的顧客",
-                "hp": 25,
-                "attack": 6,
-                "defense": 1,
-                "ai_type": "basic"
-            },
-            "mutant_rat": {
-                "name": "變異老鼠",
-                "hp": 15,
-                "attack": 5,
-                "defense": 0,
-                "ai_type": "aggressive"
-            },
-            "alien_scout": {
-                "name": "外星偵察兵",
-                "hp": 40,
-                "attack": 15,
-                "defense": 5,
-                "ai_type": "smart"
-            },
-            "boss_infected": {
-                "name": "感染者首領",
-                "hp": 80,
-                "attack": 20,
-                "defense": 8,
-                "ai_type": "smart"
-            },
-            "survivor": {
-                "name": "瘋狂倖存者",
-                "hp": 35,
-                "attack": 12,
-                "defense": 3,
-                "ai_type": "defensive"
-            },
-            "goblin": {
-                "name": "哥布林",
-                "hp": 30,
-                "attack": 5,
-                "defense": 1,
-                "ai_type": "basic"
-            }
-        }
+    def start_combat(self, enemy):
+        self.in_combat = True
+        self.current_enemy = enemy.copy()
+        self.current_enemy["max_hp"] = enemy["hp"]
+        self.player_turn = True
+        self.combat_log = [f"遭遇了 {enemy['name']}！"]
+        self.animation_timer = 0
+        self.combat_result = None
     
-    def start_combat(self, enemy_type):
-        """開始戰鬥"""
-        if enemy_type in self.enemy_templates:
-            template = self.enemy_templates[enemy_type]
-            self.current_enemy = Enemy(
-                template["name"],
-                template["hp"],
-                template["attack"],
-                template["defense"],
-                template["ai_type"]
-            )
-            self.in_combat = True
-            self.turn_count = 0
-            self.player_temp_defense = 0
-            self.defend_next_turn = False
-            self.combat_log = [f"⚔️ 你遭遇了 {self.current_enemy.name}！"]
-            return True
-        return False
-    
-    def battle(self, player, enemy_type_or_enemy):
-        """簡化的戰鬥函數，兼容第二個版本的調用方式"""
-        # 如果傳入的是Enemy對象，直接使用
-        if isinstance(enemy_type_or_enemy, Enemy):
-            self.current_enemy = enemy_type_or_enemy
-            self.in_combat = True
-            self.turn_count = 0
-            self.player_temp_defense = 0
-            self.defend_next_turn = False
-            self.combat_log = [f"⚔️ 你遭遇了 {self.current_enemy.name}！"]
-        else:
-            # 否則按敵人類型創建
-            if not self.start_combat(enemy_type_or_enemy):
-                return "錯誤"
-        
-        self.player = player
-        
-        # 戰鬥主循環
-        while self.player["hp"] > 0 and self.current_enemy.is_alive():
-            print(f"\n你的 HP: {self.player['hp']} | {self.current_enemy.name} HP: {self.current_enemy.hp}\n")
-            print("選擇行動：")
-            for i, choice in enumerate(self.combat_choices):
-                print(f"{i+1}. {choice}")
-            
-            try:
-                action = input("輸入選項(1/2/3/4)：").strip()
-                action_index = int(action) - 1
-                
-                if action_index < 0 or action_index >= len(self.combat_choices):
-                    print("輸入錯誤，請重新選擇。")
-                    continue
-                
-                result = self.process_action(action_index, self.player)
-                
-                # 顯示戰鬥日誌
-                for log in self.combat_log[-3:]:  # 顯示最近3條訊息
-                    print(log)
-                
-                if result == "victory":
-                    return "勝利"
-                elif result == "defeat":
-                    return "失敗"
-                elif result == "flee_success":
-                    return "逃跑"
-                elif result == "invalid":
-                    print("無效的行動，請重新選擇。")
-                    continue
-                
-                self.combat_log = []  # 清空日誌避免重複顯示
-                
-            except (ValueError, IndexError):
-                print("輸入錯誤，請重新選擇。")
-                continue
-        
-        # 戰鬥結束判定
-        if self.player["hp"] <= 0:
-            return "失敗"
-        else:
-            return "勝利"
-    
-    def process_action(self, action_index, player):
-        """處理戰鬥行動"""
-        if not self.in_combat or not self.current_enemy or not self.current_enemy.is_alive():
-            return "invalid"
-        
-        self.player = player
-        
-        # 處理玩家行動
-        if action_index == 0:  # 攻擊
-            result = self.player_attack()
-        elif action_index == 1:  # 防禦
-            result = self.player_defend()
-        elif action_index == 2:  # 使用道具
-            result = self.player_use_item()
-        elif action_index == 3:  # 逃跑
-            result = self.player_flee()
-        else:
-            result = "invalid"
-        
-        # 檢查敵人是否死亡
-        if not self.current_enemy.is_alive():
-            exp_reward = self.calculate_exp_reward()
-            # 檢查玩家是否有經驗值系統
-            if hasattr(self.player, 'gain_exp'):
-                self.player.gain_exp(exp_reward)
-                self.combat_log.append(f"獲得 {exp_reward} 經驗值！")
-            self.combat_log.append(f"你打倒了 {self.current_enemy.name}！")
-            self.end_combat()
-            return "victory"
-        
-        # 敵人回合（如果玩家沒有逃跑）
-        if self.in_combat and result != "flee_success":
-            self.enemy_turn()
-            
-            # 檢查玩家是否死亡
-            if self.player["hp"] <= 0:
-                self.combat_log.append("你被擊敗了...")
-                self.end_combat()
-                return "defeat"
-        
-        self.turn_count += 1
-        return result if result in ["flee_success", "flee_failed"] else "continue"
-    
-    def calculate_exp_reward(self):
-        """計算經驗值獎勵"""
-        base_exp = self.current_enemy.max_hp // 5
-        level_bonus = max(1, self.current_enemy.max_hp // 20)
-        return base_exp + level_bonus
-    
-    def player_attack(self):
-        """玩家攻擊"""
-        # 計算傷害（加入隨機性）
-        base_damage = random.randint(5, 15)  # 兼容第二個版本的傷害範圍
-        
-        # 如果玩家有攻擊力屬性，使用它
-        if "attack" in self.player:
-            base_damage = self.player["attack"] + random.randint(-2, 3)
-        
-        # 暴擊機率
-        crit_chance = 0.1
-        if random.random() < crit_chance:
-            base_damage = int(base_damage * 1.5)
-            self.combat_log.append("暴擊！")
-        
-        actual_damage = self.current_enemy.take_damage(base_damage)
-        self.combat_log.append(f"你對 {self.current_enemy.name} 造成了 {actual_damage} 點傷害！")
-        
-        return "attack_success"
-    
-    def player_defend(self):
-        """玩家防禦"""
-        # 標記下次受到傷害減半
-        self.defend_next_turn = True
-        self.player_temp_defense = 5
-        heal_amount = random.randint(2, 5)
-        
-        # 簡單的治療
-        if "max_hp" in self.player:
-            self.player["hp"] = min(self.player["max_hp"], self.player["hp"] + heal_amount)
-        else:
-            self.player["hp"] += heal_amount
-        
-        self.combat_log.append("你準備防禦，這回合受到的傷害減半。")
-        if heal_amount > 0:
-            self.combat_log.append(f"恢復了 {heal_amount} 點生命值")
-        return "defend_success"
-    
-    def player_use_item(self):
-        """玩家使用道具"""
-        # 嘗試導入inventory模組
-        try:
-            from inventory import inventory, use_item
-            
-            if not inventory:
-                self.combat_log.append("你的背包是空的，沒有道具可以使用。")
-                return "item_failed"
-            
-            print("\n背包道具：")
-            for i, item in enumerate(inventory):
-                print(f"{i+1}. {item['name']}（{item['type']}）")
-            
-            choice = input("輸入要使用的道具編號：").strip()
-            
-            if not choice.isdigit() or int(choice) < 1 or int(choice) > len(inventory):
-                self.combat_log.append("輸入錯誤，請重新選擇道具。")
-                return "item_failed"
-            
-            item_name = inventory[int(choice) - 1]["name"]
-            used = use_item(self.player, item_name, self.current_enemy)
-            
-            if used:
-                self.combat_log.append(f"使用了 {item_name}")
-                return "item_used"
-            else:
-                self.combat_log.append("道具使用失敗。")
-                return "item_failed"
-                
-        except ImportError:
-            # 如果沒有inventory模組，使用備用方案
-            if self.player["hp"] < self.player.get("max_hp", 100):
-                heal_amount = random.randint(10, 20)
-                max_hp = self.player.get("max_hp", 100)
-                self.player["hp"] = min(max_hp, self.player["hp"] + heal_amount)
-                self.combat_log.append(f"你使用了應急醫療用品，恢復了 {heal_amount} 點生命值")
-                return "item_used"
-            else:
-                self.combat_log.append("你目前不需要治療")
-                return "item_failed"
-    
-    def player_flee(self):
-        """玩家逃跑"""
-        # 逃跑成功率根據敵人類型調整
-        base_flee_chance = 0.7
-        
-        if self.current_enemy.ai_type == "aggressive":
-            flee_chance = base_flee_chance - 0.2
-        elif self.current_enemy.ai_type == "defensive":
-            flee_chance = base_flee_chance + 0.1
-        else:
-            flee_chance = base_flee_chance
-        
-        if random.random() < flee_chance:
-            self.combat_log.append("你成功逃跑了！")
-            self.end_combat()
-            return "flee_success"
-        else:
-            self.combat_log.append("逃跑失敗！")
-            return "flee_failed"
-    
-    def enemy_turn(self):
-        """敵人回合"""
-        action = self.current_enemy.get_ai_action(self.player)
+    def player_action(self, action):
+        if not self.in_combat or not self.player_turn:
+            return
         
         if action == "attack":
-            self.enemy_attack()
+            self.player_attack()
         elif action == "defend":
-            self.enemy_defend()
+            self.player_defend()
+        elif action == "escape":
+            self.player_escape()
         
-        # 重置臨時效果
-        self.player_temp_defense = 0
-        self.current_enemy.reset_temp_effects()
-        self.defend_next_turn = False
+        # 檢查敵人是否死亡
+        if self.current_enemy["hp"] <= 0:
+            self.combat_result = "win"
+            self.end_combat()
+            return
+        
+        # 敵人回合
+        if self.in_combat and action != "escape":
+            self.player_turn = False
+            self.animation_timer = 60  # 1秒延遲
     
-    def enemy_attack(self):
-        """敵人攻擊"""
-        enemy_damage = self.current_enemy.attack
-        damage_variance = random.randint(-1, 2)
-        total_damage = max(1, enemy_damage + damage_variance)
+    def player_attack(self):
+        # 計算傷害
+        base_damage = random.randint(8, 15)
+        damage = max(1, base_damage - self.current_enemy["defense"])
         
-        # 如果玩家上回合防禦，傷害減半
-        if self.defend_next_turn:
-            total_damage = total_damage // 2
-            self.combat_log.append("防禦生效！傷害減半")
+        # 暴擊機率
+        is_critical = random.random() < 0.15  # 15%暴擊率
+        if is_critical:
+            damage = int(damage * 1.5)
+            self.combat_log.append(f"暴擊！造成 {damage} 點傷害！")
+        else:
+            self.combat_log.append(f"造成 {damage} 點傷害！")
         
-        # 計算玩家實際受到的傷害
-        player_defense = self.player.get("defense", 0) + self.player_temp_defense
-        actual_damage = max(1, total_damage - player_defense)
-        
-        self.player["hp"] = max(0, self.player["hp"] - actual_damage)
-        self.combat_log.append(f"{self.current_enemy.name} 攻擊你，造成了 {actual_damage} 傷害！")
+        self.current_enemy["hp"] -= damage
+        self.shake_timer = 30
+        self.shake_intensity = 5
     
-    def enemy_defend(self):
-        """敵人防禦"""
-        self.current_enemy.temp_defense = 3
-        heal_amount = random.randint(1, 3)
-        self.current_enemy.hp = min(self.current_enemy.max_hp, self.current_enemy.hp + heal_amount)
-        self.combat_log.append(f"{self.current_enemy.name} 進入防禦姿態")
+    def player_defend(self):
+        # 防禦回復少量血量
+        heal_amount = random.randint(5, 10)
+        self.combat_log.append(f"防禦姿態，回復 {heal_amount} 點血量！")
+        # 這裡需要game_state來回復血量，暫時記錄
+        self.combat_log.append("下回合受到傷害減半！")
+    
+    def player_escape(self):
+        escape_chance = 0.6  # 60%逃跑成功率
+        if random.random() < escape_chance:
+            self.combat_log.append("成功逃跑了！")
+            self.combat_result = "escape"
+            self.end_combat()
+        else:
+            self.combat_log.append("逃跑失敗！")
+    
+    def enemy_turn(self, game_state):
+        if not self.in_combat or self.player_turn:
+            return
+        
+        # 敵人攻擊
+        enemy_damage = random.randint(
+            self.current_enemy["attack"] - 2,
+            self.current_enemy["attack"] + 2
+        )
+        
+        actual_damage = game_state.damage_player(enemy_damage)
+        self.combat_log.append(f"{self.current_enemy['name']} 攻擊你，造成 {actual_damage} 點傷害！")
+        
+        # 檢查玩家是否死亡
+        if game_state.is_player_dead():
+            self.combat_result = "lose"
+            self.end_combat()
+            return
+        
+        self.player_turn = True
+        self.shake_timer = 20
+        self.shake_intensity = 3
     
     def end_combat(self):
-        """結束戰鬥"""
-        self.in_combat = False
-        self.current_enemy = None
-        self.player = None
-        self.turn_count = 0
-        self.player_temp_defense = 0
-        self.defend_next_turn = False
+        if self.combat_result == "win":
+            exp_reward = self.current_enemy["exp_reward"]
+            self.combat_log.append(f"獲得 {exp_reward} 經驗值！")
+        
+        self.animation_timer = 120  # 2秒後結束戰鬥畫面
     
-    def get_combat_data(self):
-        """獲取戰鬥數據用於UI顯示"""
+    def update(self, game_state):
         if not self.in_combat:
-            return None
+            return
         
-        return {
-            "enemy": {
-                "name": self.current_enemy.name,
-                "hp": self.current_enemy.hp,
-                "max_hp": self.current_enemy.max_hp
-            },
-            "player": {
-                "hp": self.player["hp"] if self.player else 0,
-                "max_hp": self.player.get("max_hp", 100) if self.player else 0
-            },
-            "choices": self.combat_choices,
-            "log": self.combat_log[-4:],  # 顯示最近4條訊息
-            "message": self.combat_log[-1] if self.combat_log else "",
-            "turn": self.turn_count
-        }
-    
-    def add_enemy_template(self, enemy_type, template):
-        """新增敵人模板"""
-        self.enemy_templates[enemy_type] = template
-    
-    def get_random_enemy(self, area_name="normal"):
-        """根據區域獲取隨機敵人"""
-        area_enemies = {
-            "normal": ["zombie", "infected_customer", "goblin"],
-            "storage": ["mutant_rat", "zombie"],
-            "outside": ["zombie_group", "alien_scout", "survivor"],
-            "boss": ["boss_infected"],
-            "freezer": ["mutant_rat"],
-            "counter": ["infected_customer"]
-        }
+        # 更新動畫計時器
+        if self.animation_timer > 0:
+            self.animation_timer -= 1
+            
+            # 敵人回合延遲
+            if not self.player_turn and self.animation_timer == 0:
+                self.enemy_turn(game_state)
+            
+            # 戰鬥結束延遲
+            if self.combat_result and self.animation_timer == 0:
+                self.in_combat = False
+                if self.combat_result == "win":
+                    game_state.add_exp(self.current_enemy["exp_reward"])
+                game_state.set_state("exploration")
         
-        possible_enemies = area_enemies.get(area_name, ["zombie"])
-        return random.choice(possible_enemies)
+        # 更新震動效果
+        if self.shake_timer > 0:
+            self.shake_timer -= 1
+        
+        # 限制戰鬥日誌長度
+        if len(self.combat_log) > 8:
+            self.combat_log.pop(0)
     
-    def get_enemy_info(self, enemy_type):
-        """獲取敵人資訊"""
-        if enemy_type in self.enemy_templates:
-            return self.enemy_templates[enemy_type].copy()
-        return None
-
-# 為了向後兼容，提供簡化的戰鬥函數
-def battle(player, enemy):
-    """簡化的戦鬥函數，兼容第二個版本"""
-    combat_system = CombatSystem()
-    return combat_system.battle(player, enemy)
-
-# 測試代碼
-if __name__ == "__main__":
-    # 測試新系統
-    combat_system = CombatSystem()
-    player = {"hp": 100, "max_hp": 100, "attack": 10, "defense": 2}
+    def render(self, screen, game_state):
+        if not self.in_combat:
+            return
+        
+        screen_width, screen_height = screen.get_size()
+        
+        # 戰鬥背景
+        combat_bg = pygame.Rect(0, 0, screen_width, screen_height)
+        pygame.draw.rect(screen, (20, 20, 40), combat_bg)
+        
+        # 震動效果
+        shake_x = 0
+        shake_y = 0
+        if self.shake_timer > 0:
+            shake_x = random.randint(-self.shake_intensity, self.shake_intensity)
+            shake_y = random.randint(-self.shake_intensity, self.shake_intensity)
+        
+        # 敵人顯示
+        enemy_x = screen_width // 2 + shake_x
+        enemy_y = 150 + shake_y
+        self.render_enemy(screen, enemy_x, enemy_y)
+        
+        # 敵人血量條
+        self.render_enemy_health(screen, enemy_x, enemy_y)
+        
+        # 玩家血量條
+        self.render_player_health(screen, game_state)
+        
+        # 戰鬥選項
+        if self.player_turn and not self.combat_result:
+            self.render_combat_options(screen)
+        
+        # 戰鬥日誌
+        self.render_combat_log(screen)
+        
+        # 戰鬥結果
+        if self.combat_result:
+            self.render_combat_result(screen)
     
-    # 方法1：使用Enemy對象（兼容第二個版本）
-    enemy = Enemy("哥布林", 30, 5)
-
-    result1 = combat_system.battle(player, enemy)
-    print(f"戰鬥結果：{result1}")
+    def render_enemy(self, screen, x, y):
+        enemy_name = self.current_enemy["name"]
+        
+        # 根據敵人類型繪製不同外觀
+        if "殭屍" in enemy_name:
+            self.draw_zombie(screen, x, y)
+        elif "外星人" in enemy_name:
+            self.draw_alien(screen, x, y)
+        else:
+            self.draw_generic_enemy(screen, x, y)
+        
+        # 敵人名稱
+        name_surface = self.font_medium.render(enemy_name, True, (255, 255, 255))
+        name_rect = name_surface.get_rect(center=(x, y - 80))
+        screen.blit(name_surface, name_rect)
     
-    # 方法2：使用敵人類型
-    player["hp"] = 100  # 重置血量
-    result2 = combat_system.battle(player, "goblin")
-    print(f"戰鬥結果：{result2}")
+    def draw_zombie(self, screen, x, y):
+        # 殭屍外觀 (像素風格)
+        # 身體
+        pygame.draw.rect(screen, (100, 100, 100), (x-20, y-20, 40, 50))
+        # 頭部
+        pygame.draw.rect(screen, (150, 150, 100), (x-15, y-40, 30, 25))
+        # 眼睛 (紅色)
+        pygame.draw.rect(screen, (255, 0, 0), (x-10, y-35, 4, 4))
+        pygame.draw.rect(screen, (255, 0, 0), (x+6, y-35, 4, 4))
+        # 嘴巴
+        pygame.draw.rect(screen, (100, 0, 0), (x-5, y-25, 10, 3))
+        # 手臂
+        pygame.draw.rect(screen, (120, 120, 80), (x-25, y-10, 10, 20))
+        pygame.draw.rect(screen, (120, 120, 80), (x+15, y-10, 10, 20))
     
-    # 方法3：使用舊版本的battle函數
-    player["hp"] = 100  # 重置血量
-    enemy2 = Enemy("殭屍", 30, 8)
-    result3 = battle(player, enemy2)
-    print(f"戰鬥結果：{result3}")
+    def draw_alien(self, screen, x, y):
+        # 外星人外觀
+        # 身體 (銀色)
+        pygame.draw.rect(screen, (150, 150, 200), (x-18, y-15, 36, 40))
+        # 頭部 (大頭)
+        pygame.draw.rect(screen, (200, 200, 220), (x-20, y-45, 40, 35))
+        # 大眼睛 (黑色)
+        pygame.draw.rect(screen, (0, 0, 0), (x-15, y-35, 8, 12))
+        pygame.draw.rect(screen, (0, 0, 0), (x+7, y-35, 8, 12))
+        # 觸角
+        pygame.draw.rect(screen, (200, 200, 220), (x-10, y-50, 2, 8))
+        pygame.draw.rect(screen, (200, 200, 220), (x+8, y-50, 2, 8))
+    
+    def draw_generic_enemy(self, screen, x, y):
+        # 一般敵人外觀
+        pygame.draw.rect(screen, (150, 50, 50), (x-16, y-16, 32, 40))
+        pygame.draw.rect(screen, (180, 80, 80), (x-12, y-32, 24, 20))
+        pygame.draw.rect(screen, (50, 50, 50), (x-8, y-28, 4, 4))
+        pygame.draw.rect(screen, (50, 50, 50), (x+4, y-28, 4, 4))
+    
+    def render_enemy_health(self, screen, enemy_x, enemy_y):
+        # 敵人血量條
+        hp_ratio = self.current_enemy["hp"] / self.current_enemy["max_hp"]
+        bar_width = 100
+        bar_height = 8
+        
+        bar_x = enemy_x - bar_width // 2
+        bar_y = enemy_y + 60
+        
+        # 背景
+        bg_rect = pygame.Rect(bar_x, bar_y, bar_width, bar_height)
+        pygame.draw.rect(screen, (100, 100, 100), bg_rect)
+        
+        # 血量
+        hp_rect = pygame.Rect(bar_x, bar_y, bar_width * hp_ratio, bar_height)
+        hp_color = (255, 0, 0) if hp_ratio < 0.3 else (255, 165, 0) if hp_ratio < 0.6 else (255, 255, 0)
+        pygame.draw.rect(screen, hp_color, hp_rect)
+        
+        # 血量文字
+        hp_text = f"{self.current_enemy['hp']}/{self.current_enemy['max_hp']}"
+        hp_surface = self.font_small.render(hp_text, True, (255, 255, 255))
+        hp_rect = hp_surface.get_rect(center=(enemy_x, bar_y + 20))
+        screen.blit(hp_surface, hp_rect)
+    
+    def render_player_health(self, screen, game_state):
+        screen_width = screen.get_width()
+        
+        # 玩家血量條
+        hp_ratio = game_state.player_stats["hp"] / game_state.player_stats["max_hp"]
+        bar_width = 200
+        bar_height = 20
+        
+        bar_x = 20
+        bar_y = screen.get_height() - 100
+        
+        # 背景
+        bg_rect = pygame.Rect(bar_x, bar_y, bar_width, bar_height)
+        pygame.draw.rect(screen, (100, 100, 100), bg_rect)
+        
+        # 血量
+        hp_rect = pygame.Rect(bar_x, bar_y, bar_width * hp_ratio, bar_height)
+        hp_color = (255, 0, 0) if hp_ratio < 0.3 else (255, 255, 0) if hp_ratio < 0.6 else (0, 255, 0)
+        pygame.draw.rect(screen, hp_color, hp_rect)
+        
+        # 血量文字
+        hp_text = f"HP: {game_state.player_stats['hp']}/{game_state.player_stats['max_hp']}"
+        hp_surface = self.font_medium.render(hp_text, True, (255, 255, 255))
+        screen.blit(hp_surface, (bar_x, bar_y - 25))
+    
+    def render_combat_options(self, screen):
+        screen_width, screen_height = screen.get_size()
+        
+        # 戰鬥選項框
+        options_rect = pygame.Rect(screen_width - 250, screen_height - 200, 230, 180)
+        pygame.draw.rect(screen, (0, 0, 0, 200), options_rect)
+        pygame.draw.rect(screen, (255, 255, 255), options_rect, 2)
+        
+        # 選項文字
+        options = [
+            "1. 攻擊",
+            "2. 防禦",
+            "3. 逃跑"
+        ]
+        
+        y_offset = options_rect.y + 20
+        for option in options:
+            option_surface = self.font_medium.render(option, True, (255, 255, 255))
+            screen.blit(option_surface, (options_rect.x + 10, y_offset))
+            y_offset += 30
+        
+        # 提示文字
+        hint_text = "選擇你的行動:"
+        hint_surface = self.font_small.render(hint_text, True, (200, 200, 200))
+        screen.blit(hint_surface, (options_rect.x + 10, options_rect.y + 120))
+    
+    def render_combat_log(self, screen):
+        # 戰鬥日誌
+        log_rect = pygame.Rect(20, 200, 400, 200)
+        pygame.draw.rect(screen, (0, 0, 0, 180), log_rect)
+        pygame.draw.rect(screen, (255, 255, 255), log_rect, 1)
+        
+        # 日誌標題
+        log_title = self.font_medium.render("戰鬥記錄:", True, (255, 255, 255))
+        screen.blit(log_title, (log_rect.x + 10, log_rect.y + 5))
+        
+        # 日誌內容
+        y_offset = log_rect.y + 30
+        for message in self.combat_log[-6:]:  # 只顯示最後6條
+            msg_surface = self.font_small.render(message, True, (255, 255, 255))
+            screen.blit(msg_surface, (log_rect.x + 10, y_offset))
+            y_offset += 20
+    
+    def render_combat_result(self, screen):
+        screen_width, screen_height = screen.get_size()
+        
+        # 結果顯示
+        if self.combat_result == "win":
+            result_text = "勝利！"
+            result_color = (0, 255, 0)
+        elif self.combat_result == "lose":
+            result_text = "失敗..."
+            result_color = (255, 0, 0)
+        elif self.combat_result == "escape":
+            result_text = "逃跑成功"
+            result_color = (255, 255, 0)
+        
+        result_surface = self.font_large.render(result_text, True, result_color)
+        result_rect = result_surface.get_rect(center=(screen_width//2, screen_height//2))
+        
+        # 結果背景
+        bg_rect = result_rect.copy()
+        bg_rect.inflate(40, 20)
+        pygame.draw.rect(screen, (0, 0, 0, 200), bg_rect)
+        
+        screen.blit(result_surface, result_rect)

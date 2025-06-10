@@ -1,0 +1,57 @@
+# 《末世第二餐廳》Git忽略檔案
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 遊戲特定檔案
+saves/
+logs/
+config.ini
+
+# 素材檔案 (太大不適合版本控制)
+assets/images/*.png
+assets/images/*.jpg
+assets/sounds/*.wav
+assets/sounds/*.ogg
+assets/sounds/*.mp3
+assets/fonts/*.ttf
+assets/fonts/*.ttc
+assets/fonts/*.otf
+
+# 但保留README檔案
+!assets/*/README.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 作業系統
+.DS_Store
+Thumbs.db
+
+# 建置檔案
+build/
+dist/
+*.exe
+*.msi
