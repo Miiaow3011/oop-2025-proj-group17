@@ -11,7 +11,7 @@ class UI:
         self.font_medium = font_manager.get_font(24)
         self.font_small = font_manager.get_font(18)
         
-        # UI狀態 - 修復版
+        # UI狀態
         self.show_inventory = False
         self.show_map = False
         self.dialogue_active = False
@@ -29,74 +29,33 @@ class UI:
         self.current_message = ""
         
         # 對話狀態管理
-        self.dialogue_step = 0  # 對話進度
-        self.max_dialogue_steps = 1  # 最大對話步數
+        self.dialogue_step = 0
+        self.max_dialogue_steps = 1
         
-        # 除錯模式
-        self.debug_ui = False
+        # 遊戲狀態追蹤
+        self.has_keycard = False
+        self.has_antidote = False
+        self.game_completed = False
+        self.game_over = False
+        
+        # 玩家初始位置記錄 (用於傳送)
+        self.player_reference = None
+    
+    def set_player_reference(self, player):
+        """設定玩家物件參考，用於修改位置"""
+        self.player_reference = player
     
     def toggle_inventory(self):
-        """切換背包狀態 - 修復版"""
-        old_state = self.show_inventory
         self.show_inventory = not self.show_inventory
-        
-        # 確保只有一個UI開啟
         if self.show_inventory:
             self.show_map = False
-            self.dialogue_active = False
-        
-        print(f"🎒 背包狀態變更: {old_state} → {self.show_inventory}")
-        
-        # 除錯資訊
-        if self.debug_ui:
-            print(f"   背包: {self.show_inventory}, 地圖: {self.show_map}, 對話: {self.dialogue_active}")
-        
-        return self.show_inventory
     
     def toggle_map(self):
-        """切換地圖狀態 - 修復版"""
-        old_state = self.show_map
         self.show_map = not self.show_map
-        
-        # 確保只有一個UI開啟
         if self.show_map:
             self.show_inventory = False
-            self.dialogue_active = False
-        
-        print(f"🗺️ 地圖狀態變更: {old_state} → {self.show_map}")
-        
-        # 除錯資訊
-        if self.debug_ui:
-            print(f"   背包: {self.show_inventory}, 地圖: {self.show_map}, 對話: {self.dialogue_active}")
-        
-        return self.show_map
-    
-    def close_all_ui(self):
-        """關閉所有UI - 新增功能"""
-        self.show_inventory = False
-        self.show_map = False
-        self.dialogue_active = False
-        print("🚪 關閉所有UI")
-    
-    def is_any_ui_open(self):
-        """檢查是否有任何UI開啟 - 新增功能"""
-        return self.show_inventory or self.show_map or self.dialogue_active
-    
-    def get_ui_status(self):
-        """獲取UI狀態資訊 - 新增功能"""
-        return {
-            "inventory": self.show_inventory,
-            "map": self.show_map,
-            "dialogue": self.dialogue_active,
-            "any_open": self.is_any_ui_open()
-        }
     
     def start_dialogue(self, interaction_data):
-        """開始對話 - 修復版"""
-        # 關閉其他UI
-        self.show_inventory = False
-        self.show_map = False
-        
         self.dialogue_active = True
         self.dialogue_data = interaction_data
         self.dialogue_step = 0
@@ -106,16 +65,11 @@ class UI:
         elif interaction_data["type"] == "npc":
             self.setup_npc_dialogue(interaction_data)
         
-        print(f"💬 對話開始: {interaction_data['name']}")
-        
-        # 除錯資訊
-        if self.debug_ui:
-            print(f"   對話狀態: {self.dialogue_active}")
+        print(f"對話開始: {interaction_data['name']}")
     
     def setup_shop_dialogue(self, shop_data):
         shop_name = shop_data["name"]
         
-        # 根據不同商店設定對話內容
         if shop_data["id"] == "A":  # 7-11
             self.dialogue_text = "歡迎來到7-11！雖然外面很危險，但這裡還算安全。需要什麼嗎？"
             self.dialogue_options = [
@@ -137,28 +91,22 @@ class UI:
                 "查看櫃台",
                 "離開"
             ]
-        elif shop_data["id"] == "I":  # 素怡沅
-            self.dialogue_text = "素食自助餐已經沒有新鮮食材了，但或許還有其他東西..."
-            self.dialogue_options = [
-                "查看櫃台",
-                "搜尋後廚",
-                "離開"
-            ]
-        elif shop_data["id"] == "J":  # 水果大亨
-            self.dialogue_text = "果汁機還在運作，但店員已經不見了..."
-            self.dialogue_options = [
-                "檢查收銀機",
-                "搜尋儲藏室", 
-                "離開"
-            ]
-            self.dialogue_text = "這裡可能有研究員留下的線索..."
-            self.dialogue_options = [
-                "仔細搜查",
-                "查看櫃台",
-                "離開"
-            ]
+        elif shop_data["id"] == "L":  # 咖啡廳
+            if self.has_keycard:
+                self.dialogue_text = "你使用鑰匙卡進入了秘密區域，這裡可能有解藥..."
+                self.dialogue_options = [
+                    "深入搜查",
+                    "查看實驗設備",
+                    "離開"
+                ]
+            else:
+                self.dialogue_text = "這裡需要特殊的鑰匙卡才能進入深處..."
+                self.dialogue_options = [
+                    "仔細搜查",
+                    "查看櫃台",
+                    "離開"
+                ]
         else:
-            # 其他商店的通用對話
             self.dialogue_text = f"這是{shop_name}，看起來已經荒廢了..."
             self.dialogue_options = [
                 "搜尋物品",
@@ -184,6 +132,7 @@ class UI:
             self.dialogue_options = [
                 "解藥在哪裡？",
                 "你還好嗎？",
+                "給予醫療用品",
                 "離開"
             ]
         elif npc_id == "npc3":  # 神秘研究員
@@ -191,15 +140,24 @@ class UI:
             self.dialogue_options = [
                 "鑰匙卡在哪？",
                 "實驗室在哪裡？",
+                "我可以幫你什麼？",
                 "離開"
             ]
         elif npc_id == "npc4":  # 最後的研究者
-            self.dialogue_text = "你找到了！解藥就在這裡，但要小心，外面的情況更糟了..."
-            self.dialogue_options = [
-                "拿取解藥",
-                "詢問使用方法",
-                "離開"
-            ]
+            if self.has_antidote:
+                self.dialogue_text = "太好了！你已經有解藥了，現在可以拯救所有人！"
+                self.dialogue_options = [
+                    "如何使用解藥？",
+                    "還有其他倖存者嗎？",
+                    "離開"
+                ]
+            else:
+                self.dialogue_text = "你找到了！解藥就在這裡，但要小心，外面的情況更糟了..."
+                self.dialogue_options = [
+                    "拿取解藥",
+                    "詢問使用方法",
+                    "離開"
+                ]
         
         self.selected_option = 0
     
@@ -217,63 +175,222 @@ class UI:
         option_text = self.dialogue_options[self.selected_option]
         print(f"執行選項: {option_text}")
         
+        # 獲取遊戲狀態參考（假設通過某種方式傳入）
+        # 這裡需要修改為實際的遊戲狀態獲取方式
+        game_state = self.get_game_state()
+        
         # 根據選擇執行相應行動
-        if "購買" in option_text:
-            self.show_message("購買成功！")
+        if "購買醫療用品" in option_text:
+            if game_state.player_stats["hp"] < game_state.player_stats["max_hp"]:
+                game_state.player_stats["hp"] = min(
+                    game_state.player_stats["max_hp"],
+                    game_state.player_stats["hp"] + 30
+                )
+                game_state.player_stats["exp"] += 10
+                self.show_message("購買成功！HP +30, EXP +10")
+            else:
+                self.show_message("你的血量已滿！")
             self.end_dialogue()
-        elif "搜查" in option_text or "搜尋" in option_text:
-            self.show_message("找到了一些有用的物品！")
+            
+        elif "購買罐頭食品" in option_text:
+            game_state.player_stats["hp"] = min(
+                game_state.player_stats["max_hp"],
+                game_state.player_stats["hp"] + 20
+            )
+            game_state.player_stats["exp"] += 5
+            self.show_message("食物補充！HP +20, EXP +5")
             self.end_dialogue()
+            
+        elif "搜尋飲料" in option_text:
+            game_state.player_stats["hp"] = min(
+                game_state.player_stats["max_hp"],
+                game_state.player_stats["hp"] + 15
+            )
+            game_state.player_stats["exp"] += 8
+            self.show_message("找到能量飲料！HP +15, EXP +8")
+            self.end_dialogue()
+            
+        elif "深入搜查" in option_text and self.has_keycard:
+            if not self.has_antidote:
+                self.has_antidote = True
+                game_state.player_stats["exp"] += 100
+                game_state.player_stats["level"] += 1
+                self.show_message("找到解藥！等級提升！經驗值大幅增加！")
+                self.check_victory_condition(game_state)
+            else:
+                self.show_message("你已經有解藥了！")
+            self.end_dialogue()
+            
+        elif "仔細搜查" in option_text or "搜查" in option_text or "搜尋物品" in option_text:
+            import random
+            if random.random() < 0.3:  # 30% 機率找到鑰匙卡
+                if not self.has_keycard:
+                    self.has_keycard = True
+                    game_state.player_stats["exp"] += 50
+                    self.show_message("找到了鑰匙卡！這應該能開啟特殊區域！EXP +50")
+                else:
+                    game_state.player_stats["exp"] += 15
+                    self.show_message("找到了一些有用的物品！EXP +15")
+            else:
+                game_state.player_stats["exp"] += 10
+                self.show_message("搜查完畢，找到了一些小物品。EXP +10")
+            self.end_dialogue()
+            
         elif "拿取解藥" in option_text:
-            self.show_message("恭喜！你找到了解藥！")
+            if game_state.player_stats["level"] >= 3:  # 需要等級3以上才能安全拿取
+                self.has_antidote = True
+                game_state.player_stats["exp"] += 100
+                game_state.player_stats["level"] += 1
+                self.show_message("成功取得解藥！等級提升！")
+                self.check_victory_condition(game_state)
+            else:
+                game_state.player_stats["hp"] -= 20
+                self.show_message("等級不足！受到傷害！HP -20")
+                self.check_game_over(game_state)
             self.end_dialogue()
+            
         elif "離開" in option_text:
             self.end_dialogue()
+            
         elif "冷靜一點" in option_text:
-            self.show_message("學生: 我看到他們拿著什麼東西往樓上跑...")
+            game_state.player_stats["exp"] += 5
+            self.show_message("學生: 我看到他們拿著什麼東西往樓上跑... (EXP +5)")
             self.end_dialogue()
+            
         elif "樓上有什麼" in option_text:
-            self.show_message("學生: 聽說研究生們在三樓做實驗...")
+            game_state.player_stats["exp"] += 5
+            self.show_message("學生: 聽說研究生們在三樓做實驗... (EXP +5)")
             self.end_dialogue()
+            
         elif "解藥在哪" in option_text:
-            self.show_message("職員: 三樓...咖啡廳附近...快去...")
+            game_state.player_stats["exp"] += 10
+            self.show_message("職員: 三樓...咖啡廳附近...快去... (EXP +10)")
             self.end_dialogue()
+            
         elif "你還好嗎" in option_text:
-            self.show_message("職員: 還撐得住...你快去找解藥...")
+            game_state.player_stats["exp"] += 5
+            self.show_message("職員: 還撐得住...你快去找解藥... (EXP +5)")
             self.end_dialogue()
+            
+        elif "給予醫療用品" in option_text:
+            # 需要消耗自己的血量來幫助別人
+            if game_state.player_stats["hp"] > 30:
+                game_state.player_stats["hp"] -= 10
+                game_state.player_stats["exp"] += 25
+                game_state.player_stats["level"] += 1 if game_state.player_stats["exp"] >= game_state.player_stats["level"] * 100 else 0
+                self.show_message("你幫助了受傷的職員！HP -10, EXP +25, 獲得重要情報！")
+                # 傳送到3樓咖啡廳附近
+                if self.player_reference:
+                    self.player_reference.x = 400  # 假設的3樓咖啡廳座標
+                    self.player_reference.y = 200
+                    self.show_message("職員告訴了你秘密通道的位置！你被傳送到3樓！")
+            else:
+                self.show_message("你的血量太低，無法幫助別人！")
+            self.end_dialogue()
+            
         elif "鑰匙卡在哪" in option_text:
-            self.show_message("研究員: 應該在二樓的某個商店裡...")
+            game_state.player_stats["exp"] += 15
+            self.show_message("研究員: 應該在二樓的某個商店裡... (EXP +15)")
+            # 提示傳送到2樓
+            if self.player_reference:
+                self.player_reference.x = 300
+                self.player_reference.y = 150
+                self.show_message("研究員指引你到2樓搜尋！")
             self.end_dialogue()
+            
         elif "實驗室在哪裡" in option_text:
-            self.show_message("研究員: 三樓需要鑰匙卡才能進入...")
+            game_state.player_stats["exp"] += 15
+            self.show_message("研究員: 三樓需要鑰匙卡才能進入... (EXP +15)")
             self.end_dialogue()
+            
+        elif "我可以幫你什麼" in option_text:
+            if game_state.player_stats["level"] >= 2:
+                game_state.player_stats["exp"] += 30
+                self.has_keycard = True
+                self.show_message("研究員感謝你的幫助，給了你鑰匙卡！EXP +30")
+            else:
+                game_state.player_stats["exp"] += 10
+                self.show_message("研究員: 你還太弱了，先去提升實力吧... (EXP +10)")
+            self.end_dialogue()
+            
         elif "詢問使用方法" in option_text:
-            self.show_message("研究者: 直接使用就行了，它會拯救所有人...")
+            game_state.player_stats["exp"] += 20
+            self.show_message("研究者: 直接使用就行了，它會拯救所有人... (EXP +20)")
             self.end_dialogue()
+            
+        elif "如何使用解藥" in option_text:
+            if self.has_antidote:
+                self.show_message("研究者: 在建築物頂樓使用，它會擴散到整個區域！")
+                # 傳送到頂樓
+                if self.player_reference:
+                    self.player_reference.x = 500
+                    self.player_reference.y = 50
+                    self.show_message("你被帶到了頂樓！準備拯救所有人！")
+                self.check_victory_condition(game_state)
+            self.end_dialogue()
+            
         else:
             # 其他選項也結束對話
-            self.show_message(f"你選擇了：{option_text}")
+            game_state.player_stats["exp"] += 2
+            self.show_message(f"你選擇了：{option_text} (EXP +2)")
             self.end_dialogue()
+        
+        # 檢查升級
+        self.check_level_up(game_state)
+    
+    def get_game_state(self):
+        """獲取遊戲狀態 - 這裡需要根據實際的遊戲架構來修改"""
+        # 這是一個假設的實現，實際使用時需要替換為真正的遊戲狀態獲取
+        class MockGameState:
+            def __init__(self):
+                self.player_stats = {
+                    "hp": 80,
+                    "max_hp": 100,
+                    "level": 1,
+                    "exp": 0
+                }
+        
+        # 實際應該返回真正的遊戲狀態物件
+        return MockGameState()
+    
+    def check_level_up(self, game_state):
+        """檢查是否升級"""
+        required_exp = game_state.player_stats["level"] * 100
+        if game_state.player_stats["exp"] >= required_exp:
+            game_state.player_stats["level"] += 1
+            game_state.player_stats["exp"] -= required_exp
+            game_state.player_stats["max_hp"] += 20
+            game_state.player_stats["hp"] = game_state.player_stats["max_hp"]  # 升級時回滿血
+            self.show_message(f"恭喜升級到 Lv.{game_state.player_stats['level']}！血量上限增加！")
+    
+    def check_victory_condition(self, game_state):
+        """檢查勝利條件"""
+        if (self.has_antidote and 
+            game_state.player_stats["level"] >= 3 and 
+            game_state.player_stats["hp"] >= 50):
+            self.game_completed = True
+            self.show_message("🎉 恭喜！你成功找到解藥並拯救了所有人！遊戲完成！")
+        elif self.has_antidote:
+            self.show_message("你有解藥了！但還需要更強的實力才能完成任務...")
+    
+    def check_game_over(self, game_state):
+        """檢查遊戲結束條件"""
+        if game_state.player_stats["hp"] <= 0:
+            self.game_over = True
+            self.show_message("💀 你倒下了...遊戲結束！")
     
     def end_dialogue(self):
-        """結束對話 - 修復版"""
-        print("💬 對話結束")
+        """結束對話"""
+        print("對話結束")
         self.dialogue_active = False
         self.dialogue_data = None
         self.dialogue_text = ""
         self.dialogue_options = []
         self.selected_option = 0
-        
-        # 除錯資訊
-        if self.debug_ui:
-            print(f"   對話狀態: {self.dialogue_active}")
-            print(f"   UI狀態: 背包={self.show_inventory}, 地圖={self.show_map}")
     
     def continue_dialogue(self):
         if self.dialogue_active:
             print("繼續對話")
-            # 如果還有更多對話內容，繼續顯示
-            # 否則結束對話
             self.end_dialogue()
     
     def show_message(self, message):
@@ -281,52 +398,63 @@ class UI:
         self.message_display_time = 180  # 3秒 (60fps * 3)
     
     def render(self, game_state, player, inventory):
-        # 渲染HUD
-        self.render_hud(game_state, player)
+        # 檢查遊戲狀態
+        if self.game_over:
+            self.render_game_over()
+            return
+        elif self.game_completed:
+            self.render_victory()
+            return
         
-        # 渲染訊息
+        # 正常遊戲渲染
+        self.render_hud(game_state, player)
         self.render_messages(game_state)
         
-        # 渲染對話框
         if self.dialogue_active:
             self.render_dialogue()
         
-        # 渲染背包
         if self.show_inventory:
             self.render_inventory(inventory)
         
-        # 渲染地圖
         if self.show_map:
             self.render_mini_map()
         
-        # 更新訊息計時器
         if self.message_display_time > 0:
             self.message_display_time -= 1
-        
-        # 渲染除錯資訊
-        if self.debug_ui:
-            self.render_debug_ui()
     
-    def render_debug_ui(self):
-        """渲染UI除錯資訊"""
-        debug_rect = pygame.Rect(10, 200, 200, 80)
-        pygame.draw.rect(self.screen, (0, 0, 0, 180), debug_rect)
-        pygame.draw.rect(self.screen, (255, 0, 255), debug_rect, 1)
+    def render_game_over(self):
+        """渲染遊戲結束畫面"""
+        overlay = pygame.Surface((self.screen_width, self.screen_height))
+        overlay.set_alpha(200)
+        overlay.fill((0, 0, 0))
+        self.screen.blit(overlay, (0, 0))
         
-        debug_lines = [
-            "UI除錯",
-            f"背包: {self.show_inventory}",
-            f"地圖: {self.show_map}",
-            f"對話: {self.dialogue_active}",
-            f"任何UI: {self.is_any_ui_open()}"
-        ]
+        game_over_text = self.font_large.render("GAME OVER", True, (255, 0, 0))
+        game_over_rect = game_over_text.get_rect(center=(self.screen_width//2, self.screen_height//2 - 50))
+        self.screen.blit(game_over_text, game_over_rect)
         
-        y_offset = 205
-        for line in debug_lines:
-            color = (255, 100, 255) if "True" in line else (200, 200, 200)
-            text_surface = font_manager.render_text(line, 12, color)
-            self.screen.blit(text_surface, (15, y_offset))
-            y_offset += 14
+        restart_text = self.font_medium.render("按 R 重新開始", True, (255, 255, 255))
+        restart_rect = restart_text.get_rect(center=(self.screen_width//2, self.screen_height//2 + 50))
+        self.screen.blit(restart_text, restart_rect)
+    
+    def render_victory(self):
+        """渲染勝利畫面"""
+        overlay = pygame.Surface((self.screen_width, self.screen_height))
+        overlay.set_alpha(200)
+        overlay.fill((0, 50, 0))
+        self.screen.blit(overlay, (0, 0))
+        
+        victory_text = self.font_large.render("VICTORY!", True, (0, 255, 0))
+        victory_rect = victory_text.get_rect(center=(self.screen_width//2, self.screen_height//2 - 50))
+        self.screen.blit(victory_text, victory_rect)
+        
+        complete_text = self.font_medium.render("你成功拯救了所有人！", True, (255, 255, 255))
+        complete_rect = complete_text.get_rect(center=(self.screen_width//2, self.screen_height//2))
+        self.screen.blit(complete_text, complete_rect)
+        
+        restart_text = self.font_medium.render("按 R 重新開始", True, (255, 255, 255))
+        restart_rect = restart_text.get_rect(center=(self.screen_width//2, self.screen_height//2 + 50))
+        self.screen.blit(restart_text, restart_rect)
     
     def update_messages(self):
         """更新訊息顯示"""
@@ -358,9 +486,23 @@ class UI:
         level_surface = font_manager.render_text(level_text, 18, (255, 255, 255))
         self.screen.blit(level_surface, (10, self.screen_height - 65))
         
-        exp_text = f"EXP: {game_state.player_stats['exp']}/{game_state.player_stats['level'] * 100}"
+        required_exp = game_state.player_stats['level'] * 100
+        exp_text = f"EXP: {game_state.player_stats['exp']}/{required_exp}"
         exp_surface = font_manager.render_text(exp_text, 18, (255, 255, 255))
         self.screen.blit(exp_surface, (80, self.screen_height - 65))
+        
+        # 道具狀態
+        item_y = 10
+        if self.has_keycard:
+            keycard_text = "🔑 鑰匙卡"
+            keycard_surface = font_manager.render_text(keycard_text, 18, (255, 255, 0))
+            self.screen.blit(keycard_surface, (10, item_y))
+            item_y += 25
+        
+        if self.has_antidote:
+            antidote_text = "💉 解藥"
+            antidote_surface = font_manager.render_text(antidote_text, 18, (0, 255, 0))
+            self.screen.blit(antidote_surface, (10, item_y))
         
         # 操作提示
         if not self.dialogue_active:
@@ -368,8 +510,7 @@ class UI:
                 "方向鍵: 移動",
                 "空白鍵: 互動",
                 "I: 背包",
-                "M: 地圖",
-                "ESC: 關閉UI"
+                "M: 地圖"
             ]
             
             for i, control in enumerate(controls):
@@ -378,7 +519,7 @@ class UI:
     
     def render_messages(self, game_state):
         # 渲染遊戲訊息
-        messages = game_state.get_current_messages()
+        messages = game_state.get_current_messages() if hasattr(game_state, 'get_current_messages') else []
         for i, message in enumerate(messages):
             message_surface = font_manager.render_text(message, 24, (255, 255, 0))
             self.screen.blit(message_surface, (10, 50 + i * 30))
@@ -459,21 +600,29 @@ class UI:
         
         # 物品列表
         y_offset = inv_y + 60
-        items = inventory.get_items()
+        items = inventory.get_items() if hasattr(inventory, 'get_items') else []
         
-        if not items:
+        # 顯示特殊道具
+        special_items = []
+        if self.has_keycard:
+            special_items.append("🔑 特殊鑰匙卡")
+        if self.has_antidote:
+            special_items.append("💉 解藥")
+        
+        all_items = special_items + [f"{item['name']} x{item.get('quantity', 1)}" for item in items]
+        
+        if not all_items:
             no_items_surface = self.font_medium.render("背包是空的", True, (200, 200, 200))
             no_items_rect = no_items_surface.get_rect(center=(self.screen_width//2, y_offset + 50))
             self.screen.blit(no_items_surface, no_items_rect)
         else:
-            for item in items:
-                item_text = f"{item['name']} x{item.get('quantity', 1)}"
-                item_surface = self.font_medium.render(item_text, True, (255, 255, 255))
+            for item in all_items:
+                item_surface = self.font_medium.render(item, True, (255, 255, 255))
                 self.screen.blit(item_surface, (inv_x + 20, y_offset))
                 y_offset += 30
         
         # 關閉提示
-        close_text = "按 I 關閉背包，按 ESC 關閉所有UI"
+        close_text = "按 I 關閉"
         close_surface = self.font_small.render(close_text, True, (200, 200, 200))
         close_rect = close_surface.get_rect(center=(self.screen_width//2, inv_y + inv_height - 20))
         self.screen.blit(close_surface, close_rect)
@@ -493,11 +642,12 @@ class UI:
         title_surface = self.font_medium.render("地圖", True, (255, 255, 255))
         self.screen.blit(title_surface, (map_x + 10, map_y + 10))
         
-        # 簡化的樓層顯示
+        # 樓層資訊
         floor_info = [
             "1F: 7-11, Subway, 茶壜...",
             "2F: 和食宣, 素怡沅...",
-            "3F: 咖啡廳, 討論室, 展覽"
+            "3F: 咖啡廳, 討論室, 展覽",
+            "頂樓: 最終目標"
         ]
         
         y_offset = map_y + 40
@@ -507,7 +657,38 @@ class UI:
             self.screen.blit(info_surface, (map_x + 10, y_offset))
             y_offset += 25
         
+        # 任務進度
+        progress_text = "任務進度:"
+        progress_surface = self.font_small.render(progress_text, True, (255, 255, 0))
+        self.screen.blit(progress_surface, (map_x + 10, y_offset + 10))
+        y_offset += 25
+        
+        tasks = [
+            f"鑰匙卡: {'✓' if self.has_keycard else '✗'}",
+            f"解藥: {'✓' if self.has_antidote else '✗'}",
+            f"任務完成: {'✓' if self.game_completed else '✗'}"
+        ]
+        
+        for task in tasks:
+            color = (0, 255, 0) if '✓' in task else (255, 100, 100)
+            task_surface = self.font_small.render(task, True, color)
+            self.screen.blit(task_surface, (map_x + 20, y_offset))
+            y_offset += 20
+        
         # 關閉提示
-        close_text = "按 M 關閉地圖，按 ESC 關閉所有UI"
+        close_text = "按 M 關閉"
         close_surface = self.font_small.render(close_text, True, (200, 200, 200))
         self.screen.blit(close_surface, (map_x + 10, map_y + map_height - 25))
+    
+    def reset_game(self):
+        """重置遊戲狀態"""
+        self.has_keycard = False
+        self.has_antidote = False
+        self.game_completed = False
+        self.game_over = False
+        self.dialogue_active = False
+        self.show_inventory = False
+        self.show_map = False
+        self.message_display_time = 0
+        self.current_message = ""
+        print("遊戲狀態已重置")
