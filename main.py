@@ -39,6 +39,7 @@ class Game:
         self.ui = UI(self.screen)
         self.combat_system = CombatSystem()
         self.inventory = Inventory()
+        
         self.ui.set_player_reference(self.player)
         self.ui.set_game_state_reference(self.game_state)
         self.ui.set_inventory_reference(self.inventory)
@@ -53,37 +54,36 @@ class Game:
         
         # 除錯模式
         self.debug_mode = False
-        
+
     def handle_events(self):
         """修復版事件處理 - 解決UI卡住問題"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
-                
             elif event.type == pygame.KEYDOWN:
                 # ======= 全域快捷鍵 - 任何狀態下都優先處理 =======
                 if event.key == pygame.K_ESCAPE:
-                    # ESC: 強制關閉所有UI並恢復exploration狀態
-                    self.force_exploration_state()
+                    # ESC鍵: 強制關閉UI或退出戰鬥
+                    if self.game_state.current_state == "combat":
+                        print("🆘 ESC強制退出戰鬥")
+                        self.force_end_combat()
+                    else:
+                        self.force_exploration_state()
                     continue
-                    
                 elif event.key == pygame.K_r:
                     # R鍵: 重新開始遊戲
                     if hasattr(self.ui, 'game_over') and hasattr(self.ui, 'game_completed'):
                         if self.ui.game_over or self.ui.game_completed:
                             self.restart_game()
-                            continue
-
+                    continue
                 elif event.key == pygame.K_i:
                     # I鍵: 背包切換
                     self.handle_inventory_toggle()
                     continue
-                    
                 elif event.key == pygame.K_m:
                     # M鍵: 地圖切換
                     self.handle_map_toggle()
                     continue
-                
                 # 除錯快捷鍵
                 elif event.key == pygame.K_F1:
                     self.toggle_debug_mode()
@@ -99,21 +99,17 @@ class Game:
                 if self.show_intro:
                     if event.key == pygame.K_SPACE:
                         self.show_intro = False
-                        
                 elif self.game_state.current_state == "exploration":
                     self.handle_exploration_input(event)
-                    
                 elif self.game_state.current_state == "combat":
                     self.handle_combat_input(event)
-                    
                 elif self.game_state.current_state == "dialogue":
                     self.handle_dialogue_input(event)
-    
+
     def handle_inventory_toggle(self):
         """處理背包切換 - 修復版"""
         old_state = self.ui.show_inventory
         self.ui.toggle_inventory()
-        
         if self.debug_mode:
             print(f"🎒 背包切換: {old_state} → {self.ui.show_inventory}")
             print(f"   當前遊戲狀態: {self.game_state.current_state}")
@@ -132,12 +128,11 @@ class Game:
                 self.game_state.set_state("exploration")
                 if self.debug_mode:
                     print("   ➤ 背包關閉，回到exploration狀態")
-    
+
     def handle_map_toggle(self):
         """處理地圖切換 - 修復版"""
         old_state = self.ui.show_map
         self.ui.toggle_map()
-        
         if self.debug_mode:
             print(f"🗺️ 地圖切換: {old_state} → {self.ui.show_map}")
             print(f"   當前遊戲狀態: {self.game_state.current_state}")
@@ -155,11 +150,10 @@ class Game:
                 self.game_state.set_state("exploration")
                 if self.debug_mode:
                     print("   ➤ 地圖關閉，回到exploration狀態")
-    
+
     def force_exploration_state(self):
         """強制恢復到exploration狀態 - 增強版"""
         print("🔧 強制恢復exploration狀態")
-        
         # 重置所有狀態
         self.game_state.current_state = "exploration"
         self.ui.close_all_ui()  # 使用UI的新方法
@@ -177,14 +171,14 @@ class Game:
             print(f"   遊戲狀態: {self.game_state.current_state}")
             print(f"   UI狀態: {self.ui.get_ui_status()}")
             print(f"   玩家移動: {self.player.is_moving}")
-    
+
     def toggle_debug_mode(self):
         """切換除錯模式"""
         self.debug_mode = not self.debug_mode
         print(f"🔧 除錯模式: {'開啟' if self.debug_mode else '關閉'}")
         if self.debug_mode:
             self.print_debug_info()
-    
+
     def print_debug_info(self):
         """顯示除錯資訊"""
         print(f"🔍 當前狀態:")
@@ -192,13 +186,13 @@ class Game:
         print(f"   UI狀態: {self.ui.get_ui_status()}")
         print(f"   玩家位置: ({self.player.x}, {self.player.y})")
         print(f"   玩家移動: {self.player.is_moving}")
-    
+
     def reset_player_position(self):
         """重置玩家位置"""
         old_pos = (self.player.x, self.player.y)
         self.player.set_position(400, 300)
         print(f"🔄 重置玩家位置: {old_pos} → (400, 300)")
-    
+
     def handle_exploration_input(self, event):
         """處理探索模式的輸入 - 修復版"""
         if self.debug_mode:
@@ -214,7 +208,6 @@ class Game:
         
         # 移動處理
         movement_successful = False
-        
         if event.key == pygame.K_UP:
             movement_successful = self.player.move(0, -32)
         elif event.key == pygame.K_DOWN:
@@ -232,27 +225,138 @@ class Game:
                 print(f"✅ 移動開始: 目標({self.player.move_target_x}, {self.player.move_target_y})")
             else:
                 print(f"❌ 移動被拒絕: 可能正在移動中或邊界限制")
-    
+
     def handle_combat_input(self, event):
-        """處理戰鬥輸入"""
+        """處理戰鬥輸入 - 最終版"""
+        key_name = pygame.key.name(event.key)
+        print(f"⚔️ 戰鬥按鍵: {key_name}")
+        
+        # 如果戰鬥已經有結果，立即結束
+        if self.combat_system.combat_result:
+            print(f"⚠️ 戰鬥已有結果: {self.combat_system.combat_result}")
+            self.handle_combat_end()
+            return
+        
+        # 檢查是否是正確的數字鍵
         if event.key == pygame.K_1:
+            print("🗡️ 選擇攻擊")
             self.combat_system.player_action("attack")
         elif event.key == pygame.K_2:
+            print("🛡️ 選擇防禦")
             self.combat_system.player_action("defend")
         elif event.key == pygame.K_3:
+            print("🏃 選擇逃跑")
             self.combat_system.player_action("escape")
+        else:
+            return
         
-        # 檢查戰鬥是否結束
-        if hasattr(self.combat_system, 'combat_result') and self.combat_system.combat_result:
-            if self.debug_mode:
-                print(f"⚔️ 戰鬥結束: {self.combat_system.combat_result}")
-            
-            # 處理戰鬥結果
-            self.end_combat_zone(self.combat_system.combat_result)
-            
-            # 回到探索狀態
-            self.game_state.current_state = "exploration"
-    
+        # 行動後立即檢查結果
+        if self.combat_system.combat_result:
+            print(f"🎯 行動後立即檢測到結果: {self.combat_system.combat_result}")
+            self.handle_combat_end()
+
+    def handle_combat_end(self):
+        """處理戰鬥結束 - 統一處理方法"""
+        if not self.combat_system.combat_result:
+            return
+        
+        result = self.combat_system.combat_result
+        print(f"🏁 處理戰鬥結束: {result}")
+        
+        try:
+            if result == "win":
+                print("✅ 處理戰鬥勝利")
+                self.ui.show_message("戰鬥勝利！獲得經驗值！")
+                
+                # 勝利時移除戰鬥區域並給予獎勵
+                if hasattr(self, 'current_combat_zone'):
+                    zone = self.current_combat_zone
+                    floor = self.map_manager.current_floor
+                    
+                    # 移除戰鬥區域
+                    if hasattr(self.map_manager, 'remove_combat_zone'):
+                        self.map_manager.remove_combat_zone(zone, floor)
+                        print(f"🗑️ 勝利！移除戰鬥區域: {zone['name']}")
+                    
+                    # 給予經驗值
+                    if hasattr(self.game_state, 'player_stats') and self.combat_system.current_enemy:
+                        exp_gain = self.combat_system.current_enemy.get("exp_reward", 10)
+                        self.game_state.player_stats["exp"] += exp_gain
+                        print(f"🎯 獲得 {exp_gain} 經驗值")
+                
+            elif result == "escape":
+                print("🏃 處理逃跑成功")
+                self.ui.show_message("成功逃離了危險區域！")
+                
+                # 🔥 關鍵：逃跑時也移除戰鬥區域 🔥
+                if hasattr(self, 'current_combat_zone'):
+                    zone = self.current_combat_zone
+                    floor = self.map_manager.current_floor
+                    
+                    # 移除戰鬥區域
+                    if hasattr(self.map_manager, 'remove_combat_zone'):
+                        self.map_manager.remove_combat_zone(zone, floor)
+                        print(f"🗑️ 逃跑成功！移除戰鬥區域: {zone['name']}")
+                    else:
+                        print("⚠️ map_manager 沒有 remove_combat_zone 方法")
+                
+            elif result == "lose":
+                print("💀 處理戰鬥失敗")
+                self.ui.show_message("你被擊敗了...")
+        
+        except Exception as e:
+            print(f"❌ 處理戰鬥結果錯誤: {e}")
+        
+        # 🔥 關鍵：立即重置所有戰鬥狀態 🔥
+        print("🔄 立即重置戰鬥狀態")
+        self.combat_system.in_combat = False
+        self.combat_system.combat_result = None
+        self.combat_system.current_enemy = None
+        self.combat_system.player_turn = True
+        self.combat_system.animation_timer = 0
+        if hasattr(self.combat_system, 'combat_log'):
+            self.combat_system.combat_log = []
+        
+        # 設定遊戲狀態
+        self.game_state.current_state = "exploration"
+        
+        # 清除戰鬥區域記錄
+        if hasattr(self, 'current_combat_zone'):
+            self.current_combat_zone = None
+        
+        print("✅ 戰鬥完全結束，立即回到探索狀態")
+
+    def force_end_combat(self):
+        """強制結束戰鬥 - 緊急版"""
+        print("💥 強制結束戰鬥！")
+        
+        # 顯示結果訊息
+        result = getattr(self.combat_system, 'combat_result', None)
+        if result == "win":
+            self.ui.show_message("戰鬥勝利！")
+        elif result == "escape":
+            self.ui.show_message("逃跑成功！")
+        elif result == "lose":
+            self.ui.show_message("戰鬥失敗！")
+        else:
+            self.ui.show_message("強制退出戰鬥！")
+        
+        # 立即重置所有戰鬥狀態
+        self.combat_system.in_combat = False
+        self.combat_system.combat_result = None
+        self.combat_system.current_enemy = None
+        self.combat_system.player_turn = True
+        self.combat_system.animation_timer = 0
+        
+        # 強制設定為探索狀態
+        self.game_state.current_state = "exploration"
+        
+        # 清除戰鬥區域
+        if hasattr(self, 'current_combat_zone'):
+            self.current_combat_zone = None
+        
+        print("✅ 強制結束完成，回到探索狀態")
+
     def handle_dialogue_input(self, event):
         if event.key == pygame.K_1 and len(self.ui.dialogue_options) >= 1:
             self.ui.select_dialogue_option(0)
@@ -266,14 +370,14 @@ class Game:
         elif event.key == pygame.K_SPACE:
             self.ui.continue_dialogue()
             self.check_dialogue_end()
-    
+
     def check_dialogue_end(self):
         """檢查對話是否結束，恢復exploration狀態"""
         if not self.ui.dialogue_active:
             self.game_state.current_state = "exploration"
             if self.debug_mode:
                 print("💬 對話結束，回到exploration狀態")
-    
+
     def interact(self):
         # 檢查互動冷卻
         current_time = time.time()
@@ -307,7 +411,7 @@ class Game:
         else:
             if self.debug_mode:
                 print("❌ 附近沒有可互動的物件")
-    
+
     def start_shop_interaction(self, shop_info):
         if self.debug_mode:
             print(f"🏪 進入商店: {shop_info['name']}")
@@ -317,10 +421,10 @@ class Game:
             if self.debug_mode:
                 print("⚠️ 已經在對話中，忽略商店互動")
             return
-            
+        
         self.game_state.set_state("dialogue")
         self.ui.start_dialogue(shop_info)
-    
+
     def start_npc_dialogue(self, npc_info):
         if self.debug_mode:
             print(f"👤 與NPC對話: {npc_info['name']}")
@@ -330,13 +434,14 @@ class Game:
             if self.debug_mode:
                 print("⚠️ 已經在對話中，忽略NPC互動")
             return
-            
+        
         self.game_state.set_state("dialogue")
         self.ui.start_dialogue(npc_info)
-    
+
     def use_stairs(self, stairs_info):
         if self.debug_mode:
             print(f"🪜 使用樓梯: {stairs_info['direction']}")
+        
         direction = stairs_info["direction"]
         current_floor = self.map_manager.current_floor
         
@@ -348,7 +453,6 @@ class Game:
                 if self.debug_mode:
                     print("⬆️ 上樓到 2 樓")
                 self.ui.show_message("來到了二樓")
-                
             elif current_floor == 2:
                 # 2樓到3樓：需要鑰匙卡
                 if self.game_state.get_flag("has_keycard") or self.inventory.has_item("鑰匙卡"):
@@ -357,19 +461,16 @@ class Game:
                     if self.debug_mode:
                         print("⬆️ 使用鑰匙卡上樓到 3 樓")
                     self.ui.show_message("🗝️ 使用鑰匙卡進入三樓！")
-                    
                     # 設定標記
                     self.game_state.set_flag("unlocked_third_floor", True)
                 else:
                     if self.debug_mode:
                         print("🚫 需要鑰匙卡才能上三樓")
                     self.ui.show_message("❌ 需要鑰匙卡才能進入三樓！")
-                    
             else:
                 if self.debug_mode:
                     print("🚫 已經在最高樓層")
                 self.ui.show_message("已經是最高樓層了")
-                
         elif direction == "down":
             if current_floor == 3:
                 # 3樓到2樓
@@ -378,7 +479,6 @@ class Game:
                 if self.debug_mode:
                     print("⬇️ 下樓到 2 樓")
                 self.ui.show_message("回到了二樓")
-                
             elif current_floor == 2:
                 # 2樓到1樓
                 self.map_manager.change_floor(1)
@@ -386,15 +486,15 @@ class Game:
                 if self.debug_mode:
                     print("⬇️ 下樓到 1 樓")
                 self.ui.show_message("回到了一樓")
-                
             else:
                 if self.debug_mode:
                     print("🚫 已經在最低樓層")
                 self.ui.show_message("已經是最低樓層了")
-    
+
     def collect_item(self, item_info):
         if self.debug_mode:
             print(f"📦 收集物品: {item_info['item']['name']}")
+        
         success = self.inventory.add_item(item_info["item"])
         if success:
             self.ui.show_message(f"獲得了 {item_info['item']['name']}")
@@ -406,43 +506,14 @@ class Game:
             self.ui.show_message("背包已滿！")
             if self.debug_mode:
                 print(f"❌ 背包已滿，無法收集: {item_info['item']['name']}")
-    
-    def update(self):
-        if not self.show_intro:
-            # 只有在沒有UI開啟時才更新遊戲邏輯
-            if not self.ui.is_any_ui_open() or self.game_state.current_state != "exploration":
-                self.player.update()
-                self.map_manager.update()
-                
-                # 戰鬥區域檢查 - 進入紅圈立即觸發戰鬥
-                if self.game_state.current_state == "exploration":
-                    combat_zone = self.map_manager.check_combat_zone(
-                        self.player.x, self.player.y, self.map_manager.current_floor
-                    )
-                    
-                    if combat_zone:
-                        if self.debug_mode:
-                            print(f"⚔️ 進入戰鬥區域: {combat_zone['name']}")
-                        # 立即開始戰鬥
-                        self.start_combat_in_zone(combat_zone)
-            
-            # 更新戰鬥系統
-            if self.game_state.current_state == "combat":
-                self.combat_system.update(self.game_state)
-    
-    def start_combat(self):
-        self.game_state.current_state = "combat"
-        enemy = self.game_state.get_random_enemy()
-        self.combat_system.start_combat(enemy)
-        if self.debug_mode:
-            print(f"⚔️ 開始戰鬥: {enemy['name']}")
-    
+
     def start_combat_in_zone(self, combat_zone):
         """在戰鬥區域開始戰鬥"""
-        if self.debug_mode:
-            print(f"🔄 切換到戰鬥狀態")
+        print(f"🔄 準備切換到戰鬥狀態")
+        print(f"   當前遊戲狀態: {self.game_state.current_state}")
         
         self.game_state.current_state = "combat"
+        print(f"   設定後遊戲狀態: {self.game_state.current_state}")
         
         # 從戰鬥區域選擇敵人
         enemy_types = combat_zone.get("enemies", ["zombie_student"])
@@ -461,42 +532,41 @@ class Game:
         # 記錄當前戰鬥區域
         self.current_combat_zone = combat_zone
         
-        if self.debug_mode:
-            print(f"⚔️ 開始戰鬥: {enemy['name']} in {combat_zone['name']}")
-            print(f"   戰鬥系統狀態: {self.combat_system.in_combat}")
+        print(f"⚔️ 開始戰鬥: {enemy['name']} in {combat_zone['name']}")
+        print(f"   戰鬥前 combat_system.in_combat: {self.combat_system.in_combat}")
         
         self.combat_system.start_combat(enemy)
+        
+        print(f"   戰鬥後 combat_system.in_combat: {self.combat_system.in_combat}")
+        print(f"   戰鬥後 player_turn: {self.combat_system.player_turn}")
 
-    def end_combat_zone(self, result):
-        """戰鬥結束處理"""
-        if result == "win" and hasattr(self, 'current_combat_zone'):
-            zone = self.current_combat_zone
-            floor = self.map_manager.current_floor
-            
-            # 從地圖移除戰鬥區域
-            self.map_manager.remove_combat_zone(zone, floor)
-            
-            # 獲得獎勵
-            rewards = zone.get("rewards", [])
-            if rewards:
-                for reward in rewards:
-                    self.inventory.add_item(reward)
-                    self.ui.show_message(f"獲得了 {reward['name']}！")
-            else:
-                # 預設獎勵
-                default_reward = {"name": "戰鬥線索", "type": "clue", "value": 1}
-                self.inventory.add_item(default_reward)
-                self.ui.show_message("獲得了重要線索！")
-            
-            if self.debug_mode:
-                print(f"✅ 戰鬥區域 {zone['name']} 已清除")
-            
-            # 清除當前戰鬥區域記錄
-            self.current_combat_zone = None
+    def update(self):
+        if not self.show_intro:
+            if self.game_state.current_state == "combat":
+                # 戰鬥狀態更新
+                self.combat_system.update(self.game_state)
+                
+                # 檢查戰鬥是否結束（通過戰鬥結果）
+                if self.combat_system.combat_result:
+                    self.handle_combat_end()
+                    
+            elif self.game_state.current_state == "exploration":
+                # 只有在沒有UI開啟時才更新遊戲邏輯
+                if not self.ui.is_any_ui_open():
+                    self.player.update()
+                    self.map_manager.update()
+                    
+                    # 戰鬥區域檢查
+                    combat_zone = self.map_manager.check_combat_zone(
+                        self.player.x, self.player.y, self.map_manager.current_floor
+                    )
+                    if combat_zone:
+                        if self.debug_mode:
+                            print(f"⚔️ 進入戰鬥區域: {combat_zone['name']}")
+                        self.start_combat_in_zone(combat_zone)
 
     def render(self):
         self.screen.fill((0, 0, 0))
-        
         if self.show_intro:
             self.render_intro()
         else:
@@ -508,7 +578,6 @@ class Game:
                 # 探索畫面
                 # 渲染地圖
                 self.map_manager.render(self.screen)
-                
                 # 渲染玩家
                 self.player.render(self.screen)
             
@@ -521,39 +590,6 @@ class Game:
         
         pygame.display.flip()
 
-    def update(self):
-        if not self.show_intro:
-            if self.game_state.current_state == "combat":
-                # 戰鬥狀態更新
-                self.combat_system.update(self.game_state)
-                
-                # 檢查戰鬥是否結束
-                if not self.combat_system.in_combat:
-                    if self.debug_mode:
-                        print(f"⚔️ 戰鬥結束，回到探索模式")
-                    
-                    # 處理戰鬥結果
-                    if hasattr(self, 'current_combat_zone'):
-                        self.end_combat_zone("win")  # 假設玩家勝利
-                    
-                    self.game_state.current_state = "exploration"
-            
-            elif self.game_state.current_state == "exploration":
-                # 只有在沒有UI開啟時才更新遊戲邏輯
-                if not self.ui.is_any_ui_open():
-                    self.player.update()
-                    self.map_manager.update()
-                    
-                    # 戰鬥區域檢查
-                    combat_zone = self.map_manager.check_combat_zone(
-                        self.player.x, self.player.y, self.map_manager.current_floor
-                    )
-                    
-                    if combat_zone:
-                        if self.debug_mode:
-                            print(f"⚔️ 進入戰鬥區域: {combat_zone['name']}")
-                        self.start_combat_in_zone(combat_zone)
-    
     def render_debug_info(self):
         """渲染除錯資訊"""
         debug_rect = pygame.Rect(10, 300, 250, 120)
@@ -579,11 +615,11 @@ class Game:
                 color = (255, 255, 100)
             else:
                 color = (0, 255, 255)
-                
+            
             text_surface = font_manager.render_text(line, 12, color)
             self.screen.blit(text_surface, (15, y_offset))
             y_offset += 14
-    
+
     def render_intro(self):
         intro_text = [
             "《末世第二餐廳》",
@@ -620,11 +656,12 @@ class Game:
                     text_surface = font_manager.render_text(line, 18, (200, 200, 200))
                 else:
                     text_surface = font_manager.render_text(line, 24, (255, 255, 255))
-                    
+                
                 text_rect = text_surface.get_rect(center=(self.SCREEN_WIDTH//2, y_offset))
                 self.screen.blit(text_surface, text_rect)
+            
             y_offset += 25 if line.startswith("方向鍵") or line.startswith("ESC") else 30
-    
+
     def run(self):
         while self.running:
             self.handle_events()
@@ -677,6 +714,7 @@ class Game:
         
         print("✅ 遊戲重置完成！")
 
+
 def main():
     """程式入口點"""
     try:
@@ -685,8 +723,10 @@ def main():
         print("   F1 - 開啟/關閉除錯模式")
         print("   ESC - 強制關閉所有UI")
         print("   如果移動卡住，按ESC後再試")
+        
         game = Game()
         game.run()
+        
     except KeyboardInterrupt:
         print("\n👋 遊戲被用戶中斷")
     except Exception as e:
@@ -698,6 +738,7 @@ def main():
             pygame.quit()
         except:
             pass
+
 
 if __name__ == "__main__":
     main()
