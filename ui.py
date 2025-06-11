@@ -55,26 +55,6 @@ class UI:
         if self.show_map:
             self.show_inventory = False
     
-    def is_any_ui_open(self):
-        """檢查是否有任何UI開啟"""
-        return self.show_inventory or self.show_map or self.dialogue_active
-
-    def close_all_ui(self):
-        """關閉所有UI"""
-        self.show_inventory = False
-        self.show_map = False
-        self.dialogue_active = False
-        print("🚪 關閉所有UI")
-
-    def get_ui_status(self):
-        """獲取UI狀態資訊"""
-        return {
-            "inventory": self.show_inventory,
-            "map": self.show_map,
-            "dialogue": self.dialogue_active,
-            "any_open": self.is_any_ui_open()
-        }
-
     def start_dialogue(self, interaction_data):
         self.dialogue_active = True
         self.dialogue_data = interaction_data
@@ -188,6 +168,27 @@ class UI:
             print(f"選擇選項 {option_index + 1}: {selected_text}")
             self.execute_dialogue_choice()
     
+    def check_has_medical_item(self, inventory):
+        """檢查背包中是否有醫療用品"""
+        if hasattr(inventory, 'get_items'):
+            items = inventory.get_items()
+            for item in items:
+                if "醫療" in item.get('name', '') or "藥" in item.get('name', '') or "治療" in item.get('name', ''):
+                    return item.get('quantity', 0) > 0
+        return False
+    
+    def consume_medical_item(self, inventory):
+        """消耗一個醫療用品"""
+        if hasattr(inventory, 'get_items') and hasattr(inventory, 'remove_item'):
+            items = inventory.get_items()
+            for item in items:
+                if "醫療" in item.get('name', '') or "藥" in item.get('name', '') or "治療" in item.get('name', ''):
+                    if item.get('quantity', 0) > 0:
+                        inventory.remove_item(item['name'], 1)
+                        print(f"消耗了 {item['name']}")
+                        return True
+        return False
+    
     def execute_dialogue_choice(self):
         if not self.dialogue_data:
             return
@@ -195,9 +196,9 @@ class UI:
         option_text = self.dialogue_options[self.selected_option]
         print(f"執行選項: {option_text}")
         
-        # 獲取遊戲狀態參考（假設通過某種方式傳入）
-        # 這裡需要修改為實際的遊戲狀態獲取方式
+        # 獲取遊戲狀態參考和背包參考
         game_state = self.get_game_state()
+        inventory = self.get_inventory()  # 需要新增這個方法來獲取背包
         
         # 根據選擇執行相應行動
         if "購買醫療用品" in option_text:
@@ -293,19 +294,20 @@ class UI:
             self.end_dialogue()
             
         elif "給予醫療用品" in option_text:
-            # 需要消耗自己的血量來幫助別人
-            if game_state.player_stats["hp"] > 30:
-                game_state.player_stats["hp"] -= 10
+            # 檢查玩家是否有醫療用品（這裡假設背包中有醫療用品）
+            has_medical_item = self.check_has_medical_item(inventory)
+            
+            if has_medical_item:
+                # 消耗醫療用品來幫助別人
+                self.consume_medical_item(inventory)
                 game_state.player_stats["exp"] += 25
-                game_state.player_stats["level"] += 1 if game_state.player_stats["exp"] >= game_state.player_stats["level"] * 100 else 0
-                self.show_message("你幫助了受傷的職員！HP -10, EXP +25, 獲得重要情報！")
+                self.show_message("你給了職員醫療用品！EXP +25, 獲得重要情報！")
                 # 傳送到3樓咖啡廳附近
                 if self.player_reference:
-                    self.player_reference.x = 400  # 假設的3樓咖啡廳座標
-                    self.player_reference.y = 200
+                    self.player_reference.teleport_to_coordinates(400, 200, 3)
                     self.show_message("職員告訴了你秘密通道的位置！你被傳送到3樓！")
             else:
-                self.show_message("你的血量太低，無法幫助別人！")
+                self.show_message("你沒有醫療用品可以給予！先去商店購買一些吧。")
             self.end_dialogue()
             
         elif "鑰匙卡在哪" in option_text:
@@ -351,12 +353,22 @@ class UI:
             
         else:
             # 其他選項也結束對話
-            game_state.player_stats["exp"] += 2
-            self.show_message(f"你選擇了：{option_text} (EXP +2)")
+            if "離開" in option_text:
+                # 確保離開選項總是有效
+                self.show_message("你離開了對話。")
+            else:
+                game_state.player_stats["exp"] += 2
+                self.show_message(f"你選擇了：{option_text} (EXP +2)")
             self.end_dialogue()
         
         # 檢查升級
         self.check_level_up(game_state)
+    
+    def get_inventory(self):
+        """獲取背包物件 - 需要根據實際的遊戲架構來修改"""
+        # 這裡需要返回真正的背包物件
+        # 暫時返回 None，需要在實際使用時修改
+        return None
     
     def get_game_state(self):
         """獲取遊戲狀態 - 這裡需要根據實際的遊戲架構來修改"""
