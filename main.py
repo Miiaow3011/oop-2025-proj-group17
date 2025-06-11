@@ -38,6 +38,8 @@ class Game:
         self.ui = UI(self.screen)
         self.combat_system = CombatSystem()
         self.inventory = Inventory()
+        self.ui.set_player_reference(self.player)
+        self.ui.set_game_state_reference(self.game_state)
         
         # 遊戲標誌
         self.running = True
@@ -63,6 +65,13 @@ class Game:
                     self.force_exploration_state()
                     continue
                     
+                elif event.key == pygame.K_r:
+                    # R鍵: 重新開始遊戲
+                    if hasattr(self.ui, 'game_over') and hasattr(self.ui, 'game_completed'):
+                        if self.ui.game_over or self.ui.game_completed:
+                            self.restart_game()
+                            continue
+
                 elif event.key == pygame.K_i:
                     # I鍵: 背包切換
                     self.handle_inventory_toggle()
@@ -623,6 +632,45 @@ class Game:
         
         pygame.quit()
         sys.exit()
+
+    def restart_game(self):
+        """重新開始遊戲"""
+        print("🔄 重新開始遊戲...")
+        
+        # 重置玩家
+        self.player.reset()
+        
+        # 重置UI
+        if hasattr(self.ui, 'reset_game'):
+            self.ui.reset_game()
+        
+        # 重置遊戲狀態
+        if hasattr(self.game_state, 'reset'):
+            self.game_state.reset()
+        else:
+            # 如果沒有reset方法，手動重置
+            self.game_state.current_state = "exploration"
+            self.game_state.player_stats = {
+                "hp": 100,
+                "max_hp": 100,
+                "level": 1,
+                "exp": 0
+            }
+        
+        # 重置其他組件
+        self.map_manager.current_floor = 1
+        self.inventory = Inventory()  # 重新創建背包
+        
+        # 重置UI狀態
+        self.ui.show_inventory = False
+        self.ui.show_map = False
+        self.ui.dialogue_active = False
+        
+        # 重新設定玩家參考（重要！）
+        self.ui.set_player_reference(self.player)
+        self.ui.set_game_state_reference(self.game_state)
+        
+        print("✅ 遊戲重置完成！")
 
 def main():
     """程式入口點"""

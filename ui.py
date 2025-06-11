@@ -359,19 +359,24 @@ class UI:
         self.check_level_up(game_state)
     
     def get_game_state(self):
-        """獲取遊戲狀態 - 這裡需要根據實際的遊戲架構來修改"""
-        # 這是一個假設的實現，實際使用時需要替換為真正的遊戲狀態獲取
-        class MockGameState:
-            def __init__(self):
-                self.player_stats = {
-                    "hp": 80,
-                    "max_hp": 100,
-                    "level": 1,
-                    "exp": 0
-                }
-        
-        # 實際應該返回真正的遊戲狀態物件
-        return MockGameState()
+        """獲取遊戲狀態 - 需要從外部設定"""
+        if hasattr(self, '_game_state_ref'):
+            return self._game_state_ref
+        else:
+            # 如果沒有設定遊戲狀態參考，使用假的狀態
+            class MockGameState:
+                def __init__(self):
+                    self.player_stats = {
+                        "hp": 80,
+                        "max_hp": 100,
+                        "level": 1,
+                        "exp": 0
+                    }
+            return MockGameState()
+    
+    def set_game_state_reference(self, game_state):
+        """設定遊戲狀態參考"""
+        self._game_state_ref = game_state
     
     def check_level_up(self, game_state):
         """檢查是否升級"""
