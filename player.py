@@ -1,4 +1,5 @@
 import pygame
+import os
 
 class Player:
     def __init__(self, x, y):
@@ -26,7 +27,7 @@ class Player:
         self.max_x = 1024 - 64
         self.max_y = 768 - 64
         
-        # 新增：樓層系統
+        # 樓層系統
         self.current_floor = 1  # 當前樓層
         self.floor_positions = {
             1: {"x": 100, "y": 400},  # 1樓預設位置
@@ -35,9 +36,70 @@ class Player:
             4: {"x": 500, "y": 50}    # 頂樓預設位置
         }
         
-        # 新增：無敵時間（避免重複傷害）
+        # 無敵時間（避免重複傷害）
         self.invulnerable_time = 0
         self.max_invulnerable_time = 60  # 1秒無敵時間
+        
+        # 🎨 新增：圖片資源載入
+        self.sprites = {}
+        self.use_sprites = True  # 是否使用圖片（如果載入失敗會自動切換為像素繪製）
+        self.load_sprites()
+    
+    def load_sprites(self):
+        """載入玩家角色圖片"""
+        sprite_paths = {
+            "down": "assets/images/player/player_down.png",
+            "up": "assets/images/player/player_up.png", 
+            "left": "assets/images/player/player_left.png",
+            "right": "assets/images/player/player_right.png"
+        }
+        
+        # 備用：單一圖片檔案
+        single_sprite_path = "assets/images/player.png"
+        
+        try:
+            # 嘗試載入方向性圖片
+            sprites_loaded = 0
+            for direction, path in sprite_paths.items():
+                if os.path.exists(path):
+                    try:
+                        sprite = pygame.image.load(path).convert_alpha()
+                        # 縮放到適當大小
+                        sprite = pygame.transform.scale(sprite, (self.width, self.height))
+                        self.sprites[direction] = sprite
+                        sprites_loaded += 1
+                        print(f"✅ 載入玩家圖片: {direction} - {path}")
+                    except Exception as e:
+                        print(f"❌ 載入 {direction} 圖片失敗: {e}")
+            
+            # 如果沒有載入到方向性圖片，嘗試單一圖片
+            if sprites_loaded == 0 and os.path.exists(single_sprite_path):
+                try:
+                    base_sprite = pygame.image.load(single_sprite_path).convert_alpha()
+                    base_sprite = pygame.transform.scale(base_sprite, (self.width, self.height))
+                    
+                    # 為所有方向使用同一張圖片（可以加上翻轉效果）
+                    self.sprites["down"] = base_sprite
+                    self.sprites["up"] = base_sprite
+                    self.sprites["right"] = base_sprite
+                    self.sprites["left"] = pygame.transform.flip(base_sprite, True, False)  # 水平翻轉
+                    
+                    sprites_loaded = 4
+                    print(f"✅ 載入單一玩家圖片: {single_sprite_path}")
+                except Exception as e:
+                    print(f"❌ 載入單一圖片失敗: {e}")
+            
+            # 檢查載入結果
+            if sprites_loaded == 0:
+                print("⚠️ 未找到玩家圖片，使用像素繪製模式")
+                self.use_sprites = False
+            else:
+                print(f"🎨 成功載入 {sprites_loaded} 個玩家圖片")
+                self.use_sprites = True
+                
+        except Exception as e:
+            print(f"❌ 圖片載入系統錯誤: {e}")
+            self.use_sprites = False
     
     def move(self, dx, dy):
         # 如果玩家正在移動中，忽略新的移動指令
@@ -152,10 +214,48 @@ class Player:
             self.invulnerable_time -= 1
     
     def render(self, screen):
-        # 玩家像素風格繪製
+        """渲染玩家 - 支援圖片和像素繪製"""
         player_x = int(self.x - self.width // 2)
         player_y = int(self.y - self.height // 2)
         
+        # 🎨 優先使用圖片渲染
+        if self.use_sprites and self.direction in self.sprites:
+            self.render_sprite(screen, player_x, player_y)
+        else:
+            # 備用：像素風格繪製
+            self.render_pixel_art(screen, player_x, player_y)
+    
+    def render_sprite(self, screen, x, y):
+        """使用圖片渲染玩家"""
+        sprite = self.sprites[self.direction]
+        
+        # 受傷閃爍效果
+        if self.invulnerable_time > 0 and self.invulnerable_time % 10 < 5:
+            # 創建紅色覆蓋效果
+            red_sprite = sprite.copy()
+            red_sprite.fill((255, 100, 100), special_flags=pygame.BLEND_MULT)
+            sprite = red_sprite
+        
+        # 行走動畫 - 輕微上下晃動
+        animation_offset_y = 0
+        if self.is_moving and self.animation_frame % 2 == 1:
+            animation_offset_y = -1
+        
+        # 繪製陰影
+        shadow_rect = pygame.Rect(x + 2, y + self.height - 4, self.width - 2, 4)
+        pygame.draw.ellipse(screen, (0, 0, 0, 100), shadow_rect)
+        
+        # 繪製角色圖片
+        screen.blit(sprite, (x, y + animation_offset_y))
+        
+        # 無敵時間保護光環
+        if self.invulnerable_time > 0:
+            pygame.draw.circle(screen, (255, 255, 0, 50), 
+                             (int(self.x), int(self.y)), 
+                             self.width, 2)
+    
+    def render_pixel_art(self, screen, x, y):
+        """像素風格繪製玩家（備用方法）"""
         # 身體顏色（受傷時閃爍紅色）
         if self.invulnerable_time > 0 and self.invulnerable_time % 10 < 5:
             body_color = (255, 100, 100)  # 受傷閃爍紅色
@@ -167,23 +267,23 @@ class Player:
         hair_color = (101, 67, 33)    # 頭髮
         
         # 繪製陰影
-        shadow_rect = pygame.Rect(player_x + 2, player_y + self.height - 4, self.width - 2, 4)
+        shadow_rect = pygame.Rect(x + 2, y + self.height - 4, self.width - 2, 4)
         pygame.draw.ellipse(screen, (0, 0, 0, 100), shadow_rect)
         
         # 根據方向和動畫幀繪製玩家
         if self.direction == "down":
-            self.draw_player_front(screen, player_x, player_y, body_color, skin_color, hair_color)
+            self.draw_player_front(screen, x, y, body_color, skin_color, hair_color)
         elif self.direction == "up":
-            self.draw_player_back(screen, player_x, player_y, body_color, skin_color, hair_color)
+            self.draw_player_back(screen, x, y, body_color, skin_color, hair_color)
         elif self.direction == "left":
-            self.draw_player_side(screen, player_x, player_y, body_color, skin_color, hair_color, True)
+            self.draw_player_side(screen, x, y, body_color, skin_color, hair_color, True)
         elif self.direction == "right":
-            self.draw_player_side(screen, player_x, player_y, body_color, skin_color, hair_color, False)
+            self.draw_player_side(screen, x, y, body_color, skin_color, hair_color, False)
         
         # 繪製行走動畫效果
         if self.is_moving and self.animation_frame % 2 == 1:
-            # 輕微的上下晃動
-            player_y -= 1
+            # 輕微的上下晃動已在調用方處理
+            pass
         
         # 如果在無敵時間，繪製保護光環
         if self.invulnerable_time > 0:
@@ -304,6 +404,12 @@ class Player:
         """檢查玩家是否在指定位置附近"""
         distance = ((self.x - x)**2 + (self.y - y)**2)**0.5
         return distance <= tolerance
+    
+    def reload_sprites(self):
+        """重新載入圖片（用於熱更新）"""
+        print("🔄 重新載入玩家圖片...")
+        self.sprites.clear()
+        self.load_sprites()
     
     def reset(self):
         """重置玩家狀態（用於遊戲重新開始）"""
