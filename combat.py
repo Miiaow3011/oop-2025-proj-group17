@@ -110,8 +110,11 @@ class CombatSystem:
         if self.combat_result == "win":
             exp_reward = self.current_enemy["exp_reward"]
             self.combat_log.append(f"獲得 {exp_reward} 經驗值！")
-        
+            
         self.animation_timer = 120  # 2秒後結束戰鬥畫面
+        
+        # 添加這行 - 通知主遊戲戰鬥結束
+        self.combat_ended = True
     
     def update(self, game_state):
         if not self.in_combat:

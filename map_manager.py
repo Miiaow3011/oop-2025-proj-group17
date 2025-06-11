@@ -32,8 +32,20 @@ class MapManager:
                     {"pos": (450, 150), "item": {"name": "手電筒", "type": "tool", "value": 1}}
                 ],
                 "combat_zones": [
-                    {"pos": (300, 250), "radius": 50, "enemies": ["zombie_student"], "name": "餐廳走廊"},
-                    {"pos": (500, 350), "radius": 40, "enemies": ["zombie_student"], "name": "樓梯口"}
+                {
+                    "pos": (300, 250), 
+                    "radius": 50, 
+                    "enemies": ["zombie_student"], 
+                    "name": "餐廳走廊",
+                    "rewards": [{"name": "醫療包", "type": "healing", "value": 30}]
+                },
+                {
+                    "pos": (500, 350), 
+                    "radius": 40, 
+                    "enemies": ["zombie_student"], 
+                    "name": "樓梯口",
+                    "rewards": [{"name": "鑰匙卡碎片", "type": "clue", "value": 1}]
+                }
                 ]
             },
             2: {  # 二樓
@@ -169,6 +181,19 @@ class MapManager:
         
         return None
     
+    def remove_combat_zone(self, zone, floor):
+        """移除已完成的戰鬥區域"""
+        floor_data = self.floor_data.get(floor, {})
+        combat_zones = floor_data.get("combat_zones", [])
+        
+        # 移除匹配的戰鬥區域
+        for i, z in enumerate(combat_zones):
+            if z["pos"] == zone["pos"] and z["name"] == zone["name"]:
+                removed_zone = combat_zones.pop(i)
+                print(f"🗑️ 移除戰鬥區域: {removed_zone['name']}")
+                return True
+        return False
+
     def remove_item_from_floor(self, item_data, floor):
         """從指定樓層移除已收集的物品"""
         current_data = self.floor_data.get(floor, {})

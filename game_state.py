@@ -64,9 +64,9 @@ class GameState:
         ]
         
         # 隨機遭遇機率
-        self.encounter_chance = 0.05  # 5%機率
+        self.encounter_chance = 0  # 5%機率
         self.last_encounter_time = time.time()
-        self.min_encounter_interval = 10  # 最少10秒間隔
+        self.min_encounter_interval = 30  # 最少30秒間隔
         
         # 遊戲訊息
         self.messages = []

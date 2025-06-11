@@ -6,7 +6,7 @@ class Player:
         self.y = y
         self.width = 24
         self.height = 32
-        self.speed = 8
+        self.speed = 4
         
         # 玩家動畫
         self.direction = "down"  # up, down, left, right
@@ -18,7 +18,6 @@ class Player:
         self.is_moving = False
         self.move_target_x = x
         self.move_target_y = y
-        self.move_threshold = 2  # 到達目標的容錯距離
         
         # 邊界限制
         self.min_x = 32
@@ -27,10 +26,6 @@ class Player:
         self.max_y = 768 - 64
     
     def move(self, dx, dy):
-        # 如果玩家正在移動中，忽略新的移動指令
-        if self.is_moving:
-            return False
-        
         # 計算新位置
         new_x = self.x + dx
         new_y = self.y + dy
@@ -38,10 +33,6 @@ class Player:
         # 邊界檢查
         new_x = max(self.min_x, min(new_x, self.max_x))
         new_y = max(self.min_y, min(new_y, self.max_y))
-        
-        # 檢查是否真的移動了
-        if new_x == self.x and new_y == self.y:
-            return False
         
         # 設定移動目標
         self.move_target_x = new_x
@@ -57,15 +48,12 @@ class Player:
             self.direction = "down"
         elif dy < 0:
             self.direction = "up"
-        
-        return True
     
     def set_position(self, x, y):
         self.x = x
         self.y = y
         self.move_target_x = x
         self.move_target_y = y
-        self.move_threshold = 2  # 到達目標的容錯距離
         self.is_moving = False
     
     def update(self):
@@ -75,11 +63,8 @@ class Player:
             dx = self.move_target_x - self.x
             dy = self.move_target_y - self.y
             
-            # 計算距離
-            distance = (dx**2 + dy**2)**0.5
-            
             # 如果距離目標很近，直接到達
-            if distance <= getattr(self, 'move_threshold', 2):
+            if abs(dx) < self.speed and abs(dy) < self.speed:
                 self.x = self.move_target_x
                 self.y = self.move_target_y
                 self.is_moving = False
@@ -207,22 +192,6 @@ class Player:
             pygame.draw.rect(screen, (50, 50, 150), (x + 6, y + 26 - leg_offset, 5, 6))
             pygame.draw.rect(screen, (50, 50, 150), (x + 13, y + 26 + leg_offset, 5, 6))
     
-
-    def force_stop_movement(self):
-        """強制停止移動"""
-        self.is_moving = False
-        self.move_target_x = self.x
-        self.move_target_y = self.y
-    
-    def get_movement_info(self):
-        """獲取移動狀態資訊"""
-        return {
-            "position": (self.x, self.y),
-            "target": (self.move_target_x, self.move_target_y),
-            "is_moving": self.is_moving,
-            "direction": self.direction,
-            "distance_to_target": ((self.move_target_x - self.x)**2 + (self.move_target_y - self.y)**2)**0.5
-        }
     def get_rect(self):
         return pygame.Rect(self.x - self.width//2, self.y - self.height//2, 
                           self.width, self.height)

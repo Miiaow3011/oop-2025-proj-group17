@@ -11,7 +11,7 @@ class UI:
         self.font_medium = font_manager.get_font(24)
         self.font_small = font_manager.get_font(18)
         
-        # UI狀態 - 修復版
+        # UI狀態
         self.show_inventory = False
         self.show_map = False
         self.dialogue_active = False
@@ -31,72 +31,18 @@ class UI:
         # 對話狀態管理
         self.dialogue_step = 0  # 對話進度
         self.max_dialogue_steps = 1  # 最大對話步數
-        
-        # 除錯模式
-        self.debug_ui = False
     
     def toggle_inventory(self):
-        """切換背包狀態 - 修復版"""
-        old_state = self.show_inventory
         self.show_inventory = not self.show_inventory
-        
-        # 確保只有一個UI開啟
         if self.show_inventory:
             self.show_map = False
-            self.dialogue_active = False
-        
-        print(f"🎒 背包狀態變更: {old_state} → {self.show_inventory}")
-        
-        # 除錯資訊
-        if self.debug_ui:
-            print(f"   背包: {self.show_inventory}, 地圖: {self.show_map}, 對話: {self.dialogue_active}")
-        
-        return self.show_inventory
     
     def toggle_map(self):
-        """切換地圖狀態 - 修復版"""
-        old_state = self.show_map
         self.show_map = not self.show_map
-        
-        # 確保只有一個UI開啟
         if self.show_map:
             self.show_inventory = False
-            self.dialogue_active = False
-        
-        print(f"🗺️ 地圖狀態變更: {old_state} → {self.show_map}")
-        
-        # 除錯資訊
-        if self.debug_ui:
-            print(f"   背包: {self.show_inventory}, 地圖: {self.show_map}, 對話: {self.dialogue_active}")
-        
-        return self.show_map
-    
-    def close_all_ui(self):
-        """關閉所有UI - 新增功能"""
-        self.show_inventory = False
-        self.show_map = False
-        self.dialogue_active = False
-        print("🚪 關閉所有UI")
-    
-    def is_any_ui_open(self):
-        """檢查是否有任何UI開啟 - 新增功能"""
-        return self.show_inventory or self.show_map or self.dialogue_active
-    
-    def get_ui_status(self):
-        """獲取UI狀態資訊 - 新增功能"""
-        return {
-            "inventory": self.show_inventory,
-            "map": self.show_map,
-            "dialogue": self.dialogue_active,
-            "any_open": self.is_any_ui_open()
-        }
     
     def start_dialogue(self, interaction_data):
-        """開始對話 - 修復版"""
-        # 關閉其他UI
-        self.show_inventory = False
-        self.show_map = False
-        
         self.dialogue_active = True
         self.dialogue_data = interaction_data
         self.dialogue_step = 0
@@ -106,11 +52,7 @@ class UI:
         elif interaction_data["type"] == "npc":
             self.setup_npc_dialogue(interaction_data)
         
-        print(f"💬 對話開始: {interaction_data['name']}")
-        
-        # 除錯資訊
-        if self.debug_ui:
-            print(f"   對話狀態: {self.dialogue_active}")
+        print(f"對話開始: {interaction_data['name']}")  # 除錯訊息
     
     def setup_shop_dialogue(self, shop_data):
         shop_name = shop_data["name"]
@@ -207,7 +149,7 @@ class UI:
         if 0 <= option_index < len(self.dialogue_options):
             self.selected_option = option_index
             selected_text = self.dialogue_options[option_index]
-            print(f"選擇選項 {option_index + 1}: {selected_text}")
+            print(f"選擇選項 {option_index + 1}: {selected_text}")  # 除錯訊息
             self.execute_dialogue_choice()
     
     def execute_dialogue_choice(self):
@@ -215,7 +157,7 @@ class UI:
             return
         
         option_text = self.dialogue_options[self.selected_option]
-        print(f"執行選項: {option_text}")
+        print(f"執行選項: {option_text}")  # 除錯訊息
         
         # 根據選擇執行相應行動
         if "購買" in option_text:
@@ -256,22 +198,17 @@ class UI:
             self.end_dialogue()
     
     def end_dialogue(self):
-        """結束對話 - 修復版"""
-        print("💬 對話結束")
+        """結束對話"""
+        print("對話結束")  # 除錯訊息
         self.dialogue_active = False
         self.dialogue_data = None
         self.dialogue_text = ""
         self.dialogue_options = []
         self.selected_option = 0
-        
-        # 除錯資訊
-        if self.debug_ui:
-            print(f"   對話狀態: {self.dialogue_active}")
-            print(f"   UI狀態: 背包={self.show_inventory}, 地圖={self.show_map}")
     
     def continue_dialogue(self):
         if self.dialogue_active:
-            print("繼續對話")
+            print("繼續對話")  # 除錯訊息
             # 如果還有更多對話內容，繼續顯示
             # 否則結束對話
             self.end_dialogue()
@@ -302,31 +239,6 @@ class UI:
         # 更新訊息計時器
         if self.message_display_time > 0:
             self.message_display_time -= 1
-        
-        # 渲染除錯資訊
-        if self.debug_ui:
-            self.render_debug_ui()
-    
-    def render_debug_ui(self):
-        """渲染UI除錯資訊"""
-        debug_rect = pygame.Rect(10, 200, 200, 80)
-        pygame.draw.rect(self.screen, (0, 0, 0, 180), debug_rect)
-        pygame.draw.rect(self.screen, (255, 0, 255), debug_rect, 1)
-        
-        debug_lines = [
-            "UI除錯",
-            f"背包: {self.show_inventory}",
-            f"地圖: {self.show_map}",
-            f"對話: {self.dialogue_active}",
-            f"任何UI: {self.is_any_ui_open()}"
-        ]
-        
-        y_offset = 205
-        for line in debug_lines:
-            color = (255, 100, 255) if "True" in line else (200, 200, 200)
-            text_surface = font_manager.render_text(line, 12, color)
-            self.screen.blit(text_surface, (15, y_offset))
-            y_offset += 14
     
     def update_messages(self):
         """更新訊息顯示"""
@@ -368,8 +280,7 @@ class UI:
                 "方向鍵: 移動",
                 "空白鍵: 互動",
                 "I: 背包",
-                "M: 地圖",
-                "ESC: 關閉UI"
+                "M: 地圖"
             ]
             
             for i, control in enumerate(controls):
@@ -473,7 +384,7 @@ class UI:
                 y_offset += 30
         
         # 關閉提示
-        close_text = "按 I 關閉背包，按 ESC 關閉所有UI"
+        close_text = "按 I 關閉"
         close_surface = self.font_small.render(close_text, True, (200, 200, 200))
         close_rect = close_surface.get_rect(center=(self.screen_width//2, inv_y + inv_height - 20))
         self.screen.blit(close_surface, close_rect)
@@ -508,6 +419,6 @@ class UI:
             y_offset += 25
         
         # 關閉提示
-        close_text = "按 M 關閉地圖，按 ESC 關閉所有UI"
+        close_text = "按 M 關閉"
         close_surface = self.font_small.render(close_text, True, (200, 200, 200))
         self.screen.blit(close_surface, (map_x + 10, map_y + map_height - 25))
