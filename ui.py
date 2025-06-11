@@ -366,11 +366,16 @@ class UI:
             if has_medical_item:
                 self.consume_medical_item(inventory)
                 game_state.add_exp(25)
-                self.show_message("你給了職員醫療用品！EXP +25, 獲得重要情報！")
+                self.show_message("你給了職員醫療用品！EXP +25")
                 print(f"✅ 幫助他人，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
-                if self.player_reference:
-                    self.player_reference.teleport_to_coordinates(400, 200, 3)
-                    self.show_message("職員告訴了你秘密通道的位置！你被傳送到3樓！")
+                
+                # 額外對話：職員感謝並提供線索
+                self.show_message("職員: 謝謝你...三樓咖啡廳附近有秘密實驗室...")
+                
+                # 給予額外獎勵（線索相關的經驗值）
+                game_state.add_exp(15)
+                self.show_message("獲得重要線索！額外 EXP +15")
+                print(f"✅ 獲得線索，總經驗值 - EXP: {game_state.player_stats['exp']}")
             else:
                 self.show_message("你沒有醫療用品可以給予！先去商店購買一些吧。")
             self.end_dialogue()
