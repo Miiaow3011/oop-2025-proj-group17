@@ -41,6 +41,7 @@ class Game:
         self.inventory = Inventory()
         self.ui.set_player_reference(self.player)
         self.ui.set_game_state_reference(self.game_state)
+        self.ui.set_inventory_reference(self.inventory)
         
         # 遊戲標誌
         self.running = True
@@ -670,6 +671,7 @@ class Game:
         # 重新設定玩家參考（重要！）
         self.ui.set_player_reference(self.player)
         self.ui.set_game_state_reference(self.game_state)
+        self.ui.set_inventory_reference(self.inventory)
         
         print("✅ 遊戲重置完成！")
 

@@ -1,4 +1,3 @@
-# ui.py
 import pygame
 from font_manager import font_manager
 
@@ -41,10 +40,36 @@ class UI:
         
         # 玩家初始位置記錄 (用於傳送)
         self.player_reference = None
+        self.inventory_reference = None
+        self.inventory_reference = None
     
     def set_player_reference(self, player):
         """設定玩家物件參考，用於修改位置"""
         self.player_reference = player
+    
+    def is_any_ui_open(self):
+        """檢查是否有任何UI開啟"""
+        return self.show_inventory or self.show_map or self.dialogue_active
+
+    def close_all_ui(self):
+        """關閉所有UI"""
+        self.show_inventory = False
+        self.show_map = False
+        self.dialogue_active = False
+        print("🚪 關閉所有UI")
+
+    def get_ui_status(self):
+        """獲取UI狀態資訊"""
+        return {
+            "inventory": self.show_inventory,
+            "map": self.show_map,
+            "dialogue": self.dialogue_active,
+            "any_open": self.is_any_ui_open()
+        }
+    
+    def set_inventory_reference(self, inventory):
+        """設定背包物件參考，用於檢查和消耗物品"""
+        self.inventory_reference = inventory
     
     def toggle_inventory(self):
         self.show_inventory = not self.show_inventory
@@ -367,29 +392,27 @@ class UI:
     
     def get_inventory(self):
         """獲取背包物件 - 需要根據實際的遊戲架構來修改"""
-        # 這裡需要返回真正的背包物件
-        # 暫時返回 None，需要在實際使用時修改
-        return None
-    
-    def get_game_state(self):
-        """獲取遊戲狀態 - 需要從外部設定"""
-        if hasattr(self, '_game_state_ref'):
-            return self._game_state_ref
-        else:
-            # 如果沒有設定遊戲狀態參考，使用假的狀態
-            class MockGameState:
-                def __init__(self):
-                    self.player_stats = {
-                        "hp": 80,
-                        "max_hp": 100,
-                        "level": 1,
-                        "exp": 0
-                    }
-            return MockGameState()
+        # 返回已設定的背包參考
+        return self.inventory_reference
     
     def set_game_state_reference(self, game_state):
         """設定遊戲狀態參考"""
         self._game_state_ref = game_state
+
+    def get_game_state(self):
+        """獲取遊戲狀態 - 這裡需要根據實際的遊戲架構來修改"""
+        # 這是一個假設的實現，實際使用時需要替換為真正的遊戲狀態獲取
+        class MockGameState:
+            def __init__(self):
+                self.player_stats = {
+                    "hp": 80,
+                    "max_hp": 100,
+                    "level": 1,
+                    "exp": 0
+                }
+        
+        # 實際應該返回真正的遊戲狀態物件
+        return MockGameState()
     
     def check_level_up(self, game_state):
         """檢查是否升級"""
