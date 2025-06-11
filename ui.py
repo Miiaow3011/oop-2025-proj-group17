@@ -1,3 +1,4 @@
+# ui.py
 import pygame
 from font_manager import font_manager
 

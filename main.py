@@ -1,3 +1,4 @@
+# 末世第二餐廳 - main.py
 import pygame
 import sys
 import time
