@@ -55,6 +55,26 @@ class UI:
         if self.show_map:
             self.show_inventory = False
     
+    def is_any_ui_open(self):
+        """檢查是否有任何UI開啟"""
+        return self.show_inventory or self.show_map or self.dialogue_active
+
+    def close_all_ui(self):
+        """關閉所有UI"""
+        self.show_inventory = False
+        self.show_map = False
+        self.dialogue_active = False
+        print("🚪 關閉所有UI")
+
+    def get_ui_status(self):
+        """獲取UI狀態資訊"""
+        return {
+            "inventory": self.show_inventory,
+            "map": self.show_map,
+            "dialogue": self.dialogue_active,
+            "any_open": self.is_any_ui_open()
+        }
+
     def start_dialogue(self, interaction_data):
         self.dialogue_active = True
         self.dialogue_data = interaction_data

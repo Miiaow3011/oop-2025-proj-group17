@@ -67,10 +67,13 @@ class MapManager:
                     {"pos": (500, 400), "item": {"name": "鑰匙卡", "type": "key", "value": 1}}
                 ],
                 "combat_zones": [
-                    {"pos": (250, 200), "radius": 60, "enemies": ["infected_staff"], "name": "二樓中央"},
-                    {"pos": (450, 300), "radius": 45, "enemies": ["zombie_student", "infected_staff"], "name": "餐廳後方"}
+                    {"pos": (250, 200), "radius": 60, "enemies": ["infected_staff"], "name": "二樓中央",
+                    "rewards": [{"name": "鑰匙卡", "type": "key", "value": 1}]},
+                    {"pos": (450, 300), "radius": 45, "enemies": ["zombie_student", "infected_staff"], "name": "餐廳後方",
+                    "rewards": [{"name": "能量飲料", "type": "healing", "value": 20}]}
                 ]
             },
+
             3: {  # 三樓
                 "shops": {
                     "L": {"name": "Cafe", "pos": (320, 192), "size": (160, 128), "chinese_name": "咖啡廳"},
