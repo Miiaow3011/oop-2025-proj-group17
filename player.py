@@ -25,6 +25,19 @@ class Player:
         self.min_y = 32
         self.max_x = 1024 - 64
         self.max_y = 768 - 64
+        
+        # 新增：樓層系統
+        self.current_floor = 1  # 當前樓層
+        self.floor_positions = {
+            1: {"x": 100, "y": 400},  # 1樓預設位置
+            2: {"x": 300, "y": 150},  # 2樓預設位置
+            3: {"x": 400, "y": 200},  # 3樓預設位置
+            4: {"x": 500, "y": 50}    # 頂樓預設位置
+        }
+        
+        # 新增：無敵時間（避免重複傷害）
+        self.invulnerable_time = 0
+        self.max_invulnerable_time = 60  # 1秒無敵時間
     
     def move(self, dx, dy):
         # 如果玩家正在移動中，忽略新的移動指令
@@ -61,12 +74,47 @@ class Player:
         return True
     
     def set_position(self, x, y):
+        """設置玩家位置（用於傳送）"""
         self.x = x
         self.y = y
         self.move_target_x = x
         self.move_target_y = y
-        self.move_threshold = 2  # 到達目標的容錯距離
         self.is_moving = False
+        print(f"玩家傳送到: ({x}, {y})")
+    
+    def teleport_to_floor(self, floor):
+        """傳送到指定樓層"""
+        if floor in self.floor_positions:
+            self.current_floor = floor
+            pos = self.floor_positions[floor]
+            self.set_position(pos["x"], pos["y"])
+            print(f"玩家傳送到 {floor} 樓")
+            return True
+        return False
+    
+    def teleport_to_coordinates(self, x, y, floor=None):
+        """傳送到指定座標"""
+        # 邊界檢查
+        x = max(self.min_x, min(x, self.max_x))
+        y = max(self.min_y, min(y, self.max_y))
+        
+        self.set_position(x, y)
+        
+        if floor is not None:
+            self.current_floor = floor
+            print(f"玩家傳送到 {floor} 樓 ({x}, {y})")
+        else:
+            print(f"玩家傳送到 ({x}, {y})")
+        
+        return True
+    
+    def take_damage(self, amount):
+        """受到傷害（有無敵時間保護）"""
+        if self.invulnerable_time <= 0:
+            self.invulnerable_time = self.max_invulnerable_time
+            print(f"玩家受到 {amount} 點傷害！")
+            return True
+        return False
     
     def update(self):
         # 平滑移動
@@ -79,7 +127,7 @@ class Player:
             distance = (dx**2 + dy**2)**0.5
             
             # 如果距離目標很近，直接到達
-            if distance <= getattr(self, 'move_threshold', 2):
+            if distance <= self.move_threshold:
                 self.x = self.move_target_x
                 self.y = self.move_target_y
                 self.is_moving = False
@@ -98,15 +146,24 @@ class Player:
                 self.animation_frame = (self.animation_frame + 1) % 4
         else:
             self.animation_frame = 0
+        
+        # 更新無敵時間
+        if self.invulnerable_time > 0:
+            self.invulnerable_time -= 1
     
     def render(self, screen):
         # 玩家像素風格繪製
         player_x = int(self.x - self.width // 2)
         player_y = int(self.y - self.height // 2)
         
-        # 身體顏色
-        body_color = (100, 150, 255)  # 藍色衣服
-        skin_color = (255, 220, 177)  # 膚色
+        # 身體顏色（受傷時閃爍紅色）
+        if self.invulnerable_time > 0 and self.invulnerable_time % 10 < 5:
+            body_color = (255, 100, 100)  # 受傷閃爍紅色
+            skin_color = (255, 200, 150)
+        else:
+            body_color = (100, 150, 255)  # 正常藍色衣服
+            skin_color = (255, 220, 177)  # 正常膚色
+        
         hair_color = (101, 67, 33)    # 頭髮
         
         # 繪製陰影
@@ -127,6 +184,12 @@ class Player:
         if self.is_moving and self.animation_frame % 2 == 1:
             # 輕微的上下晃動
             player_y -= 1
+        
+        # 如果在無敵時間，繪製保護光環
+        if self.invulnerable_time > 0:
+            pygame.draw.circle(screen, (255, 255, 0, 50), 
+                             (int(self.x), int(self.y)), 
+                             self.width, 2)
     
     def draw_player_front(self, screen, x, y, body_color, skin_color, hair_color):
         # 頭部
@@ -207,7 +270,6 @@ class Player:
             pygame.draw.rect(screen, (50, 50, 150), (x + 6, y + 26 - leg_offset, 5, 6))
             pygame.draw.rect(screen, (50, 50, 150), (x + 13, y + 26 + leg_offset, 5, 6))
     
-
     def force_stop_movement(self):
         """強制停止移動"""
         self.is_moving = False
@@ -221,8 +283,38 @@ class Player:
             "target": (self.move_target_x, self.move_target_y),
             "is_moving": self.is_moving,
             "direction": self.direction,
-            "distance_to_target": ((self.move_target_x - self.x)**2 + (self.move_target_y - self.y)**2)**0.5
+            "distance_to_target": ((self.move_target_x - self.x)**2 + (self.move_target_y - self.y)**2)**0.5,
+            "current_floor": self.current_floor
         }
+    
     def get_rect(self):
+        """獲取玩家碰撞矩形"""
         return pygame.Rect(self.x - self.width//2, self.y - self.height//2, 
                           self.width, self.height)
+    
+    def get_position(self):
+        """獲取玩家當前位置"""
+        return (self.x, self.y)
+    
+    def get_floor(self):
+        """獲取當前樓層"""
+        return self.current_floor
+    
+    def is_at_position(self, x, y, tolerance=10):
+        """檢查玩家是否在指定位置附近"""
+        distance = ((self.x - x)**2 + (self.y - y)**2)**0.5
+        return distance <= tolerance
+    
+    def reset(self):
+        """重置玩家狀態（用於遊戲重新開始）"""
+        self.x = 100
+        self.y = 400
+        self.move_target_x = self.x
+        self.move_target_y = self.y
+        self.is_moving = False
+        self.current_floor = 1
+        self.direction = "down"
+        self.animation_frame = 0
+        self.animation_timer = 0
+        self.invulnerable_time = 0
+        print("玩家狀態已重置")
