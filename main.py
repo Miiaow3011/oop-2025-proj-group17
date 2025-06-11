@@ -339,20 +339,15 @@ class Game:
                 self.ui.show_message("來到了二樓")
                 
             elif current_floor == 2:
-                # 2樓到3樓：需要鑰匙卡
-                if self.game_state.get_flag("has_keycard") or self.inventory.has_item("鑰匙卡"):
-                    self.map_manager.change_floor(3)
-                    self.player.set_position(400, 600)
-                    if self.debug_mode:
-                        print("⬆️ 使用鑰匙卡上樓到 3 樓")
-                    self.ui.show_message("🗝️ 使用鑰匙卡進入三樓！")
-                    
-                    # 設定標記
-                    self.game_state.set_flag("unlocked_third_floor", True)
-                else:
-                    if self.debug_mode:
-                        print("🚫 需要鑰匙卡才能上三樓")
-                    self.ui.show_message("❌ 需要鑰匙卡才能進入三樓！")
+                # 2樓到3樓：暫時移除鑰匙卡限制
+                self.map_manager.change_floor(3)
+                self.player.set_position(400, 600)
+                if self.debug_mode:
+                    print("⬆️ 上樓到 3 樓")
+                self.ui.show_message("來到了三樓！")
+                
+                # 設定標記
+                self.game_state.set_flag("unlocked_third_floor", True)
                     
             else:
                 if self.debug_mode:

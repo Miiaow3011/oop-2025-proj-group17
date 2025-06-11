@@ -114,6 +114,17 @@ class MapManager:
     def check_interaction(self, player_x, player_y, floor):
         current_data = self.floor_data.get(floor, {})
         
+        # 檢查樓梯互動
+        for stairs in current_data.get("stairs", []):
+            stairs_rect = pygame.Rect(stairs["pos"][0]-16, stairs["pos"][1]-16, 32, 32)
+            player_rect = pygame.Rect(player_x, player_y, 32, 32)
+            
+            if stairs_rect.colliderect(player_rect):
+                return {
+                    "type": "stairs",
+                    "direction": stairs["direction"]
+                }
+
         # 檢查商店互動
         for shop_id, shop_data in current_data.get("shops", {}).items():
             shop_rect = pygame.Rect(shop_data["pos"], shop_data["size"])
@@ -138,17 +149,6 @@ class MapManager:
                     "id": npc["id"],
                     "name": npc["name"],
                     "data": npc
-                }
-        
-        # 檢查樓梯互動
-        for stairs in current_data.get("stairs", []):
-            stairs_rect = pygame.Rect(stairs["pos"][0]-16, stairs["pos"][1]-16, 32, 32)
-            player_rect = pygame.Rect(player_x, player_y, 32, 32)
-            
-            if stairs_rect.colliderect(player_rect):
-                return {
-                    "type": "stairs",
-                    "direction": stairs["direction"]
                 }
         
         # 檢查道具互動
