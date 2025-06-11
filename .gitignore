@@ -28,7 +28,6 @@ logs/
 config.ini
 
 # 素材檔案 (太大不適合版本控制)
-assets/images/*.png
 assets/images/*.jpg
 assets/sounds/*.wav
 assets/sounds/*.ogg
