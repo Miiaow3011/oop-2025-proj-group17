@@ -55,3 +55,7 @@ build/
 dist/
 *.exe
 *.msi
+__pycache__/
+*.pyc
+
+
