@@ -655,6 +655,8 @@ class Game:
             self.game_state.player_stats = {
                 "hp": 100,
                 "max_hp": 100,
+                "attack": 10,
+                "defense": 5,
                 "level": 1,
                 "exp": 0
             }
