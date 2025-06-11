@@ -57,7 +57,10 @@ dist/
 *.msi
 __pycache__/
 *.pyc
+<<<<<<< HEAD
+=======
 
 
 __pycache__/
 *.pyc
+>>>>>>> upstream/main
