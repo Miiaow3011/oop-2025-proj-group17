@@ -22,6 +22,9 @@ class CombatSystem:
         # self.font_small = pygame.font.Font(None, 18)   # 刪除這行
 
     def start_combat(self, enemy):
+        print(f"🔥 開始戰鬥初始化...")
+        print(f"  敵人: {enemy['name']}")
+        
         self.in_combat = True
         self.current_enemy = enemy.copy()
         self.current_enemy["max_hp"] = enemy["hp"]
@@ -29,26 +32,48 @@ class CombatSystem:
         self.combat_log = [f"遭遇了 {enemy['name']}！"]
         self.animation_timer = 0
         self.combat_result = None
+        
+        print(f"✅ 戰鬥初始化完成:")
+        print(f"  in_combat: {self.in_combat}")
+        print(f"  player_turn: {self.player_turn}")
+        print(f"  敵人血量: {self.current_enemy['hp']}/{self.current_enemy['max_hp']}")
+        print(f"  戰鬥日誌: {len(self.combat_log)} 條")
 
     def player_action(self, action):
-        if not self.in_combat or not self.player_turn:
+        """玩家行動 - 修復版"""
+        print(f"🎮 玩家行動: {action}")
+        print(f"  戰鬥中: {self.in_combat}")
+        print(f"  玩家回合: {self.player_turn}")
+        print(f"  當前戰鬥結果: {self.combat_result}")
+        
+        if not self.in_combat or not self.player_turn or self.combat_result:
+            print(f"❌ 行動被拒絕！")
             return
 
+        print(f"✅ 執行行動: {action}")
+        
         if action == "attack":
             self.player_attack()
         elif action == "defend":
             self.player_defend()
         elif action == "escape":
+            print("🏃 嘗試逃跑...")
             self.player_escape()
+            # 如果逃跑成功，直接返回，不進入敵人回合
+            if self.combat_result == "escape":
+                print("🏃 逃跑成功，跳過敵人回合")
+                return
 
         # 檢查敵人是否死亡
-        if self.current_enemy["hp"] <= 0:
+        if self.current_enemy and self.current_enemy["hp"] <= 0:
+            print("💀 敵人被擊敗")
             self.combat_result = "win"
             self.end_combat()
             return
 
-        # 敵人回合
-        if self.in_combat and action != "escape":
+        # 只有在沒有戰鬥結果時才進入敵人回合
+        if self.in_combat and not self.combat_result:
+            print("👹 準備敵人回合")
             self.player_turn = False
             self.animation_timer = 60  # 1秒延遲
 
@@ -77,12 +102,26 @@ class CombatSystem:
         self.combat_log.append("下回合受到傷害減半！")
 
     def player_escape(self):
+        """玩家逃跑 - 修復版"""
+        import time
+        import random
+        
+        # 添加時間種子確保真正的隨機
+        random.seed(int(time.time() * 1000000) % 2147483647)
+        
         escape_chance = 0.6  # 60%逃跑成功率
-        if random.random() < escape_chance:
+        random_value = random.random()
+        
+        print(f"🎲 逃跑隨機值: {random_value:.3f} (需要 < {escape_chance})")
+        
+        if random_value < escape_chance:
+            print("✅ 逃跑成功！")
             self.combat_log.append("成功逃跑了！")
             self.combat_result = "escape"
-            self.end_combat()
+            # 🔥 立即結束，不呼叫 end_combat()🔥
+            print("🏃 逃跑成功，準備立即結束戰鬥")
         else:
+            print("❌ 逃跑失敗！")
             self.combat_log.append("逃跑失敗！")
 
     def enemy_turn(self, game_state):
@@ -108,15 +147,27 @@ class CombatSystem:
         self.shake_intensity = 3
 
     def end_combat(self):
-        if self.combat_result == "win":
-            exp_reward = self.current_enemy["exp_reward"]
-            self.combat_log.append(f"獲得 {exp_reward} 經驗值！")
+        """戰鬥結束處理 - 無延遲版"""
+        print(f"🏁 戰鬥結束處理，結果: {self.combat_result}")
         
-        self.animation_timer = 120  # 2秒後結束戰鬥畫面
-        # 添加這行 - 通知主遊戲戰鬥結束
-        self.combat_ended = True
+        if self.combat_result == "win":
+            exp_reward = self.current_enemy.get("exp_reward", 10)
+            self.combat_log.append(f"獲得 {exp_reward} 經驗值！")
+            print(f"🎯 戰鬥勝利")
+        elif self.combat_result == "escape":
+            self.combat_log.append("成功逃離戰鬥！")
+            print(f"🏃 逃跑成功")
+        elif self.combat_result == "lose":
+            self.combat_log.append("戰鬥失敗...")
+            print(f"💀 戰鬥失敗")
+        
+        # 🔥 關鍵修復：不設定延遲！🔥
+        self.animation_timer = 0  # 設為0，不延遲
+        print(f"⚡ 無延遲結束")
+        print(f"⏰ 顯示結果延遲: {self.animation_timer} 幀")
 
     def update(self, game_state):
+        """更新戰鬥狀態 - 完全修復版"""
         if not self.in_combat:
             return
 
@@ -125,15 +176,9 @@ class CombatSystem:
             self.animation_timer -= 1
 
         # 敵人回合延遲
-        if not self.player_turn and self.animation_timer == 0:
+        if not self.player_turn and self.animation_timer == 0 and not self.combat_result:
+            print("👹 敵人回合開始")
             self.enemy_turn(game_state)
-
-        # 戰鬥結束延遲
-        if self.combat_result and self.animation_timer == 0:
-            self.in_combat = False
-            if self.combat_result == "win":
-                game_state.add_exp(self.current_enemy["exp_reward"])
-            game_state.set_state("exploration")
 
         # 更新震動效果
         if self.shake_timer > 0:
