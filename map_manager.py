@@ -26,20 +26,20 @@ class MapManager:
                 {"type": "shop", "id": "B", "name": "Subway", "x": 200, "y": 250, "width": 80, "height": 60},
                 {"type": "shop", "id": "C", "name": "茶壜", "x": 350, "y": 300, "width": 80, "height": 60},
                 {"type": "npc", "id": "npc1", "name": "驚慌學生", "x": 500, "y": 400, "width": 30, "height": 30},
-                {"type": "stairs", "direction": "up", "x": 450, "y": 100, "width": 64, "height": 32, "target_floor": 2}
+                {"type": "stairs", "direction": "up", "x": 450, "y": 100, "width": 96, "height": 48, "target_floor": 2}  # 🆕 加大樓梯尺寸
             ],
             2: [  # 2樓
                 {"type": "shop", "id": "D", "name": "和食宣", "x": 100, "y": 200, "width": 80, "height": 60},
                 {"type": "shop", "id": "E", "name": "素怡沅", "x": 300, "y": 150, "width": 80, "height": 60},
                 {"type": "npc", "id": "npc2", "name": "受傷職員", "x": 200, "y": 300, "width": 30, "height": 30},
-                {"type": "stairs", "direction": "up", "x": 450, "y": 100, "width": 64, "height": 32, "target_floor": 3},
-                {"type": "stairs", "direction": "down", "x": 450, "y": 600, "width": 64, "height": 32, "target_floor": 1}
+                {"type": "stairs", "direction": "up", "x": 450, "y": 100, "width": 96, "height": 48, "target_floor": 3},    # 🆕 加大樓梯尺寸
+                {"type": "stairs", "direction": "down", "x": 450, "y": 600, "width": 96, "height": 48, "target_floor": 1}  # 🆕 加大樓梯尺寸
             ],
             3: [  # 3樓
                 {"type": "shop", "id": "L", "name": "咖啡廳", "x": 150, "y": 250, "width": 80, "height": 60},
                 {"type": "npc", "id": "npc3", "name": "神秘研究員", "x": 400, "y": 200, "width": 30, "height": 30},
                 {"type": "npc", "id": "npc4", "name": "最後的研究者", "x": 300, "y": 350, "width": 30, "height": 30},
-                {"type": "stairs", "direction": "down", "x": 450, "y": 600, "width": 64, "height": 32, "target_floor": 2}
+                {"type": "stairs", "direction": "down", "x": 450, "y": 600, "width": 96, "height": 48, "target_floor": 2}  # 🆕 加大樓梯尺寸
             ]
         }
         
@@ -96,26 +96,37 @@ class MapManager:
         for direction, path in stairs_paths.items():
             if os.path.exists(path):
                 try:
-                    # 載入並縮放圖片
+                    # 載入你自己的樓梯圖片
                     image = pygame.image.load(path).convert_alpha()
-                    # 縮放到適當大小 (64x32 像素)
-                    image = pygame.transform.scale(image, (64, 32))
+                    original_size = image.get_size()
+                    print(f"   原始圖片尺寸: {original_size}")
+                    
+                    # 🎨 保持原圖比例，縮放到合適大小
+                    # 你可以調整這個目標尺寸來改變樓梯大小
+                    target_width = 96  # 可以調整這個數值
+                    target_height = 60  # 可以調整這個數值
+                    
+                    # 縮放到目標尺寸
+                    image = pygame.transform.scale(image, (target_width, target_height))
                     self.stairs_sprites[direction] = image
                     print(f"✅ 成功載入樓梯圖片: {direction} - {path}")
+                    print(f"   縮放後尺寸: {target_width}x{target_height}")
                 except Exception as e:
                     print(f"❌ 載入樓梯圖片失敗: {direction} - {e}")
                     self.stairs_sprites[direction] = None
             else:
                 print(f"⚠️ 找不到樓梯圖片: {path}")
+                print(f"   請確認你的樓梯圖片已放在正確位置")
                 self.stairs_sprites[direction] = None
         
         # 如果沒有載入到圖片，設定標記
         self.use_sprites = any(sprite is not None for sprite in self.stairs_sprites.values())
         
         if not self.use_sprites:
-            print("📦 將使用像素繪製樓梯")
+            print("📦 未找到樓梯圖片，將使用像素繪製樓梯")
         else:
             print(f"🎨 成功載入 {len([s for s in self.stairs_sprites.values() if s is not None])} 個樓梯圖片")
+            print("💡 如果樓梯太小或太大，可以在 load_stairs_images() 方法中調整 target_width 和 target_height")
     
     def create_floor_1(self):
         """創建1樓地圖"""
@@ -358,7 +369,7 @@ class MapManager:
         
         # 互動提示
         hint_surface = font_manager.render_text("空白鍵", 12, (255, 255, 0))
-        hint_rect = hint_surface.get_rect(center=(x + width//2, y - 15))
+        hint_rect = hint_surface.get_rect(center=(x + width//2, y - 20))  # 🆕 調整提示位置
         screen.blit(hint_surface, hint_rect)
     
     def render_stairs_sprite(self, screen, stairs):
@@ -374,23 +385,23 @@ class MapManager:
             if direction == "up":
                 # 上樓梯：添加向上的光效
                 pygame.draw.circle(screen, (255, 255, 0, 100), 
-                                 (stairs["x"] + 32, stairs["y"] + 10), 20, 2)
+                                 (stairs["x"] + 48, stairs["y"] + 15), 30, 2)  # 🆕 調整位置和大小
                 # 向上箭頭
                 arrow_points = [
-                    (stairs["x"] + 32, stairs["y"] - 5),
-                    (stairs["x"] + 27, stairs["y"] + 5),
-                    (stairs["x"] + 37, stairs["y"] + 5)
+                    (stairs["x"] + 48, stairs["y"] - 8),   # 🆕 調整箭頭位置
+                    (stairs["x"] + 40, stairs["y"] + 8),
+                    (stairs["x"] + 56, stairs["y"] + 8)
                 ]
                 pygame.draw.polygon(screen, (255, 255, 0), arrow_points)
             else:
                 # 下樓梯：添加向下的光效
                 pygame.draw.circle(screen, (0, 255, 255, 100), 
-                                 (stairs["x"] + 32, stairs["y"] + 22), 20, 2)
+                                 (stairs["x"] + 48, stairs["y"] + 33), 30, 2)  # 🆕 調整位置和大小
                 # 向下箭頭
                 arrow_points = [
-                    (stairs["x"] + 32, stairs["y"] + 40),
-                    (stairs["x"] + 27, stairs["y"] + 30),
-                    (stairs["x"] + 37, stairs["y"] + 30)
+                    (stairs["x"] + 48, stairs["y"] + 60),  # 🆕 調整箭頭位置
+                    (stairs["x"] + 40, stairs["y"] + 45),
+                    (stairs["x"] + 56, stairs["y"] + 45)
                 ]
                 pygame.draw.polygon(screen, (0, 255, 255), arrow_points)
     
@@ -424,9 +435,9 @@ class MapManager:
             
             # 上樓箭頭
             arrow_points = [
-                (x + width//2, y - 5),
-                (x + width//2 - 8, y + 5),
-                (x + width//2 + 8, y + 5)
+                (x + width//2, y - 8),      # 🆕 調整箭頭位置和大小
+                (x + width//2 - 12, y + 8),
+                (x + width//2 + 12, y + 8)
             ]
             pygame.draw.polygon(screen, (255, 255, 0), arrow_points)
             
@@ -454,9 +465,9 @@ class MapManager:
             
             # 下樓箭頭
             arrow_points = [
-                (x + width//2, y + height + 8),
-                (x + width//2 - 8, y + height - 2),
-                (x + width//2 + 8, y + height - 2)
+                (x + width//2, y + height + 12),    # 🆕 調整箭頭位置和大小
+                (x + width//2 - 12, y + height - 3),
+                (x + width//2 + 12, y + height - 3)
             ]
             pygame.draw.polygon(screen, (0, 255, 255), arrow_points)
     
