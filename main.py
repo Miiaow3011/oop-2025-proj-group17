@@ -761,16 +761,16 @@ class Game:
             "按 [空白鍵] 開始遊戲",
             "",
             "📋 遊戲操作:",
-            "方向鍵移動，空白鍵互動，I背包，M地圖"
+            "方向鍵 移動，空白鍵 互動，I 背包，M 地圖"
         ]
         
-        # 計算總高度來實現垂直置中
+        # 計算總高度來實現垂直置中，並往上調一行
         total_lines = len([line for line in intro_text if line])  # 非空行數
         line_height = 32  # 平均行高
         total_height = total_lines * line_height
         
-        # 垂直置中起始位置
-        start_y = (self.SCREEN_HEIGHT - total_height) // 2
+        # 垂直置中起始位置，往上調兩行 (減少64像素)
+        start_y = (self.SCREEN_HEIGHT - total_height) // 2 - 64
         y_offset = start_y
         
         for line in intro_text:
