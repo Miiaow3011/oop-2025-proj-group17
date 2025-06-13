@@ -1,4 +1,4 @@
-# 末世第二餐廳 - main.py (完整修復版)
+# 末世第二餐廳 - main.py (完整修復版 + 地板圖片支援)
 import pygame
 import sys
 import time
@@ -58,6 +58,7 @@ class Game:
         # 🪜 樓梯圖片偵錯資訊
         if self.debug_mode:
             self.map_manager.debug_print_stairs()
+            self.map_manager.debug_print_floor_info()  # 🆕 新增地板偵錯
 
     def handle_events(self):
         """修復版事件處理 - 整合所有功能"""
@@ -115,6 +116,14 @@ class Game:
                     self.map_manager.reset_items()
                     self.ui.show_message("已重置所有物品收集狀態")
                     continue
+                elif event.key == pygame.K_F8:
+                    # 🆕 F8: 重新載入地板圖片
+                    self.reload_floor_images()
+                    continue
+                elif event.key == pygame.K_F9:
+                    # 🆕 F9: 地板偵錯資訊
+                    self.map_manager.debug_print_floor_info()
+                    continue
                 
                 # ======= 狀態專用事件處理 =======
                 if self.show_intro:
@@ -133,6 +142,14 @@ class Game:
         self.map_manager.reload_stairs_images()
         if self.debug_mode:
             self.map_manager.debug_print_stairs()
+
+    def reload_floor_images(self):
+        """🆕 重新載入地板圖片"""
+        print("🔄 手動重新載入地板圖片...")
+        self.map_manager.reload_floor_images()
+        if self.debug_mode:
+            self.map_manager.debug_print_floor_info()
+        self.ui.show_message("地板圖片已重新載入！")
 
     def handle_inventory_toggle(self):
         """處理背包切換 - 修復版"""
@@ -208,6 +225,7 @@ class Game:
             self.print_debug_info()
             self.map_manager.debug_print_stairs()
             self.map_manager.debug_print_items()  # 新增物品除錯資訊
+            self.map_manager.debug_print_floor_info()  # 🆕 新增地板除錯資訊
 
     def print_debug_info(self):
         """顯示除錯資訊"""
@@ -703,7 +721,7 @@ class Game:
 
     def render_debug_info(self):
         """渲染除錯資訊"""
-        debug_rect = pygame.Rect(10, 300, 300, 160)
+        debug_rect = pygame.Rect(10, 300, 300, 180)  # 🆕 增加高度以容納地板資訊
         pygame.draw.rect(self.screen, (0, 0, 0, 180), debug_rect)
         pygame.draw.rect(self.screen, (0, 255, 255), debug_rect, 1)
         
@@ -718,6 +736,7 @@ class Game:
             f"地圖: {self.ui.show_map}",
             f"對話: {self.ui.dialogue_active}",
             f"樓梯圖片: {self.map_manager.use_sprites}",
+            f"地板圖片: {self.map_manager.use_floor_sprites}",  # 🆕 新增地板狀態
             f"已收集物品: {len(self.map_manager.collected_items)}"
         ]
         
@@ -725,9 +744,9 @@ class Game:
         for line in debug_lines:
             if "True" in line and ("移動" in line or "開啟" in line):
                 color = (255, 100, 100)
-            elif "樓梯圖片: True" in line:
+            elif "樓梯圖片: True" in line or "地板圖片: True" in line:  # 🆕 地板圖片狀態顏色
                 color = (0, 255, 0)
-            elif "樓梯圖片: False" in line:
+            elif "樓梯圖片: False" in line or "地板圖片: False" in line:  # 🆕 地板圖片狀態顏色
                 color = (255, 255, 0)
             elif "已收集物品:" in line:
                 color = (255, 200, 100)
@@ -761,7 +780,10 @@ class Game:
             "按 [空白鍵] 開始遊戲",
             "",
             "📋 遊戲操作:",
-            "方向鍵 移動，空白鍵 互動，I 背包，M 地圖"
+            "方向鍵 移動，空白鍵 互動，I 背包，M 地圖",
+            "",
+            "🔧 除錯快捷鍵:",
+            "F8 重新載入地板圖片，F9 地板偵錯資訊"  # 🆕 新增地板快捷鍵說明
         ]
         
         # 計算總高度來實現垂直置中，並往上調一行
@@ -779,10 +801,10 @@ class Game:
                 if line.startswith("《"):
                     text_surface = font_manager.render_text(line, 36, (255, 255, 0))
                     line_spacing = 50
-                elif line.startswith("📋"):
+                elif line.startswith("📋") or line.startswith("🔧"):  # 🆕 除錯快捷鍵也用綠色
                     text_surface = font_manager.render_text(line, 24, (100, 255, 100))
                     line_spacing = 35
-                elif line.startswith("方向鍵"):
+                elif line.startswith("方向鍵") or line.startswith("F8"):  # 🆕 新快捷鍵說明
                     text_surface = font_manager.render_text(line, 20, (200, 200, 200))
                     line_spacing = 25
                 elif line.startswith("按"):
@@ -862,10 +884,11 @@ class Game:
 def main():
     """程式入口點"""
     try:
-        print("🎮 啟動《末世第二餐廳》(完整修復版)")
-        print("=" * 60)
+        print("🎮 啟動《末世第二餐廳》(完整修復版 + 地板圖片支援)")
+        print("=" * 70)
         print("💡 遊戲功能:")
         print("   ✅ 樓梯圖片支援 (F4重新載入)")
+        print("   ✅ 地板圖片支援 (F8重新載入) - 新功能！")
         print("   ✅ 物品收集系統修復 (F6除錯)")
         print("   ✅ 戰鬥系統完整")
         print("   ✅ UI互動修復")
@@ -879,12 +902,19 @@ def main():
         print("   F5 - 顯示樓梯除錯資訊")
         print("   F6 - 顯示物品除錯資訊")
         print("   F7 - 重置物品收集狀態")
+        print("   F8 - 重新載入地板圖片 (新功能！)")
+        print("   F9 - 顯示地板除錯資訊 (新功能！)")
         print("   ESC - 強制關閉所有UI")
         print("   I - 背包, M - 地圖, R - 重新開始(遊戲結束時)")
         print("")
         print("🪜 樓梯圖片路徑:")
-        print("   assets/images/stairs_up.png - 上樓梯圖片 (64x32)")
-        print("   assets/images/stairs_down.png - 下樓梯圖片 (64x32)")
+        print("   assets/images/stairs_up.png - 上樓梯圖片 (96x72)")
+        print("   assets/images/stairs_down.png - 下樓梯圖片 (96x72)")
+        print("")
+        print("🏢 地板圖片路徑 (新功能！):")
+        print("   assets/images/floor.png - 主要地板圖片 (會縮放到64x64)")
+        print("   assets/images/神饃.png - 備用地板圖片")
+        print("   assets/images/tile.png - 另一個備用選項")
         print("")
         print("📦 物品系統改進:")
         print("   - 醫療包和能量包不再重疊")
@@ -893,8 +923,14 @@ def main():
         print("   - 支援經驗值獎勵系統")
         print("   - 完整的物品追蹤和除錯")
         print("")
+        print("🎨 視覺改進:")
+        print("   - 支援自定義地板圖片")
+        print("   - 圖片載入失敗時自動回退到程式繪製")
+        print("   - 熱重載功能，可在遊戲中更新圖片")
+        print("   - 完整的除錯資訊顯示")
+        print("")
         print("🚀 準備啟動遊戲...")
-        print("=" * 60)
+        print("=" * 70)
         
         game = Game()
         game.run()
@@ -910,6 +946,8 @@ def main():
         print("2. 確認所有遊戲檔案都存在")
         print("3. 嘗試執行 setup_stairs.py 創建樓梯圖片")
         print("4. 檢查 assets 資料夾結構")
+        print("5. 確認地板圖片檔名是否為 'floor.png'")
+        print("6. 檢查圖片檔案格式是否正確 (建議使用PNG)")
     finally:
         try:
             pygame.quit()
