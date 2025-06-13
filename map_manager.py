@@ -32,7 +32,7 @@ class MapManager:
                 {"type": "shop", "id": "D", "name": "和食宣", "x": 100, "y": 200, "width": 80, "height": 60},
                 {"type": "shop", "id": "E", "name": "素怡沅", "x": 300, "y": 150, "width": 80, "height": 60},
                 {"type": "npc", "id": "npc2", "name": "受傷職員", "x": 200, "y": 300, "width": 30, "height": 30},
-                {"type": "stairs", "direction": "up", "x": 450, "y": 100, "width": 96, "height": 48, "target_floor": 3},    # 🆕 加大樓梯尺寸
+                {"type": "stairs", "direction": "up", "x": 450, "y": 90, "width": 96, "height": 48, "target_floor": 3},    # 🆕 加大樓梯尺寸
                 {"type": "stairs", "direction": "down", "x": 450, "y": 600, "width": 96, "height": 48, "target_floor": 1}  # 🆕 加大樓梯尺寸
             ],
             3: [  # 3樓
@@ -104,7 +104,7 @@ class MapManager:
                     # 🎨 保持原圖比例，縮放到合適大小
                     # 你可以調整這個目標尺寸來改變樓梯大小
                     target_width = 96  # 可以調整這個數值
-                    target_height = 60  # 可以調整這個數值
+                    target_height = 72  # 可以調整這個數值
                     
                     # 縮放到目標尺寸
                     image = pygame.transform.scale(image, (target_width, target_height))
