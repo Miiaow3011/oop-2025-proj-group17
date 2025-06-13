@@ -941,7 +941,7 @@ def main():
         print("   assets/images/tile.png - 另一個備用選項")
         print("")
         print("🏪 商店圖片路徑 (新功能！):")
-        print("   assets/images/711.png - 7-11商店圖片 (會縮放到120x90)")
+        print("   assets/images/711.png - 7-11商店圖片 (會縮放到135x101)")
         print("   assets/images/subway.png - Subway商店圖片 (會縮放到80x60)")
         print("   assets/images/coffee.png - 咖啡廳商店圖片 (會縮放到80x60)")
         print("")
