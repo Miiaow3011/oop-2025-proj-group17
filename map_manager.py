@@ -151,9 +151,9 @@ class MapManager:
                     
                     # 🎨 根據商店類型設定不同尺寸
                     if shop_type == "711":
-                        # 7-11 縮小到0.75倍：120x90像素
-                        target_width = 120
-                        target_height = 90
+                        # 7-11 再稍微放大一點：135x101像素
+                        target_width = 135
+                        target_height = 101
                     else:
                         # 其他商店維持原尺寸：80x60像素
                         target_width = 80
@@ -474,10 +474,10 @@ class MapManager:
         if shop_id == "A" and "711" in self.shop_sprites:  # 7-11
             sprite = self.shop_sprites["711"]
             # 7-11 圖片調整位置和大小
-            sprite_width = 120
-            sprite_height = 90
-            # 計算位置：置中但往右移動15像素
-            x_offset = (shop["width"] - sprite_width) // 2 + 15  # 往右移15像素
+            sprite_width = 135
+            sprite_height = 101
+            # 計算位置：置中但往右移動30像素（15+15）
+            x_offset = (shop["width"] - sprite_width) // 2 + 30  # 往右移30像素
             y_offset = (shop["height"] - sprite_height) // 2
             draw_x = shop["x"] + x_offset
             draw_y = shop["y"] + y_offset
@@ -513,8 +513,8 @@ class MapManager:
         """🆕 渲染商店名稱"""
         # 🎨 針對7-11調整文字位置
         if shop["id"] == "A":  # 7-11
-            # 文字位置：稍微往下調整，配合圖片大小
-            text_y = shop["y"] + shop["height"]//2 + 10  # 往下調10像素
+            # 文字位置：往下調整40像素（10+30）
+            text_y = shop["y"] + shop["height"]//2 + 40  # 往下調40像素
         else:
             # 其他商店維持原位置
             text_y = shop["y"] + shop["height"]//2
