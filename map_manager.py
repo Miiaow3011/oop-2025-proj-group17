@@ -371,7 +371,8 @@ class MapManager:
                 if x < 1024 and y < 768:
                     screen.blit(floor_sprite, (x, y))
 
-        print(f"🎨 使用圖片渲染地板: {cols}x{rows} 磚塊")
+        # 移除這行煩人的除錯輸出
+        # print(f"🎨 使用圖片渲染地板: {cols}x{rows} 磚塊")
 
     def render_floor_with_code(self, screen):
         """🆕 使用程式繪製地板（備用方法）"""
