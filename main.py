@@ -124,6 +124,14 @@ class Game:
                     # 🆕 F9: 地板偵錯資訊
                     self.map_manager.debug_print_floor_info()
                     continue
+                elif event.key == pygame.K_F10:
+                    # 🆕 F10: 重新載入商店圖片
+                    self.reload_shop_images()
+                    continue
+                elif event.key == pygame.K_F11:
+                    # 🆕 F11: 商店圖片偵錯資訊
+                    self.map_manager.debug_print_shop_info()
+                    continue
                 
                 # ======= 狀態專用事件處理 =======
                 if self.show_intro:
@@ -150,6 +158,14 @@ class Game:
         if self.debug_mode:
             self.map_manager.debug_print_floor_info()
         self.ui.show_message("地板圖片已重新載入！")
+
+    def reload_shop_images(self):
+        """🆕 重新載入商店圖片"""
+        print("🔄 手動重新載入商店圖片...")
+        self.map_manager.reload_shop_images()
+        if self.debug_mode:
+            self.map_manager.debug_print_shop_info()
+        self.ui.show_message("商店圖片已重新載入！")
 
     def handle_inventory_toggle(self):
         """處理背包切換 - 修復版"""
@@ -737,6 +753,7 @@ class Game:
             f"對話: {self.ui.dialogue_active}",
             f"樓梯圖片: {self.map_manager.use_sprites}",
             f"地板圖片: {self.map_manager.use_floor_sprites}",  # 🆕 新增地板狀態
+            f"商店圖片: {self.map_manager.use_shop_sprites}",  # 🆕 新增商店圖片狀態
             f"已收集物品: {len(self.map_manager.collected_items)}"
         ]
         
@@ -748,7 +765,12 @@ class Game:
                 color = (0, 255, 0)
             elif "樓梯圖片: False" in line or "地板圖片: False" in line:  # 🆕 地板圖片狀態顏色
                 color = (255, 255, 0)
+            elif "商店圖片: True" in line:  # 🆕 商店圖片狀態顏色
+                color = (0, 255, 0)
+            elif "商店圖片: False" in line:  # 🆕 商店圖片狀態顏色
+                color = (255, 255, 0)
             elif "已收集物品:" in line:
+                color = (255, 200, 100)
                 color = (255, 200, 100)
             elif self.ui.is_any_ui_open() and "UI開啟: True" in line:
                 color = (255, 255, 100)
@@ -783,7 +805,7 @@ class Game:
             "方向鍵 移動，空白鍵 互動，I 背包，M 地圖",
             "",
             "🔧 除錯快捷鍵:",
-            "F8 重新載入地板圖片，F9 地板偵錯資訊"  # 🆕 新增地板快捷鍵說明
+            "F8 地板圖片，F9 地板除錯，F10 商店圖片，F11 商店除錯"  # 🆕 完整的快捷鍵說明
         ]
         
         # 計算總高度來實現垂直置中，並往上調一行
@@ -904,6 +926,8 @@ def main():
         print("   F7 - 重置物品收集狀態")
         print("   F8 - 重新載入地板圖片 (新功能！)")
         print("   F9 - 顯示地板除錯資訊 (新功能！)")
+        print("   F10 - 重新載入商店圖片 (新功能！)")
+        print("   F11 - 顯示商店圖片除錯資訊 (新功能！)")
         print("   ESC - 強制關閉所有UI")
         print("   I - 背包, M - 地圖, R - 重新開始(遊戲結束時)")
         print("")
@@ -911,10 +935,15 @@ def main():
         print("   assets/images/stairs_up.png - 上樓梯圖片 (96x72)")
         print("   assets/images/stairs_down.png - 下樓梯圖片 (96x72)")
         print("")
-        print("🏢 地板圖片路徑 (新功能！):")
+        print("🏢 地板圖片路徑:")
         print("   assets/images/floor.png - 主要地板圖片 (會縮放到64x64)")
         print("   assets/images/神饃.png - 備用地板圖片")
         print("   assets/images/tile.png - 另一個備用選項")
+        print("")
+        print("🏪 商店圖片路徑 (新功能！):")
+        print("   assets/images/711.png - 7-11商店圖片 (會縮放到80x60)")
+        print("   assets/images/subway.png - Subway商店圖片")
+        print("   assets/images/coffee.png - 咖啡廳商店圖片")
         print("")
         print("📦 物品系統改進:")
         print("   - 醫療包和能量包不再重疊")
