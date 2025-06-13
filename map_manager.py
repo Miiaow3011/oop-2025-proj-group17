@@ -149,9 +149,16 @@ class MapManager:
                     original_size = image.get_size()
                     print(f"   原始商店圖片尺寸: {original_size}")
                     
-                    # 🎨 縮放到商店大小（80x60像素）
-                    target_width = 80
-                    target_height = 60
+                    # 🎨 根據商店類型設定不同尺寸
+                    if shop_type == "711":
+                        # 7-11 放大一倍：160x120像素
+                        target_width = 160
+                        target_height = 120
+                    else:
+                        # 其他商店維持原尺寸：80x60像素
+                        target_width = 80
+                        target_height = 60
+                    
                     image = pygame.transform.scale(image, (target_width, target_height))
                     self.shop_sprites[shop_type] = image
                     print(f"✅ 成功載入商店圖片: {shop_type} - {path}")
@@ -466,14 +473,26 @@ class MapManager:
         sprite = None
         if shop_id == "A" and "711" in self.shop_sprites:  # 7-11
             sprite = self.shop_sprites["711"]
+            # 7-11 圖片放大了，需要調整位置讓它置中
+            sprite_width = 160
+            sprite_height = 120
+            # 計算置中位置
+            x_offset = (shop["width"] - sprite_width) // 2
+            y_offset = (shop["height"] - sprite_height) // 2
+            draw_x = shop["x"] + x_offset
+            draw_y = shop["y"] + y_offset
         elif shop_name == "Subway" and "subway" in self.shop_sprites:
             sprite = self.shop_sprites["subway"]
+            draw_x = shop["x"]
+            draw_y = shop["y"]
         elif shop_name == "咖啡廳" and "coffee" in self.shop_sprites:
             sprite = self.shop_sprites["coffee"]
+            draw_x = shop["x"]
+            draw_y = shop["y"]
         
         if sprite:
             # 繪製商店圖片
-            screen.blit(sprite, (shop["x"], shop["y"]))
+            screen.blit(sprite, (draw_x, draw_y))
             return True
         
         return False
@@ -492,9 +511,16 @@ class MapManager:
     
     def render_shop_name(self, screen, shop):
         """🆕 渲染商店名稱"""
+        # 🎨 針對7-11調整文字位置
+        if shop["id"] == "A":  # 7-11
+            # 文字往下調整，因為圖片變大了
+            text_y = shop["y"] + shop["height"]//2 + 25  # 往下調25像素
+        else:
+            # 其他商店維持原位置
+            text_y = shop["y"] + shop["height"]//2
+        
         name_surface = font_manager.render_text(shop["name"], 18, (255, 255, 255))
-        name_rect = name_surface.get_rect(center=(shop["x"] + shop["width"]//2,
-                                                shop["y"] + shop["height"]//2))
+        name_rect = name_surface.get_rect(center=(shop["x"] + shop["width"]//2, text_y))
         
         # 名稱背景（讓文字更清楚）
         bg_rect = name_rect.copy()
