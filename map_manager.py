@@ -16,6 +16,10 @@ class MapManager:
         self.stairs_sprites = {}
         self.load_stairs_images()
         
+        # 🆕 商店圖片
+        self.shop_sprites = {}
+        self.load_shop_images()
+        
         # 樓層地圖數據
         self.floor_maps = {
             1: self.create_floor_1(),
@@ -126,6 +130,42 @@ class MapManager:
                 print(f"   - {path}")
         else:
             print(f"🎨 成功載入地板圖片！使用圖片渲染地板")
+    
+    def load_shop_images(self):
+        """🆕 載入商店圖片"""
+        shop_paths = {
+            "711": "assets/images/711.png",  # 你的7-11圖片
+            "subway": "assets/images/subway.png",  # 可選的Subway圖片
+            "coffee": "assets/images/coffee.png"  # 可選的咖啡廳圖片
+        }
+        
+        print("🏪 載入商店圖片...")
+        
+        for shop_type, path in shop_paths.items():
+            if os.path.exists(path):
+                try:
+                    # 載入商店圖片
+                    image = pygame.image.load(path).convert_alpha()
+                    original_size = image.get_size()
+                    print(f"   原始商店圖片尺寸: {original_size}")
+                    
+                    # 🎨 縮放到商店大小（80x60像素）
+                    target_width = 80
+                    target_height = 60
+                    image = pygame.transform.scale(image, (target_width, target_height))
+                    self.shop_sprites[shop_type] = image
+                    print(f"✅ 成功載入商店圖片: {shop_type} - {path}")
+                    print(f"   縮放後尺寸: {target_width}x{target_height}")
+                except Exception as e:
+                    print(f"❌ 載入商店圖片失敗: {shop_type} - {e}")
+        
+        # 檢查是否成功載入商店圖片
+        self.use_shop_sprites = len(self.shop_sprites) > 0
+        
+        if not self.use_shop_sprites:
+            print("📦 未找到商店圖片，將使用程式繪製商店")
+        else:
+            print(f"🎨 成功載入 {len(self.shop_sprites)} 個商店圖片")
     
     def load_stairs_images(self):
         """載入樓梯圖片"""
@@ -408,7 +448,38 @@ class MapManager:
                 self.render_stairs(screen, interaction)
 
     def render_shop(self, screen, shop):
-        """渲染商店"""
+        """渲染商店 - 支援圖片和程式繪製"""
+        # 🎨 優先使用圖片渲染
+        if self.use_shop_sprites and self.render_shop_with_sprite(screen, shop):
+            # 圖片渲染成功，添加商店名稱
+            self.render_shop_name(screen, shop)
+        else:
+            # 備用：程式繪製
+            self.render_shop_with_code(screen, shop)
+    
+    def render_shop_with_sprite(self, screen, shop):
+        """🆕 使用圖片渲染商店"""
+        shop_id = shop["id"]
+        shop_name = shop["name"]
+        
+        # 根據商店名稱或ID選擇對應圖片
+        sprite = None
+        if shop_id == "A" and "711" in self.shop_sprites:  # 7-11
+            sprite = self.shop_sprites["711"]
+        elif shop_name == "Subway" and "subway" in self.shop_sprites:
+            sprite = self.shop_sprites["subway"]
+        elif shop_name == "咖啡廳" and "coffee" in self.shop_sprites:
+            sprite = self.shop_sprites["coffee"]
+        
+        if sprite:
+            # 繪製商店圖片
+            screen.blit(sprite, (shop["x"], shop["y"]))
+            return True
+        
+        return False
+    
+    def render_shop_with_code(self, screen, shop):
+        """🆕 程式繪製商店（備用方法）"""
         # 商店背景
         shop_color = (100, 150, 200)
         pygame.draw.rect(screen, shop_color,
@@ -417,9 +488,21 @@ class MapManager:
                         (shop["x"], shop["y"], shop["width"], shop["height"]), 2)
 
         # 商店名稱
+        self.render_shop_name(screen, shop)
+    
+    def render_shop_name(self, screen, shop):
+        """🆕 渲染商店名稱"""
         name_surface = font_manager.render_text(shop["name"], 18, (255, 255, 255))
         name_rect = name_surface.get_rect(center=(shop["x"] + shop["width"]//2,
                                                 shop["y"] + shop["height"]//2))
+        
+        # 名稱背景（讓文字更清楚）
+        bg_rect = name_rect.copy()
+        bg_rect.inflate(8, 4)
+        bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+        bg_surface.fill((0, 0, 0, 150))
+        screen.blit(bg_surface, bg_rect)
+        
         screen.blit(name_surface, name_rect)
 
     def render_npc(self, screen, npc):
@@ -747,6 +830,12 @@ class MapManager:
         print("🔄 重新載入地板圖片...")
         self.floor_sprites.clear()
         self.load_floor_images()
+    
+    def reload_shop_images(self):
+        """🆕 重新載入商店圖片（用於熱更新）"""
+        print("🔄 重新載入商店圖片...")
+        self.shop_sprites.clear()
+        self.load_shop_images()
 
     def get_stairs_info(self, floor=None):
         """獲取樓梯資訊"""
@@ -794,6 +883,17 @@ class MapManager:
                 if sprite:
                     size = sprite.get_size()
                     print(f"     - {floor_type}: {size[0]}x{size[1]} 像素")
+    
+    def debug_print_shop_info(self):
+        """🆕 除錯：印出商店圖片資訊"""
+        print("🏪 商店圖片偵錯資訊:")
+        print(f"   使用圖片渲染: {self.use_shop_sprites}")
+        print(f"   載入的商店圖片: {list(self.shop_sprites.keys())}")
+        if self.use_shop_sprites:
+            for shop_type, sprite in self.shop_sprites.items():
+                if sprite:
+                    size = sprite.get_size()
+                    print(f"     - {shop_type}: {size[0]}x{size[1]} 像素")
 
     def get_available_items(self, floor=None):
         """🆕 獲取可用物品列表"""
