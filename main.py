@@ -1,4 +1,4 @@
-# 末世第二餐廳 - main.py
+# 末世第二餐廳 - main.py (完整修復版 + 地板圖片支援)
 import pygame
 import sys
 import time
@@ -54,9 +54,14 @@ class Game:
         
         # 除錯模式
         self.debug_mode = False
+        
+        # 🪜 樓梯圖片偵錯資訊
+        if self.debug_mode:
+            self.map_manager.debug_print_stairs()
+            self.map_manager.debug_print_floor_info()  # 🆕 新增地板偵錯
 
     def handle_events(self):
-        """修復版事件處理 - 解決UI卡住問題"""
+        """修復版事件處理 - 整合所有功能"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
@@ -94,6 +99,39 @@ class Game:
                 elif event.key == pygame.K_F3:
                     self.reset_player_position()
                     continue
+                elif event.key == pygame.K_F4:
+                    # 🪜 F4: 重新載入樓梯圖片
+                    self.reload_stairs_images()
+                    continue
+                elif event.key == pygame.K_F5:
+                    # F5: 樓梯偵錯資訊
+                    self.map_manager.debug_print_stairs()
+                    continue
+                elif event.key == pygame.K_F6:
+                    # 🆕 F6: 物品偵錯資訊
+                    self.map_manager.debug_print_items()
+                    continue
+                elif event.key == pygame.K_F7:
+                    # 🆕 F7: 重置物品收集狀態
+                    self.map_manager.reset_items()
+                    self.ui.show_message("已重置所有物品收集狀態")
+                    continue
+                elif event.key == pygame.K_F8:
+                    # 🆕 F8: 重新載入地板圖片
+                    self.reload_floor_images()
+                    continue
+                elif event.key == pygame.K_F9:
+                    # 🆕 F9: 地板偵錯資訊
+                    self.map_manager.debug_print_floor_info()
+                    continue
+                elif event.key == pygame.K_F10:
+                    # 🆕 F10: 重新載入商店圖片
+                    self.reload_shop_images()
+                    continue
+                elif event.key == pygame.K_F11:
+                    # 🆕 F11: 商店圖片偵錯資訊
+                    self.map_manager.debug_print_shop_info()
+                    continue
                 
                 # ======= 狀態專用事件處理 =======
                 if self.show_intro:
@@ -105,6 +143,29 @@ class Game:
                     self.handle_combat_input(event)
                 elif self.game_state.current_state == "dialogue":
                     self.handle_dialogue_input(event)
+
+    def reload_stairs_images(self):
+        """重新載入樓梯圖片"""
+        print("🔄 手動重新載入樓梯圖片...")
+        self.map_manager.reload_stairs_images()
+        if self.debug_mode:
+            self.map_manager.debug_print_stairs()
+
+    def reload_floor_images(self):
+        """🆕 重新載入地板圖片"""
+        print("🔄 手動重新載入地板圖片...")
+        self.map_manager.reload_floor_images()
+        if self.debug_mode:
+            self.map_manager.debug_print_floor_info()
+        self.ui.show_message("地板圖片已重新載入！")
+
+    def reload_shop_images(self):
+        """🆕 重新載入商店圖片"""
+        print("🔄 手動重新載入商店圖片...")
+        self.map_manager.reload_shop_images()
+        if self.debug_mode:
+            self.map_manager.debug_print_shop_info()
+        self.ui.show_message("商店圖片已重新載入！")
 
     def handle_inventory_toggle(self):
         """處理背包切換 - 修復版"""
@@ -173,11 +234,14 @@ class Game:
             print(f"   玩家移動: {self.player.is_moving}")
 
     def toggle_debug_mode(self):
-        """切換除錯模式"""
+        """切換除錯模式 - 增強版"""
         self.debug_mode = not self.debug_mode
         print(f"🔧 除錯模式: {'開啟' if self.debug_mode else '關閉'}")
         if self.debug_mode:
             self.print_debug_info()
+            self.map_manager.debug_print_stairs()
+            self.map_manager.debug_print_items()  # 新增物品除錯資訊
+            self.map_manager.debug_print_floor_info()  # 🆕 新增地板除錯資訊
 
     def print_debug_info(self):
         """顯示除錯資訊"""
@@ -186,6 +250,7 @@ class Game:
         print(f"   UI狀態: {self.ui.get_ui_status()}")
         print(f"   玩家位置: ({self.player.x}, {self.player.y})")
         print(f"   玩家移動: {self.player.is_moving}")
+        print(f"   當前樓層: {self.map_manager.current_floor}")
 
     def reset_player_position(self):
         """重置玩家位置"""
@@ -388,6 +453,18 @@ class Game:
         
         # 檢查玩家附近是否有可互動物件
         current_floor = self.map_manager.get_current_floor()
+        
+        # 🔧 修復：優先檢查物品收集
+        item_pickup = self.map_manager.check_item_pickup(
+            self.player.x, self.player.y, current_floor
+        )
+        
+        if item_pickup:
+            self.collect_item_new(item_pickup)
+            self.last_interaction_time = current_time
+            return
+        
+        # 然後檢查其他互動物件
         interaction = self.map_manager.check_interaction(
             self.player.x, self.player.y, current_floor
         )
@@ -406,11 +483,90 @@ class Game:
                 self.start_npc_dialogue(interaction)
             elif interaction["type"] == "stairs":
                 self.use_stairs(interaction)
-            elif interaction["type"] == "item":
-                self.collect_item(interaction)
         else:
             if self.debug_mode:
                 print("❌ 附近沒有可互動的物件")
+
+    def collect_item_new(self, item_pickup):
+        """🆕 新的物品收集方法"""
+        item = item_pickup["item"]
+        item_id = item_pickup["item_id"]
+        
+        if self.debug_mode:
+            print(f"📦 收集物品: {item['name']} (ID: {item_id})")
+        
+        # 嘗試添加到背包
+        success = self.inventory.add_item(item)
+        
+        if success:
+            # 標記為已收集
+            self.map_manager.collect_item(item_id)
+            
+            # 根據物品類型顯示不同訊息
+            if item["type"] == "healing":
+                self.ui.show_message(f"獲得了 {item['name']}！回復 {item.get('value', 0)} 血量")
+            elif item["type"] == "key":
+                self.ui.show_message(f"獲得了 {item['name']}！這看起來很重要")
+                # 設定UI標記（如果需要的話）
+                if item["name"] == "鑰匙卡":
+                    self.ui.has_keycard = True
+            elif item["type"] == "special":
+                self.ui.show_message(f"🎉 獲得了 {item['name']}！這可能是關鍵物品！")
+                if item["name"] == "解藥":
+                    self.ui.has_antidote = True
+                    self.ui.show_message("🎊 恭喜！你找到了拯救世界的解藥！")
+            elif item["type"] == "clue":
+                self.ui.show_message(f"獲得了 {item['name']}！這提供了重要線索")
+            else:
+                self.ui.show_message(f"獲得了 {item['name']}！")
+            
+            # 給予經驗值獎勵
+            exp_reward = self.get_item_exp_reward(item)
+            if exp_reward > 0:
+                self.game_state.add_exp(exp_reward)
+                if self.debug_mode:
+                    print(f"🎯 收集物品獲得 {exp_reward} 經驗值")
+            
+            if self.debug_mode:
+                print(f"✅ 成功收集: {item['name']}")
+                print(f"   背包物品數: {len(self.inventory.get_items())}")
+                print(f"   玩家經驗: {self.game_state.player_stats['exp']}")
+                
+        else:
+            self.ui.show_message("背包已滿！無法收集更多物品")
+            if self.debug_mode:
+                print(f"❌ 背包已滿，無法收集: {item['name']}")
+
+    def get_item_exp_reward(self, item):
+        """🆕 根據物品類型計算經驗值獎勵"""
+        exp_rewards = {
+            "healing": 5,
+            "key": 20,
+            "special": 50,
+            "clue": 15
+        }
+        return exp_rewards.get(item["type"], 3)
+
+    def collect_item(self, item_info):
+        """舊的物品收集方法（保持兼容性）"""
+        if self.debug_mode:
+            print(f"📦 使用舊版收集方法: {item_info}")
+        
+        # 如果是新格式，轉換為舊格式處理
+        if "item" in item_info and "item_id" in item_info:
+            self.collect_item_new(item_info)
+        else:
+            # 舊格式處理
+            success = self.inventory.add_item(item_info["item"])
+            if success:
+                self.ui.show_message(f"獲得了 {item_info['item']['name']}")
+                self.map_manager.remove_item(item_info["item"])
+                if self.debug_mode:
+                    print(f"✅ 成功收集: {item_info['item']['name']}")
+            else:
+                self.ui.show_message("背包已滿！")
+                if self.debug_mode:
+                    print(f"❌ 背包已滿，無法收集: {item_info['item']['name']}")
 
     def start_shop_interaction(self, shop_info):
         if self.debug_mode:
@@ -439,25 +595,30 @@ class Game:
         self.ui.start_dialogue(npc_info)
 
     def use_stairs(self, stairs_info):
+        """使用樓梯 - 增強版"""
         if self.debug_mode:
-            print(f"🪜 使用樓梯: {stairs_info['direction']}")
+            print(f"🪜 使用樓梯: {stairs_info}")
         
         direction = stairs_info["direction"]
         current_floor = self.map_manager.current_floor
+        target_floor = stairs_info.get("target_floor")
+        
+        if self.debug_mode:
+            print(f"   方向: {direction}, 當前樓層: {current_floor}, 目標樓層: {target_floor}")
         
         if direction == "up":
-            if current_floor == 1:
+            if current_floor == 1 and target_floor == 2:
                 # 1樓到2樓：自由通行
                 self.map_manager.change_floor(2)
-                self.player.set_position(400, 600)  # 樓梯底部
+                self.player.set_position(450, 600)  # 樓梯底部
                 if self.debug_mode:
                     print("⬆️ 上樓到 2 樓")
                 self.ui.show_message("來到了二樓")
-            elif current_floor == 2:
+            elif current_floor == 2 and target_floor == 3:
                 # 2樓到3樓：需要鑰匙卡
-                if self.game_state.get_flag("has_keycard") or self.inventory.has_item("鑰匙卡"):
+                if self.game_state.get_flag("has_keycard") or self.inventory.has_item("鑰匙卡") or self.ui.has_keycard:
                     self.map_manager.change_floor(3)
-                    self.player.set_position(400, 600)
+                    self.player.set_position(450, 600)
                     if self.debug_mode:
                         print("⬆️ 使用鑰匙卡上樓到 3 樓")
                     self.ui.show_message("🗝️ 使用鑰匙卡進入三樓！")
@@ -469,43 +630,27 @@ class Game:
                     self.ui.show_message("❌ 需要鑰匙卡才能進入三樓！")
             else:
                 if self.debug_mode:
-                    print("🚫 已經在最高樓層")
+                    print("🚫 已經在最高樓層或無效目標")
                 self.ui.show_message("已經是最高樓層了")
         elif direction == "down":
-            if current_floor == 3:
+            if current_floor == 3 and target_floor == 2:
                 # 3樓到2樓
                 self.map_manager.change_floor(2)
-                self.player.set_position(400, 100)  # 樓梯頂部
+                self.player.set_position(450, 100)  # 樓梯頂部
                 if self.debug_mode:
                     print("⬇️ 下樓到 2 樓")
                 self.ui.show_message("回到了二樓")
-            elif current_floor == 2:
+            elif current_floor == 2 and target_floor == 1:
                 # 2樓到1樓
                 self.map_manager.change_floor(1)
-                self.player.set_position(400, 100)
+                self.player.set_position(450, 100)
                 if self.debug_mode:
                     print("⬇️ 下樓到 1 樓")
                 self.ui.show_message("回到了一樓")
             else:
                 if self.debug_mode:
-                    print("🚫 已經在最低樓層")
+                    print("🚫 已經在最低樓層或無效目標")
                 self.ui.show_message("已經是最低樓層了")
-
-    def collect_item(self, item_info):
-        if self.debug_mode:
-            print(f"📦 收集物品: {item_info['item']['name']}")
-        
-        success = self.inventory.add_item(item_info["item"])
-        if success:
-            self.ui.show_message(f"獲得了 {item_info['item']['name']}")
-            # 從地圖上移除物品
-            self.map_manager.remove_item(item_info["item"])
-            if self.debug_mode:
-                print(f"✅ 成功收集: {item_info['item']['name']}")
-        else:
-            self.ui.show_message("背包已滿！")
-            if self.debug_mode:
-                print(f"❌ 背包已滿，無法收集: {item_info['item']['name']}")
 
     def start_combat_in_zone(self, combat_zone):
         """在戰鬥區域開始戰鬥"""
@@ -592,7 +737,7 @@ class Game:
 
     def render_debug_info(self):
         """渲染除錯資訊"""
-        debug_rect = pygame.Rect(10, 300, 250, 120)
+        debug_rect = pygame.Rect(10, 300, 300, 180)  # 🆕 增加高度以容納地板資訊
         pygame.draw.rect(self.screen, (0, 0, 0, 180), debug_rect)
         pygame.draw.rect(self.screen, (0, 255, 255), debug_rect, 1)
         
@@ -601,16 +746,32 @@ class Game:
             f"遊戲狀態: {self.game_state.current_state}",
             f"玩家位置: ({self.player.x}, {self.player.y})",
             f"玩家移動: {self.player.is_moving}",
+            f"當前樓層: {self.map_manager.current_floor}",
             f"任何UI開啟: {self.ui.is_any_ui_open()}",
             f"背包: {self.ui.show_inventory}",
             f"地圖: {self.ui.show_map}",
-            f"對話: {self.ui.dialogue_active}"
+            f"對話: {self.ui.dialogue_active}",
+            f"樓梯圖片: {self.map_manager.use_sprites}",
+            f"地板圖片: {self.map_manager.use_floor_sprites}",  # 🆕 新增地板狀態
+            f"商店圖片: {self.map_manager.use_shop_sprites}",  # 🆕 新增商店圖片狀態
+            f"已收集物品: {len(self.map_manager.collected_items)}"
         ]
         
         y_offset = 305
         for line in debug_lines:
             if "True" in line and ("移動" in line or "開啟" in line):
                 color = (255, 100, 100)
+            elif "樓梯圖片: True" in line or "地板圖片: True" in line:  # 🆕 地板圖片狀態顏色
+                color = (0, 255, 0)
+            elif "樓梯圖片: False" in line or "地板圖片: False" in line:  # 🆕 地板圖片狀態顏色
+                color = (255, 255, 0)
+            elif "商店圖片: True" in line:  # 🆕 商店圖片狀態顏色
+                color = (0, 255, 0)
+            elif "商店圖片: False" in line:  # 🆕 商店圖片狀態顏色
+                color = (255, 255, 0)
+            elif "已收集物品:" in line:
+                color = (255, 200, 100)
+                color = (255, 200, 100)
             elif self.ui.is_any_ui_open() and "UI開啟: True" in line:
                 color = (255, 255, 100)
             else:
@@ -641,26 +802,48 @@ class Game:
             "按 [空白鍵] 開始遊戲",
             "",
             "📋 遊戲操作:",
-            "方向鍵移動，空白鍵互動，I背包，M地圖",
-            "ESC強制關閉UI，F1除錯模式，F2重置狀態"
+            "方向鍵 移動，空白鍵 互動，I 背包，M 地圖",
+            "",
+            "🔧 除錯快捷鍵:",
+            "F8 地板圖片，F9 地板除錯，F10 商店圖片，F11 商店除錯"  # 🆕 完整的快捷鍵說明
         ]
         
-        y_offset = 30
+        # 計算總高度來實現垂直置中，並往上調一行
+        total_lines = len([line for line in intro_text if line])  # 非空行數
+        line_height = 32  # 平均行高
+        total_height = total_lines * line_height
+        
+        # 垂直置中起始位置，往上調兩行 (減少64像素)
+        start_y = (self.SCREEN_HEIGHT - total_height) // 2 - 64
+        y_offset = start_y
+        
         for line in intro_text:
             if line:
+                # 根據內容類型設定字體大小和顏色
                 if line.startswith("《"):
-                    text_surface = font_manager.render_text(line, 28, (255, 255, 0))
-                elif line.startswith("📋"):
-                    text_surface = font_manager.render_text(line, 22, (100, 255, 100))
-                elif line.startswith("方向鍵") or line.startswith("ESC"):
-                    text_surface = font_manager.render_text(line, 18, (200, 200, 200))
+                    text_surface = font_manager.render_text(line, 36, (255, 255, 0))
+                    line_spacing = 50
+                elif line.startswith("📋") or line.startswith("🔧"):  # 🆕 除錯快捷鍵也用綠色
+                    text_surface = font_manager.render_text(line, 24, (100, 255, 100))
+                    line_spacing = 35
+                elif line.startswith("方向鍵") or line.startswith("F8"):  # 🆕 新快捷鍵說明
+                    text_surface = font_manager.render_text(line, 20, (200, 200, 200))
+                    line_spacing = 25
+                elif line.startswith("按"):
+                    text_surface = font_manager.render_text(line, 26, (255, 255, 100))
+                    line_spacing = 40
                 else:
-                    text_surface = font_manager.render_text(line, 24, (255, 255, 255))
+                    text_surface = font_manager.render_text(line, 22, (255, 255, 255))
+                    line_spacing = 28
                 
+                # 水平置中
                 text_rect = text_surface.get_rect(center=(self.SCREEN_WIDTH//2, y_offset))
                 self.screen.blit(text_surface, text_rect)
-            
-            y_offset += 25 if line.startswith("方向鍵") or line.startswith("ESC") else 30
+                
+                y_offset += line_spacing
+            else:
+                # 空行增加間距
+                y_offset += 15
 
     def run(self):
         while self.running:
@@ -700,12 +883,17 @@ class Game:
         
         # 重置其他組件
         self.map_manager.current_floor = 1
+        self.map_manager.reset_items()  # 🆕 重置物品收集狀態
         self.inventory = Inventory()  # 重新創建背包
         
         # 重置UI狀態
         self.ui.show_inventory = False
         self.ui.show_map = False
         self.ui.dialogue_active = False
+        self.ui.has_keycard = False  # 🆕 重置特殊物品標記
+        self.ui.has_antidote = False
+        self.ui.game_completed = False
+        self.ui.game_over = False
         
         # 重新設定玩家參考（重要！）
         self.ui.set_player_reference(self.player)
@@ -718,11 +906,60 @@ class Game:
 def main():
     """程式入口點"""
     try:
-        print("🎮 啟動《末世第二餐廳》(修復版)")
-        print("💡 提示:")
+        print("🎮 啟動《末世第二餐廳》(完整修復版 + 地板圖片支援)")
+        print("=" * 70)
+        print("💡 遊戲功能:")
+        print("   ✅ 樓梯圖片支援 (F4重新載入)")
+        print("   ✅ 地板圖片支援 (F8重新載入) - 新功能！")
+        print("   ✅ 物品收集系統修復 (F6除錯)")
+        print("   ✅ 戰鬥系統完整")
+        print("   ✅ UI互動修復")
+        print("   ✅ 中文字體支援")
+        print("")
+        print("🎯 快捷鍵說明:")
         print("   F1 - 開啟/關閉除錯模式")
+        print("   F2 - 強制重置遊戲狀態")
+        print("   F3 - 重置玩家位置")
+        print("   F4 - 重新載入樓梯圖片")
+        print("   F5 - 顯示樓梯除錯資訊")
+        print("   F6 - 顯示物品除錯資訊")
+        print("   F7 - 重置物品收集狀態")
+        print("   F8 - 重新載入地板圖片 (新功能！)")
+        print("   F9 - 顯示地板除錯資訊 (新功能！)")
+        print("   F10 - 重新載入商店圖片 (新功能！)")
+        print("   F11 - 顯示商店圖片除錯資訊 (新功能！)")
         print("   ESC - 強制關閉所有UI")
-        print("   如果移動卡住，按ESC後再試")
+        print("   I - 背包, M - 地圖, R - 重新開始(遊戲結束時)")
+        print("")
+        print("🪜 樓梯圖片路徑:")
+        print("   assets/images/stairs_up.png - 上樓梯圖片 (96x72)")
+        print("   assets/images/stairs_down.png - 下樓梯圖片 (96x72)")
+        print("")
+        print("🏢 地板圖片路徑:")
+        print("   assets/images/floor.png - 主要地板圖片 (會縮放到64x64)")
+        print("   assets/images/神饃.png - 備用地板圖片")
+        print("   assets/images/tile.png - 另一個備用選項")
+        print("")
+        print("🏪 商店圖片路徑 (新功能！):")
+        print("   assets/images/711.png - 7-11商店圖片 (會縮放到135x101)")
+        print("   assets/images/subway.png - Subway商店圖片 (會縮放到80x60)")
+        print("   assets/images/coffee.png - 咖啡廳商店圖片 (會縮放到80x60)")
+        print("")
+        print("📦 物品系統改進:")
+        print("   - 醫療包和能量包不再重疊")
+        print("   - 每種物品有獨特的視覺效果")
+        print("   - 收集後立即從地圖消失")
+        print("   - 支援經驗值獎勵系統")
+        print("   - 完整的物品追蹤和除錯")
+        print("")
+        print("🎨 視覺改進:")
+        print("   - 支援自定義地板圖片")
+        print("   - 圖片載入失敗時自動回退到程式繪製")
+        print("   - 熱重載功能，可在遊戲中更新圖片")
+        print("   - 完整的除錯資訊顯示")
+        print("")
+        print("🚀 準備啟動遊戲...")
+        print("=" * 70)
         
         game = Game()
         game.run()
@@ -733,6 +970,13 @@ def main():
         print(f"💥 遊戲發生錯誤: {e}")
         import traceback
         traceback.print_exc()
+        print("\n🔧 除錯建議:")
+        print("1. 檢查是否安裝了 pygame")
+        print("2. 確認所有遊戲檔案都存在")
+        print("3. 嘗試執行 setup_stairs.py 創建樓梯圖片")
+        print("4. 檢查 assets 資料夾結構")
+        print("5. 確認地板圖片檔名是否為 'floor.png'")
+        print("6. 檢查圖片檔案格式是否正確 (建議使用PNG)")
     finally:
         try:
             pygame.quit()
