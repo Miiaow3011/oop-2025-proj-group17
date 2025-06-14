@@ -151,9 +151,13 @@ class MapManager:
                     
                     # 🎨 根據商店類型設定不同尺寸
                     if shop_type == "711":
-                        # 7-11 再稍微放大一點：135x101像素
-                        target_width = 135
-                        target_height = 101
+                        # 7-11 調小一點：100x75像素
+                        target_width = 110
+                        target_height = 90
+                    elif shop_type == "subway":
+                        # Subway 調大一點：110x82像素
+                        target_width = 100
+                        target_height = 78
                     else:
                         # 其他商店維持原尺寸：80x60像素
                         target_width = 80
@@ -511,13 +515,9 @@ class MapManager:
     
     def render_shop_name(self, screen, shop):
         """🆕 渲染商店名稱"""
-        # 🎨 針對7-11調整文字位置
-        if shop["id"] == "A":  # 7-11
-            # 文字位置：往下調整40像素（10+30）
-            text_y = shop["y"] + shop["height"]//2 + 40  # 往下調40像素
-        else:
+    
             # 其他商店維持原位置
-            text_y = shop["y"] + shop["height"]//2
+        text_y = shop["y"] + shop["height"]//2 +50
         
         name_surface = font_manager.render_text(shop["name"], 18, (255, 255, 255))
         name_rect = name_surface.get_rect(center=(shop["x"] + shop["width"]//2, text_y))
