@@ -517,7 +517,7 @@ class MapManager:
         """🆕 渲染商店名稱"""
     
             # 其他商店維持原位置
-        text_y = shop["y"] + shop["height"]//2 +50
+        text_y = shop["y"] + shop["height"]//2 +60
         
         name_surface = font_manager.render_text(shop["name"], 18, (255, 255, 255))
         name_rect = name_surface.get_rect(center=(shop["x"] + shop["width"]//2, text_y))
