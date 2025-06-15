@@ -1,4 +1,4 @@
-# 末世第二餐廳 - main.py (完整修復版 + 隱藏戰鬥區域)
+# 末世第二餐廳 - main.py (完整修復版 + 角色選擇系統)
 import pygame
 import sys
 import time
@@ -10,6 +10,7 @@ from ui import UI
 from combat import CombatSystem
 from inventory import Inventory
 from font_manager import font_manager
+from character_selector import CharacterSelector  # 🆕 導入角色選擇器
 
 class Game:
     def __init__(self):
@@ -30,12 +31,48 @@ class Game:
         pygame.display.set_caption("末世第二餐廳")
         self.clock = pygame.time.Clock()
         
+        # 🆕 遊戲流程控制
+        self.show_intro = True
+        self.show_character_select = False
+        self.character_selector = None
+        self.selected_character = None
+        self.game_started = False
+        
+        # 遊戲組件（稍後初始化）
+        self.game_state = None
+        self.map_manager = None
+        self.player = None
+        self.ui = None
+        self.combat_system = None
+        self.inventory = None
+        
+        # 遊戲標誌
+        self.running = True
+        
+        # 互動冷卻機制
+        self.last_interaction_time = 0
+        self.interaction_cooldown = 0.5  # 0.5秒冷卻時間
+        
+        # 除錯模式
+        self.debug_mode = False
+
+    def initialize_game_components(self):
+        """🆕 在角色選擇完成後初始化遊戲組件"""
+        print("🎮 初始化遊戲組件...")
+        
         # 遊戲狀態
         self.game_state = GameState()
         
+        # 🆕 根據選擇的角色設定玩家血量
+        if self.selected_character:
+            initial_hp = self.selected_character["stats"]["hp"]
+            self.game_state.player_stats["hp"] = initial_hp
+            self.game_state.player_stats["max_hp"] = initial_hp
+            print(f"🎭 角色初始血量設定為: {initial_hp}")
+        
         # 初始化遊戲組件
         self.map_manager = MapManager()
-        self.player = Player(x=400, y=300)  # 初始位置在7-11
+        self.player = Player(x=400, y=300, character_data=self.selected_character)  # 🆕 傳入角色資料
         self.ui = UI(self.screen)
         self.combat_system = CombatSystem()
         self.inventory = Inventory()
@@ -44,96 +81,85 @@ class Game:
         self.ui.set_game_state_reference(self.game_state)
         self.ui.set_inventory_reference(self.inventory)
         
-        # 遊戲標誌
-        self.running = True
-        self.show_intro = True
-        
-        # 互動冷卻機制
-        self.last_interaction_time = 0
-        self.interaction_cooldown = 0.5  # 0.5秒冷卻時間
-        
-        # 除錯模式
-        self.debug_mode = False
-        
         # 🪜 樓梯圖片偵錯資訊
         if self.debug_mode:
             self.map_manager.debug_print_stairs()
             self.map_manager.debug_print_floor_info()
+        
+        print("✅ 遊戲組件初始化完成")
 
     def handle_events(self):
-        """修復版事件處理 - 整合所有功能"""
+        """修復版事件處理 - 整合角色選擇"""
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 self.running = False
             elif event.type == pygame.KEYDOWN:
                 # ======= 全域快捷鍵 - 任何狀態下都優先處理 =======
                 if event.key == pygame.K_ESCAPE:
-                    # ESC鍵: 強制關閉UI或退出戰鬥
-                    if self.game_state.current_state == "combat":
-                        print("🆘 ESC強制退出戰鬥")
-                        self.force_end_combat()
-                    else:
-                        self.force_exploration_state()
+                    if self.show_intro:
+                        # 在介紹畫面按ESC直接退出
+                        self.running = False
+                    elif self.show_character_select:
+                        # 在角色選擇畫面按ESC選擇預設角色
+                        self.character_selector.handle_event(event)
+                    elif self.game_started:
+                        # 遊戲中按ESC處理
+                        if self.game_state.current_state == "combat":
+                            print("🆘 ESC強制退出戰鬥")
+                            self.force_end_combat()
+                        else:
+                            self.force_exploration_state()
                     continue
-                elif event.key == pygame.K_r:
+                elif event.key == pygame.K_r and self.game_started:
                     # R鍵: 重新開始遊戲
                     if hasattr(self.ui, 'game_over') and hasattr(self.ui, 'game_completed'):
                         if self.ui.game_over or self.ui.game_completed:
                             self.restart_game()
                     continue
-                elif event.key == pygame.K_i:
+                elif self.game_started and event.key == pygame.K_i:
                     # I鍵: 背包切換
                     self.handle_inventory_toggle()
                     continue
-                elif event.key == pygame.K_m:
+                elif self.game_started and event.key == pygame.K_m:
                     # M鍵: 地圖切換
                     self.handle_map_toggle()
                     continue
-                # 除錯快捷鍵
-                elif event.key == pygame.K_F1:
+                # 除錯快捷鍵（只在遊戲開始後）
+                elif self.game_started and event.key == pygame.K_F1:
                     self.toggle_debug_mode()
                     continue
-                elif event.key == pygame.K_F2:
+                elif self.game_started and event.key == pygame.K_F2:
                     self.force_exploration_state()
                     continue
-                elif event.key == pygame.K_F3:
+                elif self.game_started and event.key == pygame.K_F3:
                     self.reset_player_position()
                     continue
-                elif event.key == pygame.K_F4:
-                    # 🪜 F4: 重新載入樓梯圖片
+                elif self.game_started and event.key == pygame.K_F4:
                     self.reload_stairs_images()
                     continue
-                elif event.key == pygame.K_F5:
-                    # F5: 樓梯偵錯資訊
+                elif self.game_started and event.key == pygame.K_F5:
                     self.map_manager.debug_print_stairs()
                     continue
-                elif event.key == pygame.K_F6:
-                    # 🆕 F6: 物品偵錯資訊
+                elif self.game_started and event.key == pygame.K_F6:
                     self.map_manager.debug_print_items()
                     continue
-                elif event.key == pygame.K_F7:
-                    # 🆕 F7: 重置物品收集狀態
+                elif self.game_started and event.key == pygame.K_F7:
                     self.map_manager.reset_items()
                     self.ui.show_message("已重置所有物品收集狀態")
                     continue
-                elif event.key == pygame.K_F8:
-                    # 🆕 F8: 重新載入地板圖片
+                elif self.game_started and event.key == pygame.K_F8:
                     self.reload_floor_images()
                     continue
-                elif event.key == pygame.K_F9:
-                    # 🆕 F9: 地板偵錯資訊
+                elif self.game_started and event.key == pygame.K_F9:
                     self.map_manager.debug_print_floor_info()
                     continue
-                elif event.key == pygame.K_F10:
-                    # 🆕 F10: 重新載入商店圖片
+                elif self.game_started and event.key == pygame.K_F10:
                     self.reload_shop_images()
                     continue
-                elif event.key == pygame.K_F11:
-                    # 🆕 F11: 商店圖片偵錯資訊
+                elif self.game_started and event.key == pygame.K_F11:
                     self.map_manager.debug_print_shop_info()
                     continue
-                elif event.key == pygame.K_F12:
-                    # 🆕 F12: 切換戰鬥區域除錯顯示 - 新功能！
+                elif self.game_started and event.key == pygame.K_F12:
                     self.toggle_combat_zone_debug()
                     continue
                 
@@ -141,12 +167,26 @@ class Game:
                 if self.show_intro:
                     if event.key == pygame.K_SPACE:
                         self.show_intro = False
-                elif self.game_state.current_state == "exploration":
-                    self.handle_exploration_input(event)
-                elif self.game_state.current_state == "combat":
-                    self.handle_combat_input(event)
-                elif self.game_state.current_state == "dialogue":
-                    self.handle_dialogue_input(event)
+                        self.show_character_select = True
+                        # 🆕 創建角色選擇器
+                        self.character_selector = CharacterSelector(self.screen)
+                        print("🎭 進入角色選擇畫面")
+                elif self.show_character_select:
+                    # 🆕 角色選擇事件處理
+                    self.character_selector.handle_event(event)
+                    if self.character_selector.is_selection_complete():
+                        self.selected_character = self.character_selector.get_selected_character()
+                        self.show_character_select = False
+                        self.game_started = True
+                        self.initialize_game_components()
+                        print(f"🎉 角色選擇完成，開始遊戲: {self.selected_character['name']}")
+                elif self.game_started:
+                    if self.game_state.current_state == "exploration":
+                        self.handle_exploration_input(event)
+                    elif self.game_state.current_state == "combat":
+                        self.handle_combat_input(event)
+                    elif self.game_state.current_state == "dialogue":
+                        self.handle_dialogue_input(event)
 
     def toggle_combat_zone_debug(self):
         """🆕 切換戰鬥區域除錯顯示"""
@@ -268,6 +308,7 @@ class Game:
         print(f"   玩家移動: {self.player.is_moving}")
         print(f"   當前樓層: {self.map_manager.current_floor}")
         print(f"   戰鬥區域除錯: {self.map_manager.debug_show_combat_zones}")
+        print(f"   選擇角色: {self.player.get_character_name()}")
 
     def reset_player_position(self):
         """重置玩家位置"""
@@ -703,7 +744,10 @@ class Game:
         print(f"   戰鬥後 player_turn: {self.combat_system.player_turn}")
 
     def update(self):
-        if not self.show_intro:
+        if self.show_character_select:
+            # 🆕 更新角色選擇器
+            self.character_selector.update()
+        elif self.game_started:
             if self.game_state.current_state == "combat":
                 # 戰鬥狀態更新
                 self.combat_system.update(self.game_state)
@@ -729,9 +773,13 @@ class Game:
 
     def render(self):
         self.screen.fill((0, 0, 0))
+        
         if self.show_intro:
             self.render_intro()
-        else:
+        elif self.show_character_select:
+            # 🆕 渲染角色選擇畫面
+            self.character_selector.render()
+        elif self.game_started:
             # 根據遊戲狀態渲染不同畫面
             if self.game_state.current_state == "combat":
                 # 戰鬥畫面
@@ -754,7 +802,7 @@ class Game:
 
     def render_debug_info(self):
         """渲染除錯資訊"""
-        debug_rect = pygame.Rect(10, 300, 300, 200)  # 🆕 增加高度以容納戰鬥區域資訊
+        debug_rect = pygame.Rect(10, 300, 350, 240)  # 🆕 增加寬度和高度
         pygame.draw.rect(self.screen, (0, 0, 0, 180), debug_rect)
         pygame.draw.rect(self.screen, (0, 255, 255), debug_rect, 1)
         
@@ -771,8 +819,10 @@ class Game:
             f"樓梯圖片: {self.map_manager.use_sprites}",
             f"地板圖片: {self.map_manager.use_floor_sprites}",
             f"商店圖片: {self.map_manager.use_shop_sprites}",
-            f"戰鬥區域除錯: {self.map_manager.debug_show_combat_zones}",  # 🆕 新增戰鬥區域狀態
-            f"已收集物品: {len(self.map_manager.collected_items)}"
+            f"戰鬥區域除錯: {self.map_manager.debug_show_combat_zones}",
+            f"已收集物品: {len(self.map_manager.collected_items)}",
+            f"🎭 角色: {self.player.get_character_name()}",  # 🆕 顯示角色名稱
+            f"角色屬性: {self.player.get_character_stats()}"  # 🆕 顯示角色屬性
         ]
         
         y_offset = 305
@@ -787,12 +837,16 @@ class Game:
                 color = (0, 255, 0)
             elif "商店圖片: False" in line:
                 color = (255, 255, 0)
-            elif "戰鬥區域除錯: True" in line:  # 🆕 戰鬥區域除錯狀態顏色
+            elif "戰鬥區域除錯: True" in line:
                 color = (255, 100, 100)
-            elif "戰鬥區域除錯: False" in line:  # 🆕 戰鬥區域除錯狀態顏色
+            elif "戰鬥區域除錯: False" in line:
                 color = (100, 255, 100)
             elif "已收集物品:" in line:
                 color = (255, 200, 100)
+            elif "🎭 角色:" in line:  # 🆕 角色資訊顏色
+                color = (255, 150, 255)
+            elif "角色屬性:" in line:  # 🆕 角色屬性顏色
+                color = (150, 255, 150)
             elif self.ui.is_any_ui_open() and "UI開啟: True" in line:
                 color = (255, 255, 100)
             else:
@@ -800,7 +854,7 @@ class Game:
             
             text_surface = font_manager.render_text(line, 12, color)
             self.screen.blit(text_surface, (15, y_offset))
-            y_offset += 14
+            y_offset += 13
 
     def render_intro(self):
         intro_text = [
@@ -820,14 +874,15 @@ class Game:
             "",
             "現在，全人類的命運，落在你手中。",
             "",
-            "按 [空白鍵] 開始遊戲",
+            "按 [空白鍵] 進入角色選擇",  # 🆕 修改提示文字
             "",
             "📋 遊戲操作:",
             "方向鍵 移動，空白鍵 互動，I 背包，M 地圖",
             "",
             "🔧 除錯快捷鍵:",
             "F8 地板圖片，F9 地板除錯，F10 商店圖片，F11 商店除錯",
-            "F12 戰鬥區域除錯 (切換危險區域顯示) - 新功能！"  # 🆕 新增F12說明
+            "F12 戰鬥區域除錯 (切換危險區域顯示)",
+            "🆕 角色選擇系統 - 選擇不同的角色皮膚！"  # 🆕 新增角色選擇提示
         ]
         
         # 計算總高度來實現垂直置中，並往上調一行
@@ -848,9 +903,12 @@ class Game:
                 elif line.startswith("📋") or line.startswith("🔧"):
                     text_surface = font_manager.render_text(line, 24, (100, 255, 100))
                     line_spacing = 35
-                elif line.startswith("方向鍵") or line.startswith("F8") or line.startswith("F12"):  # 🆕 新增F12顏色
+                elif line.startswith("方向鍵") or line.startswith("F8") or line.startswith("F12"):
                     text_surface = font_manager.render_text(line, 20, (200, 200, 200))
                     line_spacing = 25
+                elif line.startswith("🆕"):  # 🆕 新功能提示顏色
+                    text_surface = font_manager.render_text(line, 22, (255, 100, 255))
+                    line_spacing = 28
                 elif line.startswith("按"):
                     text_surface = font_manager.render_text(line, 26, (255, 255, 100))
                     line_spacing = 40
@@ -878,58 +936,65 @@ class Game:
         sys.exit()
 
     def restart_game(self):
-        """重新開始遊戲"""
+        """重新開始遊戲 - 🆕 支援角色選擇重置"""
         print("🔄 重新開始遊戲...")
         
-        # 重置玩家
-        self.player.reset()
+        # 🆕 重置流程控制
+        self.show_intro = True
+        self.show_character_select = False
+        self.game_started = False
+        self.selected_character = None
         
-        # 重置UI
-        if hasattr(self.ui, 'reset_game'):
-            self.ui.reset_game()
+        # 清理角色選擇器
+        if self.character_selector:
+            self.character_selector = None
         
-        # 重置遊戲狀態
-        if hasattr(self.game_state, 'reset'):
-            self.game_state.reset()
-        else:
-            # 如果沒有reset方法，手動重置
-            self.game_state.current_state = "exploration"
-            self.game_state.player_stats = {
-                "hp": 100,
-                "max_hp": 100,
-                "attack": 10,
-                "defense": 5,
-                "level": 1,
-                "exp": 0
-            }
+        # 重置遊戲組件（如果已初始化）
+        if self.game_started and self.player:
+            # 重置玩家
+            self.player.reset()
+            
+            # 重置UI
+            if hasattr(self.ui, 'reset_game'):
+                self.ui.reset_game()
+            
+            # 重置遊戲狀態
+            if hasattr(self.game_state, 'reset'):
+                self.game_state.reset()
+            else:
+                # 如果沒有reset方法，手動重置
+                self.game_state.current_state = "exploration"
+                self.game_state.player_stats = {
+                    "hp": 100,
+                    "max_hp": 100,
+                    "attack": 10,
+                    "defense": 5,
+                    "level": 1,
+                    "exp": 0
+                }
+            
+            # 重置其他組件
+            self.map_manager.current_floor = 1
+            self.map_manager.reset_items()
+            self.map_manager.debug_show_combat_zones = False
+            self.inventory = Inventory()
+            
+            # 重置UI狀態
+            self.ui.show_inventory = False
+            self.ui.show_map = False
+            self.ui.dialogue_active = False
+            self.ui.has_keycard = False
+            self.ui.has_antidote = False
+            self.ui.game_completed = False
+            self.ui.game_over = False
         
-        # 重置其他組件
-        self.map_manager.current_floor = 1
-        self.map_manager.reset_items()  # 🆕 重置物品收集狀態
-        self.map_manager.debug_show_combat_zones = False  # 🆕 重置戰鬥區域除錯狀態
-        self.inventory = Inventory()  # 重新創建背包
-        
-        # 重置UI狀態
-        self.ui.show_inventory = False
-        self.ui.show_map = False
-        self.ui.dialogue_active = False
-        self.ui.has_keycard = False  # 🆕 重置特殊物品標記
-        self.ui.has_antidote = False
-        self.ui.game_completed = False
-        self.ui.game_over = False
-        
-        # 重新設定玩家參考（重要！）
-        self.ui.set_player_reference(self.player)
-        self.ui.set_game_state_reference(self.game_state)
-        self.ui.set_inventory_reference(self.inventory)
-        
-        print("✅ 遊戲重置完成！")
+        print("✅ 遊戲重置完成！將重新開始角色選擇流程")
 
 
 def main():
     """程式入口點"""
     try:
-        print("🎮 啟動《末世第二餐廳》(完整修復版 + 隱藏戰鬥區域)")
+        print("🎮 啟動《末世第二餐廳》(完整修復版 + 角色選擇系統)")
         print("=" * 70)
         print("💡 遊戲功能:")
         print("   ✅ 樓梯圖片支援 (F4重新載入)")
@@ -938,7 +1003,21 @@ def main():
         print("   ✅ 戰鬥系統完整")
         print("   ✅ UI互動修復")
         print("   ✅ 中文字體支援")
-        print("   🆕 隱藏戰鬥區域 (F12切換除錯顯示) - 新功能！")
+        print("   🆕 隱藏戰鬥區域 (F12切換除錯顯示)")
+        print("   🎭 角色選擇系統 - 全新功能！")
+        print("")
+        print("🎯 角色選擇系統:")
+        print("   - 三種不同的角色皮膚可供選擇")
+        print("   - 每個角色有不同的屬性和外觀")
+        print("   - 支援圖片和程式繪製雙重模式")
+        print("   - 滑鼠點擊或鍵盤操作都可以")
+        print("")
+        print("📁 角色圖片路徑結構:")
+        print("   學生A: assets/images/player/student_a_[direction].png")
+        print("   學生B: assets/images/player/student_b_[direction].png") 
+        print("   學生C: assets/images/player/student_c_[direction].png")
+        print("   備用: assets/images/player/student_[a/b/c].png")
+        print("   [direction] = down, up, left, right")
         print("")
         print("🎯 快捷鍵說明:")
         print("   F1 - 開啟/關閉除錯模式")
@@ -952,9 +1031,15 @@ def main():
         print("   F9 - 顯示地板除錯資訊")
         print("   F10 - 重新載入商店圖片")
         print("   F11 - 顯示商店圖片除錯資訊")
-        print("   F12 - 切換戰鬥區域除錯顯示 (新功能！)")
-        print("   ESC - 強制關閉所有UI")
+        print("   F12 - 切換戰鬥區域除錯顯示")
+        print("   ESC - 強制關閉所有UI / 退出")
         print("   I - 背包, M - 地圖, R - 重新開始(遊戲結束時)")
+        print("")
+        print("🎭 角色選擇操作:")
+        print("   ← → 選擇角色")
+        print("   空白鍵/Enter 確認選擇")
+        print("   滑鼠點擊角色卡片直接選擇")
+        print("   ESC 選擇預設角色並開始遊戲")
         print("")
         print("🪜 樓梯圖片路徑:")
         print("   assets/images/stairs_up.png - 上樓梯圖片 (96x72)")
@@ -971,7 +1056,7 @@ def main():
         print("   assets/images/coffee.png - 咖啡廳商店圖片 (會縮放到80x60)")
         print("   assets/images/tea.png - 茶壜商店圖片 (會縮放到100x75)")
         print("")
-        print("⚔️ 戰鬥區域改進 (新功能！):")
+        print("⚔️ 戰鬥區域改進:")
         print("   - 戰鬥區域預設完全隱藏，看起來像普通地板")
         print("   - 玩家無法事先察覺危險區域")
         print("   - 按F12可切換除錯顯示紅色框框")
@@ -991,6 +1076,7 @@ def main():
         print("   - 熱重載功能，可在遊戲中更新圖片")
         print("   - 完整的除錯資訊顯示")
         print("   - 戰鬥區域完美隱藏技術")
+        print("   🆕 角色選擇系統與多皮膚支援")
         print("")
         print("🚀 準備啟動遊戲...")
         print("=" * 70)
@@ -1012,6 +1098,8 @@ def main():
         print("5. 確認地板圖片檔名是否為 'floor.png'")
         print("6. 檢查圖片檔案格式是否正確 (建議使用PNG)")
         print("7. 使用F12切換戰鬥區域顯示來除錯戰鬥系統")
+        print("8. 🆕 檢查角色圖片是否放在正確路徑")
+        print("9. 🆕 確認角色圖片命名符合規範")
     finally:
         try:
             pygame.quit()
