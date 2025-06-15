@@ -1,4 +1,4 @@
-# 末世第二餐廳 - main.py (完整修復版 + 地板圖片支援)
+# 末世第二餐廳 - main.py (完整修復版 + 隱藏戰鬥區域)
 import pygame
 import sys
 import time
@@ -58,7 +58,7 @@ class Game:
         # 🪜 樓梯圖片偵錯資訊
         if self.debug_mode:
             self.map_manager.debug_print_stairs()
-            self.map_manager.debug_print_floor_info()  # 🆕 新增地板偵錯
+            self.map_manager.debug_print_floor_info()
 
     def handle_events(self):
         """修復版事件處理 - 整合所有功能"""
@@ -132,6 +132,10 @@ class Game:
                     # 🆕 F11: 商店圖片偵錯資訊
                     self.map_manager.debug_print_shop_info()
                     continue
+                elif event.key == pygame.K_F12:
+                    # 🆕 F12: 切換戰鬥區域除錯顯示 - 新功能！
+                    self.toggle_combat_zone_debug()
+                    continue
                 
                 # ======= 狀態專用事件處理 =======
                 if self.show_intro:
@@ -143,6 +147,17 @@ class Game:
                     self.handle_combat_input(event)
                 elif self.game_state.current_state == "dialogue":
                     self.handle_dialogue_input(event)
+
+    def toggle_combat_zone_debug(self):
+        """🆕 切換戰鬥區域除錯顯示"""
+        debug_status = self.map_manager.toggle_combat_zone_debug()
+        if debug_status:
+            self.ui.show_message("🔧 戰鬥區域除錯: 開啟 (可看到紅色危險區域)")
+        else:
+            self.ui.show_message("🔧 戰鬥區域除錯: 關閉 (危險區域隱藏)")
+        
+        if self.debug_mode:
+            self.map_manager.debug_print_combat_zones()
 
     def reload_stairs_images(self):
         """重新載入樓梯圖片"""
@@ -240,8 +255,9 @@ class Game:
         if self.debug_mode:
             self.print_debug_info()
             self.map_manager.debug_print_stairs()
-            self.map_manager.debug_print_items()  # 新增物品除錯資訊
-            self.map_manager.debug_print_floor_info()  # 🆕 新增地板除錯資訊
+            self.map_manager.debug_print_items()
+            self.map_manager.debug_print_floor_info()
+            self.map_manager.debug_print_combat_zones()
 
     def print_debug_info(self):
         """顯示除錯資訊"""
@@ -251,6 +267,7 @@ class Game:
         print(f"   玩家位置: ({self.player.x}, {self.player.y})")
         print(f"   玩家移動: {self.player.is_moving}")
         print(f"   當前樓層: {self.map_manager.current_floor}")
+        print(f"   戰鬥區域除錯: {self.map_manager.debug_show_combat_zones}")
 
     def reset_player_position(self):
         """重置玩家位置"""
@@ -737,7 +754,7 @@ class Game:
 
     def render_debug_info(self):
         """渲染除錯資訊"""
-        debug_rect = pygame.Rect(10, 300, 300, 180)  # 🆕 增加高度以容納地板資訊
+        debug_rect = pygame.Rect(10, 300, 300, 200)  # 🆕 增加高度以容納戰鬥區域資訊
         pygame.draw.rect(self.screen, (0, 0, 0, 180), debug_rect)
         pygame.draw.rect(self.screen, (0, 255, 255), debug_rect, 1)
         
@@ -752,8 +769,9 @@ class Game:
             f"地圖: {self.ui.show_map}",
             f"對話: {self.ui.dialogue_active}",
             f"樓梯圖片: {self.map_manager.use_sprites}",
-            f"地板圖片: {self.map_manager.use_floor_sprites}",  # 🆕 新增地板狀態
-            f"商店圖片: {self.map_manager.use_shop_sprites}",  # 🆕 新增商店圖片狀態
+            f"地板圖片: {self.map_manager.use_floor_sprites}",
+            f"商店圖片: {self.map_manager.use_shop_sprites}",
+            f"戰鬥區域除錯: {self.map_manager.debug_show_combat_zones}",  # 🆕 新增戰鬥區域狀態
             f"已收集物品: {len(self.map_manager.collected_items)}"
         ]
         
@@ -761,16 +779,19 @@ class Game:
         for line in debug_lines:
             if "True" in line and ("移動" in line or "開啟" in line):
                 color = (255, 100, 100)
-            elif "樓梯圖片: True" in line or "地板圖片: True" in line:  # 🆕 地板圖片狀態顏色
+            elif "樓梯圖片: True" in line or "地板圖片: True" in line:
                 color = (0, 255, 0)
-            elif "樓梯圖片: False" in line or "地板圖片: False" in line:  # 🆕 地板圖片狀態顏色
+            elif "樓梯圖片: False" in line or "地板圖片: False" in line:
                 color = (255, 255, 0)
-            elif "商店圖片: True" in line:  # 🆕 商店圖片狀態顏色
+            elif "商店圖片: True" in line:
                 color = (0, 255, 0)
-            elif "商店圖片: False" in line:  # 🆕 商店圖片狀態顏色
+            elif "商店圖片: False" in line:
                 color = (255, 255, 0)
+            elif "戰鬥區域除錯: True" in line:  # 🆕 戰鬥區域除錯狀態顏色
+                color = (255, 100, 100)
+            elif "戰鬥區域除錯: False" in line:  # 🆕 戰鬥區域除錯狀態顏色
+                color = (100, 255, 100)
             elif "已收集物品:" in line:
-                color = (255, 200, 100)
                 color = (255, 200, 100)
             elif self.ui.is_any_ui_open() and "UI開啟: True" in line:
                 color = (255, 255, 100)
@@ -805,7 +826,8 @@ class Game:
             "方向鍵 移動，空白鍵 互動，I 背包，M 地圖",
             "",
             "🔧 除錯快捷鍵:",
-            "F8 地板圖片，F9 地板除錯，F10 商店圖片，F11 商店除錯"  # 🆕 完整的快捷鍵說明
+            "F8 地板圖片，F9 地板除錯，F10 商店圖片，F11 商店除錯",
+            "F12 戰鬥區域除錯 (切換危險區域顯示) - 新功能！"  # 🆕 新增F12說明
         ]
         
         # 計算總高度來實現垂直置中，並往上調一行
@@ -823,10 +845,10 @@ class Game:
                 if line.startswith("《"):
                     text_surface = font_manager.render_text(line, 36, (255, 255, 0))
                     line_spacing = 50
-                elif line.startswith("📋") or line.startswith("🔧"):  # 🆕 除錯快捷鍵也用綠色
+                elif line.startswith("📋") or line.startswith("🔧"):
                     text_surface = font_manager.render_text(line, 24, (100, 255, 100))
                     line_spacing = 35
-                elif line.startswith("方向鍵") or line.startswith("F8"):  # 🆕 新快捷鍵說明
+                elif line.startswith("方向鍵") or line.startswith("F8") or line.startswith("F12"):  # 🆕 新增F12顏色
                     text_surface = font_manager.render_text(line, 20, (200, 200, 200))
                     line_spacing = 25
                 elif line.startswith("按"):
@@ -884,6 +906,7 @@ class Game:
         # 重置其他組件
         self.map_manager.current_floor = 1
         self.map_manager.reset_items()  # 🆕 重置物品收集狀態
+        self.map_manager.debug_show_combat_zones = False  # 🆕 重置戰鬥區域除錯狀態
         self.inventory = Inventory()  # 重新創建背包
         
         # 重置UI狀態
@@ -906,15 +929,16 @@ class Game:
 def main():
     """程式入口點"""
     try:
-        print("🎮 啟動《末世第二餐廳》(完整修復版 + 地板圖片支援)")
+        print("🎮 啟動《末世第二餐廳》(完整修復版 + 隱藏戰鬥區域)")
         print("=" * 70)
         print("💡 遊戲功能:")
         print("   ✅ 樓梯圖片支援 (F4重新載入)")
-        print("   ✅ 地板圖片支援 (F8重新載入) - 新功能！")
+        print("   ✅ 地板圖片支援 (F8重新載入)")
         print("   ✅ 物品收集系統修復 (F6除錯)")
         print("   ✅ 戰鬥系統完整")
         print("   ✅ UI互動修復")
         print("   ✅ 中文字體支援")
+        print("   🆕 隱藏戰鬥區域 (F12切換除錯顯示) - 新功能！")
         print("")
         print("🎯 快捷鍵說明:")
         print("   F1 - 開啟/關閉除錯模式")
@@ -924,10 +948,11 @@ def main():
         print("   F5 - 顯示樓梯除錯資訊")
         print("   F6 - 顯示物品除錯資訊")
         print("   F7 - 重置物品收集狀態")
-        print("   F8 - 重新載入地板圖片 (新功能！)")
-        print("   F9 - 顯示地板除錯資訊 (新功能！)")
-        print("   F10 - 重新載入商店圖片 (新功能！)")
-        print("   F11 - 顯示商店圖片除錯資訊 (新功能！)")
+        print("   F8 - 重新載入地板圖片")
+        print("   F9 - 顯示地板除錯資訊")
+        print("   F10 - 重新載入商店圖片")
+        print("   F11 - 顯示商店圖片除錯資訊")
+        print("   F12 - 切換戰鬥區域除錯顯示 (新功能！)")
         print("   ESC - 強制關閉所有UI")
         print("   I - 背包, M - 地圖, R - 重新開始(遊戲結束時)")
         print("")
@@ -940,10 +965,18 @@ def main():
         print("   assets/images/神饃.png - 備用地板圖片")
         print("   assets/images/tile.png - 另一個備用選項")
         print("")
-        print("🏪 商店圖片路徑 (新功能！):")
-        print("   assets/images/711.png - 7-11商店圖片 (會縮放到135x101)")
-        print("   assets/images/subway.png - Subway商店圖片 (會縮放到80x60)")
+        print("🏪 商店圖片路徑:")
+        print("   assets/images/711.png - 7-11商店圖片 (會縮放到110x90)")
+        print("   assets/images/subway.png - Subway商店圖片 (會縮放到100x78)")
         print("   assets/images/coffee.png - 咖啡廳商店圖片 (會縮放到80x60)")
+        print("   assets/images/tea.png - 茶壜商店圖片 (會縮放到100x75)")
+        print("")
+        print("⚔️ 戰鬥區域改進 (新功能！):")
+        print("   - 戰鬥區域預設完全隱藏，看起來像普通地板")
+        print("   - 玩家無法事先察覺危險區域")
+        print("   - 按F12可切換除錯顯示紅色框框")
+        print("   - 戰鬥功能完全正常，只是視覺上隱藏")
+        print("   - 增加遊戲驚喜和挑戰性")
         print("")
         print("📦 物品系統改進:")
         print("   - 醫療包和能量包不再重疊")
@@ -957,6 +990,7 @@ def main():
         print("   - 圖片載入失敗時自動回退到程式繪製")
         print("   - 熱重載功能，可在遊戲中更新圖片")
         print("   - 完整的除錯資訊顯示")
+        print("   - 戰鬥區域完美隱藏技術")
         print("")
         print("🚀 準備啟動遊戲...")
         print("=" * 70)
@@ -977,6 +1011,7 @@ def main():
         print("4. 檢查 assets 資料夾結構")
         print("5. 確認地板圖片檔名是否為 'floor.png'")
         print("6. 檢查圖片檔案格式是否正確 (建議使用PNG)")
+        print("7. 使用F12切換戰鬥區域顯示來除錯戰鬥系統")
     finally:
         try:
             pygame.quit()
