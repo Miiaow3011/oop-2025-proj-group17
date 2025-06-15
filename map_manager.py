@@ -132,11 +132,12 @@ class MapManager:
             print(f"🎨 成功載入地板圖片！使用圖片渲染地板")
     
     def load_shop_images(self):
-        """🆕 載入商店圖片"""
+        """🆕 載入商店圖片 - 新增茶壜支援"""
         shop_paths = {
             "711": "assets/images/711.png",  # 你的7-11圖片
             "subway": "assets/images/subway.png",  # 可選的Subway圖片
-            "coffee": "assets/images/coffee.png"  # 可選的咖啡廳圖片
+            "coffee": "assets/images/coffee.png",  # 可選的咖啡廳圖片
+            "tea": "assets/images/tea.png"  # 🆕 新增茶壜圖片
         }
         
         print("🏪 載入商店圖片...")
@@ -151,13 +152,17 @@ class MapManager:
                     
                     # 🎨 根據商店類型設定不同尺寸
                     if shop_type == "711":
-                        # 7-11 調小一點：100x75像素
+                        # 7-11 調小一點：110x90像素
                         target_width = 110
                         target_height = 90
                     elif shop_type == "subway":
-                        # Subway 調大一點：110x82像素
+                        # Subway 調大一點：100x78像素
                         target_width = 100
                         target_height = 78
+                    elif shop_type == "tea":
+                        # 🆕 茶壜設定合適尺寸：128x96像素
+                        target_width = 128
+                        target_height = 96
                     else:
                         # 其他商店維持原尺寸：80x60像素
                         target_width = 80
@@ -469,12 +474,15 @@ class MapManager:
             self.render_shop_with_code(screen, shop)
     
     def render_shop_with_sprite(self, screen, shop):
-        """🆕 使用圖片渲染商店"""
+        """🆕 使用圖片渲染商店 - 新增茶壜支援"""
         shop_id = shop["id"]
         shop_name = shop["name"]
         
         # 根據商店名稱或ID選擇對應圖片
         sprite = None
+        draw_x = shop["x"]
+        draw_y = shop["y"]
+        
         if shop_id == "A" and "711" in self.shop_sprites:  # 7-11
             sprite = self.shop_sprites["711"]
             # 7-11 圖片調整位置和大小
@@ -487,12 +495,16 @@ class MapManager:
             draw_y = shop["y"] + y_offset
         elif shop_name == "Subway" and "subway" in self.shop_sprites:
             sprite = self.shop_sprites["subway"]
-            draw_x = shop["x"]
-            draw_y = shop["y"]
         elif shop_name == "咖啡廳" and "coffee" in self.shop_sprites:
             sprite = self.shop_sprites["coffee"]
-            draw_x = shop["x"]
-            draw_y = shop["y"]
+        elif shop_name == "茶壜" and "tea" in self.shop_sprites:
+            # 🆕 茶壜圖片渲染
+            sprite = self.shop_sprites["tea"]
+            # 茶壜圖片位置微調（可根據需要調整）
+            x_offset = (shop["width"] - 128) // 2  # 128是茶壜圖片寬度
+            y_offset = (shop["height"] - 96) // 2  # 96是茶壜圖片高度
+            draw_x = shop["x"] + x_offset
+            draw_y = shop["y"] + y_offset
         
         if sprite:
             # 繪製商店圖片
@@ -515,9 +527,8 @@ class MapManager:
     
     def render_shop_name(self, screen, shop):
         """🆕 渲染商店名稱"""
-    
-            # 其他商店維持原位置
-        text_y = shop["y"] + shop["height"]//2 +60
+        # 其他商店維持原位置
+        text_y = shop["y"] + shop["height"]//2 + 60
         
         name_surface = font_manager.render_text(shop["name"], 18, (255, 255, 255))
         name_rect = name_surface.get_rect(center=(shop["x"] + shop["width"]//2, text_y))
