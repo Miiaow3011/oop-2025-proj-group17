@@ -16,6 +16,10 @@ class MapManager:
         self.stairs_sprites = {}
         self.load_stairs_images()
         
+        # 🆕 NPC圖片
+        self.npc_sprites = {}
+        self.load_npc_images()
+        
         # 🆕 商店圖片
         self.shop_sprites = {}
         self.load_shop_images()
@@ -195,6 +199,41 @@ class MapManager:
             print("📦 未找到商店圖片，將使用程式繪製商店")
         else:
             print(f"🎨 成功載入 {len(self.shop_sprites)} 個商店圖片")
+    
+    def load_npc_images(self):
+        """🆕 載入NPC圖片"""
+        npc_paths = {
+            "npc3_2floor": "assets/images/npc3_2floor.png",  # 🆕 你的NPC圖片
+            "default_npc": "assets/images/npc.png"  # 可選的通用NPC圖片
+        }
+        
+        print("👤 載入NPC圖片...")
+        
+        for npc_type, path in npc_paths.items():
+            if os.path.exists(path):
+                try:
+                    # 載入NPC圖片
+                    image = pygame.image.load(path).convert_alpha()
+                    original_size = image.get_size()
+                    print(f"   原始NPC圖片尺寸: {original_size}")
+                    
+                    # 🎨 NPC圖片統一縮放到24x32像素
+                    target_width = 24
+                    target_height = 32
+                    image = pygame.transform.scale(image, (target_width, target_height))
+                    self.npc_sprites[npc_type] = image
+                    print(f"✅ 成功載入NPC圖片: {npc_type} - {path}")
+                    print(f"   縮放後尺寸: {target_width}x{target_height}")
+                except Exception as e:
+                    print(f"❌ 載入NPC圖片失敗: {npc_type} - {e}")
+        
+        # 檢查是否成功載入NPC圖片
+        self.use_npc_sprites = len(self.npc_sprites) > 0
+        
+        if not self.use_npc_sprites:
+            print("📦 未找到NPC圖片，將使用程式繪製NPC")
+        else:
+            print(f"🎨 成功載入 {len(self.npc_sprites)} 個NPC圖片")
     
     def load_stairs_images(self):
         """載入樓梯圖片"""
@@ -587,18 +626,71 @@ class MapManager:
         screen.blit(name_surface, name_rect)
 
     def render_npc(self, screen, npc):
-        """渲染NPC"""
-        # NPC圓形
-        npc_color = (255, 200, 100)
+        """渲染NPC - 支援圖片和程式繪製"""
         center_x = npc["x"] + npc["width"] // 2
         center_y = npc["y"] + npc["height"] // 2
 
+        # 🎨 優先使用圖片渲染
+        if self.use_npc_sprites and self.render_npc_with_sprite(screen, npc, center_x, center_y):
+            # 圖片渲染成功，添加NPC名稱
+            self.render_npc_name(screen, npc, center_x, center_y)
+        else:
+            # 備用：程式繪製圓形NPC
+            self.render_npc_with_code(screen, npc, center_x, center_y)
+    
+    def render_npc_with_sprite(self, screen, npc, center_x, center_y):
+        """🆕 使用圖片渲染NPC"""
+        npc_id = npc.get("id", "")
+        npc_name = npc.get("name", "")
+        
+        # 根據NPC ID或名稱選擇對應圖片
+        sprite = None
+        
+        # 🎯 優先使用你的專用NPC圖片
+        if "npc3_2floor" in self.npc_sprites:
+            sprite = self.npc_sprites["npc3_2floor"]
+        elif "default_npc" in self.npc_sprites:
+            sprite = self.npc_sprites["default_npc"]
+        
+        if sprite:
+            # 計算圖片繪製位置（24x32像素，置中）
+            sprite_width = 24
+            sprite_height = 32
+            draw_x = center_x - sprite_width // 2
+            draw_y = center_y - sprite_height // 2
+            
+            # 繪製NPC圖片
+            screen.blit(sprite, (draw_x, draw_y))
+            return True
+        
+        return False
+    
+    def render_npc_with_code(self, screen, npc, center_x, center_y):
+        """🆕 程式繪製NPC（備用方法）"""
+        # NPC圓形（原本的樣式）
+        npc_color = (255, 200, 100)
         pygame.draw.circle(screen, npc_color, (center_x, center_y), 15)
         pygame.draw.circle(screen, (255, 255, 255), (center_x, center_y), 15, 2)
-
+        
         # NPC名稱
+        self.render_npc_name(screen, npc, center_x, center_y)
+    
+    def render_npc_name(self, screen, npc, center_x, center_y):
+        """🆕 渲染NPC名稱"""
         name_surface = font_manager.render_text(npc["name"], 14, (255, 255, 255))
-        name_rect = name_surface.get_rect(center=(center_x, center_y - 25))
+        name_rect = name_surface.get_rect(center=(center_x, center_y - 28))  # 🆕 調整名稱位置（24x32圖片）
+        
+        # 名稱背景（讓文字更清楚）
+        bg_rect = name_rect.copy()
+        bg_rect.inflate(8, 4)
+        bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+        bg_surface.fill((0, 0, 0, 150))
+        screen.blit(bg_surface, bg_rect)
+        
+        screen.blit(name_surface, name_rect)
+        
+        screen.blit(name_surface, name_rect)
+        
         screen.blit(name_surface, name_rect)
 
     def render_stairs(self, screen, stairs):
@@ -997,6 +1089,12 @@ class MapManager:
         print("🔄 重新載入商店圖片...")
         self.shop_sprites.clear()
         self.load_shop_images()
+    
+    def reload_npc_images(self):
+        """🆕 重新載入NPC圖片（用於熱更新）"""
+        print("🔄 重新載入NPC圖片...")
+        self.npc_sprites.clear()
+        self.load_npc_images()
 
     def get_stairs_info(self, floor=None):
         """獲取樓梯資訊"""
@@ -1055,6 +1153,17 @@ class MapManager:
                 if sprite:
                     size = sprite.get_size()
                     print(f"     - {shop_type}: {size[0]}x{size[1]} 像素")
+    
+    def debug_print_npc_info(self):
+        """🆕 除錯：印出NPC圖片資訊"""
+        print("👤 NPC圖片偵錯資訊:")
+        print(f"   使用圖片渲染: {self.use_npc_sprites}")
+        print(f"   載入的NPC圖片: {list(self.npc_sprites.keys())}")
+        if self.use_npc_sprites:
+            for npc_type, sprite in self.npc_sprites.items():
+                if sprite:
+                    size = sprite.get_size()
+                    print(f"     - {npc_type}: {size[0]}x{size[1]} 像素")
 
     def debug_print_combat_zones(self):
         """🆕 除錯：印出戰鬥區域資訊"""
