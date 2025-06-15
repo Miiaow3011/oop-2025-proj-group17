@@ -793,7 +793,7 @@ class MapManager:
             if (direction == "down" and 
                 stairs.get("target_floor") == 1 and 
                 stairs["x"] == 450 and stairs["y"] == 590):
-                draw_y = stairs["y"] - 18  # 圖片往上移18個像素（10+8）
+                draw_y = stairs["y"] - 26  # 圖片往上移26個像素（10+8+8）
             
             # 繪製樓梯圖片
             screen.blit(sprite, (draw_x, draw_y))
@@ -811,11 +811,11 @@ class MapManager:
                 # 向下箭頭（針對特殊樓梯調整箭頭位置）
                 if (stairs.get("target_floor") == 1 and 
                     stairs["x"] == 450 and stairs["y"] == 590):
-                    # 二樓往下樓梯的箭頭：圖片上移18像素，箭頭再下移5像素
+                    # 二樓往下樓梯的箭頭：圖片上移26像素，箭頭再下移10像素（5+5）
                     arrow_points = [
-                        (stairs["x"] + 48, stairs["y"] + 55),  # 原本+50，現在+55（往下5像素）
-                        (stairs["x"] + 40, stairs["y"] + 40),  # 原本+35，現在+40（往下5像素）
-                        (stairs["x"] + 56, stairs["y"] + 40)   # 原本+35，現在+40（往下5像素）
+                        (stairs["x"] + 48, stairs["y"] + 60),  # 原本+55，現在+60（再往下5像素）
+                        (stairs["x"] + 40, stairs["y"] + 45),  # 原本+40，現在+45（再往下5像素）
+                        (stairs["x"] + 56, stairs["y"] + 45)   # 原本+40，現在+45（再往下5像素）
                     ]
                 else:
                     # 其他下樓梯箭頭保持原位置
