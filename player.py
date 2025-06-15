@@ -20,6 +20,9 @@ class Player:
             self.character_name = "預設角色"
             print("🎭 創建預設角色")
         
+        # 🔧 移動除錯標記
+        self.debug_movement = False
+        
         # 玩家動畫
         self.direction = "down"  # up, down, left, right
         self.animation_frame = 0
@@ -30,7 +33,7 @@ class Player:
         self.is_moving = False
         self.move_target_x = x
         self.move_target_y = y
-        self.move_threshold = 2  # 到達目標的容錯距離
+        self.move_threshold = 3  # 🔧 增加容錯距離，避免跳動
         
         # 邊界限制
         self.min_x = 32
@@ -152,6 +155,8 @@ class Player:
     def move(self, dx, dy):
         # 如果玩家正在移動中，忽略新的移動指令
         if self.is_moving:
+            if self.debug_movement:
+                print(f"⚠️ {self.character_name} 正在移動中，忽略新指令")
             return False
         
         # 計算新位置
@@ -164,6 +169,8 @@ class Player:
         
         # 檢查是否真的移動了
         if new_x == self.x and new_y == self.y:
+            if self.debug_movement:
+                print(f"❌ {self.character_name} 邊界限制，無法移動")
             return False
         
         # 設定移動目標
@@ -180,6 +187,10 @@ class Player:
             self.direction = "down"
         elif dy < 0:
             self.direction = "up"
+        
+        if self.debug_movement:
+            print(f"🎯 {self.character_name} 開始移動: ({self.x}, {self.y}) -> ({new_x}, {new_y})")
+            print(f"   移動距離: {abs(dx) + abs(dy)}, 速度: {self.speed}")
         
         return True
     
@@ -227,7 +238,7 @@ class Player:
         return False
     
     def update(self):
-        # 平滑移動
+        # 平滑移動 - 修復版
         if self.is_moving:
             # 計算移動方向
             dx = self.move_target_x - self.x
@@ -236,17 +247,29 @@ class Player:
             # 計算距離
             distance = (dx**2 + dy**2)**0.5
             
+            # 🔧 修復：增加容錯距離並確保速度合理
             # 如果距離目標很近，直接到達
-            if distance <= self.move_threshold:
+            if distance <= max(self.move_threshold, self.speed + 1):
                 self.x = self.move_target_x
                 self.y = self.move_target_y
                 self.is_moving = False
+                if hasattr(self, 'debug_movement') and self.debug_movement:
+                    print(f"🎯 {self.character_name} 到達目標: ({self.x}, {self.y})")
             else:
-                # 朝目標移動
+                # 朝目標移動 - 確保每次移動不超過剩餘距離
+                move_x = 0
+                move_y = 0
+                
                 if dx != 0:
-                    self.x += self.speed if dx > 0 else -self.speed
+                    move_x = min(abs(dx), self.speed) * (1 if dx > 0 else -1)
                 if dy != 0:
-                    self.y += self.speed if dy > 0 else -self.speed
+                    move_y = min(abs(dy), self.speed) * (1 if dy > 0 else -1)
+                
+                self.x += move_x
+                self.y += move_y
+                
+                if hasattr(self, 'debug_movement') and self.debug_movement:
+                    print(f"🚶 {self.character_name} 移動: ({self.x}, {self.y}) -> 目標({self.move_target_x}, {self.move_target_y}), 距離:{distance:.1f}")
         
         # 更新動畫
         if self.is_moving:
