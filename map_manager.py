@@ -544,8 +544,13 @@ class MapManager:
     
     def render_shop_name(self, screen, shop):
         """🆕 渲染商店名稱"""
-        # 其他商店維持原位置
-        text_y = shop["y"] + shop["height"]//2 + 60
+        # 根據商店名稱調整文字位置
+        if shop["name"] == "素怡沅":
+            # 素怡沅的文字往下移2個像素
+            text_y = shop["y"] + shop["height"]//2 + 62
+        else:
+            # 其他商店維持原位置
+            text_y = shop["y"] + shop["height"]//2 + 60
         
         name_surface = font_manager.render_text(shop["name"], 18, (255, 255, 255))
         name_rect = name_surface.get_rect(center=(shop["x"] + shop["width"]//2, text_y))
