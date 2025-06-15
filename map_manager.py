@@ -160,9 +160,9 @@ class MapManager:
                         target_width = 100
                         target_height = 78
                     elif shop_type == "tea":
-                        # 🆕 茶壜設定合適尺寸：128x96像素
-                        target_width = 128
-                        target_height = 96
+                        # 🆕 茶壜設定合適尺寸：100x75像素
+                        target_width = 100
+                        target_height = 75
                     else:
                         # 其他商店維持原尺寸：80x60像素
                         target_width = 80
@@ -501,8 +501,8 @@ class MapManager:
             # 🆕 茶壜圖片渲染
             sprite = self.shop_sprites["tea"]
             # 茶壜圖片位置微調（可根據需要調整）
-            x_offset = (shop["width"] - 128) // 2  # 128是茶壜圖片寬度
-            y_offset = (shop["height"] - 96) // 2  # 96是茶壜圖片高度
+            x_offset = (shop["width"] - 100) // 2  # 100是茶壜圖片寬度
+            y_offset = (shop["height"] - 75) // 2  # 75是茶壜圖片高度
             draw_x = shop["x"] + x_offset
             draw_y = shop["y"] + y_offset
         
