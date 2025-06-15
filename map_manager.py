@@ -55,7 +55,7 @@ class MapManager:
         self.combat_zones = {
             1: [
                 {"name": "走廊1", "x": 150, "y": 150, "width": 100, "height": 80, "enemies": ["zombie_student"]},
-                {"name": "角落", "x": 550, "y": 300, "width": 80, "height": 80, "enemies": ["infected_staff"]}  # 🔧 從600往左調整50像素到550
+                {"name": "角落", "x": 545, "y": 300, "width": 80, "height": 80, "enemies": ["infected_staff"]}  # 🔧 從550再往左調整5像素到545
             ],
             2: [
                 {"name": "走廊2", "x": 500, "y": 200, "width": 120, "height": 80, "enemies": ["zombie_student", "infected_staff"]},
