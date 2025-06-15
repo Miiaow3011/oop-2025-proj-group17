@@ -135,12 +135,13 @@ class MapManager:
             print(f"🎨 成功載入地板圖片！使用圖片渲染地板")
     
     def load_shop_images(self):
-        """🆕 載入商店圖片 - 新增茶壜支援"""
+        """🆕 載入商店圖片 - 新增茶壜和素怡沅支援"""
         shop_paths = {
             "711": "assets/images/711.png",  # 你的7-11圖片
             "subway": "assets/images/subway.png",  # 可選的Subway圖片
             "coffee": "assets/images/coffee.png",  # 可選的咖啡廳圖片
-            "tea": "assets/images/tea.png"  # 🆕 新增茶壜圖片
+            "tea": "assets/images/tea.png",  # 🆕 新增茶壜圖片
+            "vegetarian": "assets/images/vegetarian_second_floor.png"  # 🆕 新增素怡沅圖片
         }
         
         print("🏪 載入商店圖片...")
@@ -166,6 +167,10 @@ class MapManager:
                         # 🆕 茶壜設定合適尺寸：100x75像素
                         target_width = 100
                         target_height = 75
+                    elif shop_type == "vegetarian":
+                        # 🆕 素怡沅設定尺寸：128x96像素
+                        target_width = 128
+                        target_height = 96
                     else:
                         # 其他商店維持原尺寸：80x60像素
                         target_width = 80
@@ -315,7 +320,7 @@ class MapManager:
         if floor not in self.combat_zones:
             return None
 
-        for zone in self.combat_zones[floor]:
+        for zone in self.combat_zones[self.current_floor]:
             if (zone["x"] <= player_x <= zone["x"] + zone["width"] and
                 zone["y"] <= player_y <= zone["y"] + zone["height"]):
                 return zone
@@ -478,7 +483,7 @@ class MapManager:
             self.render_shop_with_code(screen, shop)
     
     def render_shop_with_sprite(self, screen, shop):
-        """🆕 使用圖片渲染商店 - 新增茶壜支援"""
+        """🆕 使用圖片渲染商店 - 新增茶壜和素怡沅支援"""
         shop_id = shop["id"]
         shop_name = shop["name"]
         
@@ -507,6 +512,14 @@ class MapManager:
             # 茶壜圖片位置微調（可根據需要調整）
             x_offset = (shop["width"] - 100) // 2  # 100是茶壜圖片寬度
             y_offset = (shop["height"] - 75) // 2  # 75是茶壜圖片高度
+            draw_x = shop["x"] + x_offset
+            draw_y = shop["y"] + y_offset
+        elif shop_name == "素怡沅" and "vegetarian" in self.shop_sprites:
+            # 🆕 素怡沅圖片渲染 - 調整為128x96尺寸
+            sprite = self.shop_sprites["vegetarian"]
+            # 素怡沅圖片位置微調
+            x_offset = (shop["width"] - 128) // 2  # 128是素怡沅圖片寬度
+            y_offset = (shop["height"] - 96) // 2  # 96是素怡沅圖片高度
             draw_x = shop["x"] + x_offset
             draw_y = shop["y"] + y_offset
         
