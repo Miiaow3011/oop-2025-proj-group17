@@ -791,7 +791,7 @@ class MapManager:
             elif (direction == "down" and 
                   stairs.get("target_floor") == 2 and 
                   stairs["x"] == 450 and stairs["y"] == 600):
-                draw_y = stairs["y"] - 26  # 圖片往上移26個像素
+                draw_y = stairs["y"] - 23  # 圖片往上移23個像素（原本26，現在減少3像素）
             
             # 繪製樓梯圖片
             screen.blit(sprite, (draw_x, draw_y))
