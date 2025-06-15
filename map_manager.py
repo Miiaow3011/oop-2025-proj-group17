@@ -632,8 +632,14 @@ class MapManager:
 
         # 🎨 優先使用圖片渲染
         if self.use_npc_sprites and self.render_npc_with_sprite(screen, npc, center_x, center_y):
-            # 圖片渲染成功，添加NPC名稱
-            self.render_npc_name(screen, npc, center_x, center_y)
+            # 圖片渲染成功，添加NPC名稱（使用調整後的位置）
+            if npc.get("name") == "受傷職員":
+                # 受傷職員使用調整後的位置
+                adjusted_center_y = center_y + 5
+                self.render_npc_name(screen, npc, center_x, adjusted_center_y)
+            else:
+                # 其他NPC使用原位置
+                self.render_npc_name(screen, npc, center_x, center_y)
         else:
             # 備用：程式繪製圓形NPC
             self.render_npc_with_code(screen, npc, center_x, center_y)
@@ -642,6 +648,14 @@ class MapManager:
         """🆕 使用圖片渲染NPC"""
         npc_id = npc.get("id", "")
         npc_name = npc.get("name", "")
+        
+        # 🆕 根據NPC名稱調整圖片位置
+        if npc_name == "受傷職員":
+            # 受傷職員的圖片往下5個像素
+            adjusted_center_y = center_y + 5
+        else:
+            # 其他NPC維持原位置
+            adjusted_center_y = center_y
         
         # 根據NPC ID或名稱選擇對應圖片
         sprite = None
@@ -657,7 +671,7 @@ class MapManager:
             sprite_width = 55
             sprite_height = 70
             draw_x = center_x - sprite_width // 2
-            draw_y = center_y - sprite_height // 2
+            draw_y = adjusted_center_y - sprite_height // 2
             
             # 繪製NPC圖片
             screen.blit(sprite, (draw_x, draw_y))
@@ -677,8 +691,19 @@ class MapManager:
     
     def render_npc_name(self, screen, npc, center_x, center_y):
         """🆕 渲染NPC名稱"""
+        # 根據NPC名稱調整文字位置
+        if npc["name"] == "受傷職員":
+            # 受傷職員的文字往下移10個像素（圖片已經下移5個，文字相對再下移5個，總共-30）
+            text_y = center_y - 30
+        elif npc["name"] == "驚慌學生":
+            # 驚慌學生的文字往下移5個像素
+            text_y = center_y - 40
+        else:
+            # 其他NPC維持原位置
+            text_y = center_y - 45
+        
         name_surface = font_manager.render_text(npc["name"], 14, (255, 255, 255))
-        name_rect = name_surface.get_rect(center=(center_x, center_y - 45))  # 🆕 調整名稱位置（55x70圖片）
+        name_rect = name_surface.get_rect(center=(center_x, text_y))
         
         # 名稱背景（讓文字更清楚）
         bg_rect = name_rect.copy()
