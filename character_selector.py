@@ -49,7 +49,7 @@ class CharacterSelector:
                     "right": "assets/images/player/student_c_right.png"
                 },
                 "fallback_path": "assets/images/player/student_c.png",
-                "stats": {"hp": 90, "speed": 7}
+                "stats": {"hp": 90, "speed": 8}  # 🔧 修復：改為8避免移動問題
             }
         ]
         
