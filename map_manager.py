@@ -548,6 +548,15 @@ class MapManager:
         if shop["name"] == "素怡沅":
             # 素怡沅的文字往下移2個像素
             text_y = shop["y"] + shop["height"]//2 + 62
+        elif shop["name"] == "茶壜":
+            # 茶壜的文字往上移6個像素（原本-3，再-3）
+            text_y = shop["y"] + shop["height"]//2 + 54
+        elif shop["name"] == "7-11":
+            # 7-11的文字往上移3個像素
+            text_y = shop["y"] + shop["height"]//2 + 57
+        elif shop["name"] == "Subway":
+            # Subway的文字往下移2個像素（原本+1，再+1）
+            text_y = shop["y"] + shop["height"]//2 + 62
         else:
             # 其他商店維持原位置
             text_y = shop["y"] + shop["height"]//2 + 60
