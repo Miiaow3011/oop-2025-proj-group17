@@ -808,17 +808,26 @@ class MapManager:
                 ]
                 pygame.draw.polygon(screen, (255, 255, 0), arrow_points)
             else:
-                # 向下箭頭（針對特殊樓梯調整箭頭位置）
-                if (stairs.get("target_floor") == 1 and 
-                    stairs["x"] == 450 and stairs["y"] == 590):
-                    # 二樓往下樓梯的箭頭：圖片上移26像素，箭頭再下移10像素（5+5）
-                    arrow_points = [
-                        (stairs["x"] + 48, stairs["y"] + 60),  # 原本+55，現在+60（再往下5像素）
-                        (stairs["x"] + 40, stairs["y"] + 45),  # 原本+40，現在+45（再往下5像素）
-                        (stairs["x"] + 56, stairs["y"] + 45)   # 原本+40，現在+45（再往下5像素）
-                    ]
+                # 向下箭頭
+                if direction == "down" and stairs["x"] == 450:
+                    # 檢查是否為需要特殊調整的往下樓梯
+                    if (stairs.get("target_floor") == 1 and stairs["y"] == 590) or \
+                       (stairs.get("target_floor") == 2 and stairs["y"] == 600):
+                        # 往下樓梯的箭頭：下移10像素
+                        arrow_points = [
+                            (stairs["x"] + 48, stairs["y"] + 60),  # 往下10像素
+                            (stairs["x"] + 40, stairs["y"] + 45),  # 往下10像素
+                            (stairs["x"] + 56, stairs["y"] + 45)   # 往下10像素
+                        ]
+                    else:
+                        # 其他下樓梯箭頭保持原位置
+                        arrow_points = [
+                            (stairs["x"] + 48, stairs["y"] + 60),
+                            (stairs["x"] + 40, stairs["y"] + 45),
+                            (stairs["x"] + 56, stairs["y"] + 45)
+                        ]
                 else:
-                    # 其他下樓梯箭頭保持原位置
+                    # 非下樓梯的情況
                     arrow_points = [
                         (stairs["x"] + 48, stairs["y"] + 60),
                         (stairs["x"] + 40, stairs["y"] + 45),
