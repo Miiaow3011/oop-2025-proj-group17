@@ -783,3 +783,86 @@ class UI:
         self.message_display_time = 0
         self.current_message = ""
         print("遊戲狀態已重置")
+
+    def render_hud(self, game_state, player):
+        # 血量條
+        hp_ratio = game_state.player_stats["hp"] / game_state.player_stats["max_hp"]
+        hp_bar_width = 200
+        hp_bar_height = 20
+        
+        # 血量條背景
+        hp_bg_rect = pygame.Rect(10, self.screen_height - 40, hp_bar_width, hp_bar_height)
+        pygame.draw.rect(self.screen, (100, 100, 100), hp_bg_rect)
+        
+        # 血量條
+        hp_rect = pygame.Rect(10, self.screen_height - 40, hp_bar_width * hp_ratio, hp_bar_height)
+        hp_color = (255, 0, 0) if hp_ratio < 0.3 else (255, 255, 0) if hp_ratio < 0.6 else (0, 255, 0)
+        pygame.draw.rect(self.screen, hp_color, hp_rect)
+        
+        # 血量文字
+        hp_text = f"HP: {game_state.player_stats['hp']}/{game_state.player_stats['max_hp']}"
+        hp_surface = font_manager.render_text(hp_text, 18, (255, 255, 255))
+        self.screen.blit(hp_surface, (220, self.screen_height - 35))
+        
+        # 等級和經驗值 - 修復：確保正確顯示
+        level_text = f"Lv.{game_state.player_stats['level']}"
+        level_surface = font_manager.render_text(level_text, 18, (255, 255, 255))
+        self.screen.blit(level_surface, (10, self.screen_height - 65))
+        
+        required_exp = game_state.player_stats['level'] * 100
+        exp_text = f"EXP: {game_state.player_stats['exp']}/{required_exp}"
+        exp_surface = font_manager.render_text(exp_text, 18, (255, 255, 255))
+        self.screen.blit(exp_surface, (80, self.screen_height - 65))
+        
+        # 經驗值條 - 視覺化經驗值條
+        exp_ratio = game_state.player_stats['exp'] / required_exp
+        exp_bar_width = 150
+        exp_bar_height = 8
+        exp_bar_x = 250
+        exp_bar_y = self.screen_height - 60
+        
+        # 經驗值條背景
+        exp_bg_rect = pygame.Rect(exp_bar_x, exp_bar_y, exp_bar_width, exp_bar_height)
+        pygame.draw.rect(self.screen, (50, 50, 50), exp_bg_rect)
+        
+        # 經驗值條
+        exp_rect = pygame.Rect(exp_bar_x, exp_bar_y, exp_bar_width * exp_ratio, exp_bar_height)
+        pygame.draw.rect(self.screen, (0, 255, 255), exp_rect)
+        
+        # 🆕 角色資訊顯示
+        character_name = player.get_character_name()
+        character_text = f"🎭 {character_name}"
+        character_surface = font_manager.render_text(character_text, 16, (255, 150, 255))
+        self.screen.blit(character_surface, (10, self.screen_height - 90))
+        
+        # 🆕 角色屬性顯示（顯示速度）
+        character_stats = player.get_character_stats()
+        speed_text = f"速度: {character_stats.get('speed', 8)}"
+        speed_surface = font_manager.render_text(speed_text, 14, (150, 255, 150))
+        self.screen.blit(speed_surface, (150, self.screen_height - 90))
+        
+        # 道具狀態
+        item_y = 10
+        if self.has_keycard:
+            keycard_text = "🔑 鑰匙卡"
+            keycard_surface = font_manager.render_text(keycard_text, 18, (255, 255, 0))
+            self.screen.blit(keycard_surface, (10, item_y))
+            item_y += 25
+        
+        if self.has_antidote:
+            antidote_text = "💉 解藥"
+            antidote_surface = font_manager.render_text(antidote_text, 18, (0, 255, 0))
+            self.screen.blit(antidote_surface, (10, item_y))
+        
+        # 操作提示
+        if not self.dialogue_active:
+            controls = [
+                "方向鍵: 移動",
+                "空白鍵: 互動",
+                "I: 背包",
+                "M: 地圖"
+            ]
+            
+            for i, control in enumerate(controls):
+                control_surface = font_manager.render_text(control, 18, (200, 200, 200))
+                self.screen.blit(control_surface, (self.screen_width - 150, 10 + i * 20))
