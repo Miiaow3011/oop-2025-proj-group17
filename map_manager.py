@@ -752,14 +752,6 @@ class MapManager:
         screen.blit(bg_surface, bg_rect)
         
         screen.blit(name_surface, name_rect)
-        
-        screen.blit(name_surface, name_rect)
-        
-        screen.blit(name_surface, name_rect)
-        
-        screen.blit(name_surface, name_rect)
-        
-        screen.blit(name_surface, name_rect)
 
     def render_stairs(self, screen, stairs):
         """渲染樓梯 - 支援圖片和像素繪製"""
@@ -785,7 +777,7 @@ class MapManager:
         sprite = self.stairs_sprites[direction]
 
         if sprite:
-            # 🆕 特殊處理：二樓往下樓梯的圖片往上移10個像素
+            # 🆕 特殊處理：二樓往下樓梯和三樓往下樓梯的圖片往上移
             draw_x = stairs["x"]
             draw_y = stairs["y"]
             
@@ -794,6 +786,12 @@ class MapManager:
                 stairs.get("target_floor") == 1 and 
                 stairs["x"] == 450 and stairs["y"] == 590):
                 draw_y = stairs["y"] - 26  # 圖片往上移26個像素（10+8+8）
+            
+            # 🆕 檢查是否為三樓往下的樓梯
+            elif (direction == "down" and 
+                  stairs.get("target_floor") == 2 and 
+                  stairs["x"] == 450 and stairs["y"] == 600):
+                draw_y = stairs["y"] - 26  # 圖片往上移26個像素
             
             # 繪製樓梯圖片
             screen.blit(sprite, (draw_x, draw_y))
@@ -808,26 +806,25 @@ class MapManager:
                 ]
                 pygame.draw.polygon(screen, (255, 255, 0), arrow_points)
             else:
-                # 向下箭頭
-                if direction == "down" and stairs["x"] == 450:
-                    # 檢查是否為需要特殊調整的往下樓梯
-                    if (stairs.get("target_floor") == 1 and stairs["y"] == 590) or \
-                       (stairs.get("target_floor") == 2 and stairs["y"] == 600):
-                        # 往下樓梯的箭頭：下移10像素
-                        arrow_points = [
-                            (stairs["x"] + 48, stairs["y"] + 60),  # 往下10像素
-                            (stairs["x"] + 40, stairs["y"] + 45),  # 往下10像素
-                            (stairs["x"] + 56, stairs["y"] + 45)   # 往下10像素
-                        ]
-                    else:
-                        # 其他下樓梯箭頭保持原位置
-                        arrow_points = [
-                            (stairs["x"] + 48, stairs["y"] + 60),
-                            (stairs["x"] + 40, stairs["y"] + 45),
-                            (stairs["x"] + 56, stairs["y"] + 45)
-                        ]
+                # 向下箭頭（針對特殊樓梯調整箭頭位置）
+                if (stairs.get("target_floor") == 1 and 
+                    stairs["x"] == 450 and stairs["y"] == 590):
+                    # 二樓往下樓梯的箭頭：圖片上移26像素，箭頭再下移10像素（5+5）
+                    arrow_points = [
+                        (stairs["x"] + 48, stairs["y"] + 60),  # 原本+55，現在+60（再往下5像素）
+                        (stairs["x"] + 40, stairs["y"] + 45),  # 原本+40，現在+45（再往下5像素）
+                        (stairs["x"] + 56, stairs["y"] + 45)   # 原本+40，現在+45（再往下5像素）
+                    ]
+                elif (stairs.get("target_floor") == 2 and 
+                      stairs["x"] == 450 and stairs["y"] == 600):
+                    # 🆕 三樓往下樓梯的箭頭：圖片上移26像素，箭頭再下移10像素
+                    arrow_points = [
+                        (stairs["x"] + 48, stairs["y"] + 70),  # 原本+60，現在+70（往下10像素）
+                        (stairs["x"] + 40, stairs["y"] + 55),  # 原本+45，現在+55（往下10像素）
+                        (stairs["x"] + 56, stairs["y"] + 55)   # 原本+45，現在+55（往下10像素）
+                    ]
                 else:
-                    # 非下樓梯的情況
+                    # 其他下樓梯箭頭保持原位置
                     arrow_points = [
                         (stairs["x"] + 48, stairs["y"] + 60),
                         (stairs["x"] + 40, stairs["y"] + 45),
