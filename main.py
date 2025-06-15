@@ -291,6 +291,10 @@ class Game:
     def toggle_debug_mode(self):
         """切換除錯模式 - 增強版"""
         self.debug_mode = not self.debug_mode
+        # 🔧 同時切換移動除錯
+        if self.player:
+            self.player.debug_movement = self.debug_mode
+        
         print(f"🔧 除錯模式: {'開啟' if self.debug_mode else '關閉'}")
         if self.debug_mode:
             self.print_debug_info()
@@ -298,6 +302,18 @@ class Game:
             self.map_manager.debug_print_items()
             self.map_manager.debug_print_floor_info()
             self.map_manager.debug_print_combat_zones()
+            if self.player:
+                print(f"🚶 移動除錯: 開啟 (角色: {self.player.character_name})")
+
+    def toggle_movement_debug(self):
+        """🆕 切換移動除錯"""
+        if self.player:
+            self.player.debug_movement = not self.player.debug_movement
+            status = "開啟" if self.player.debug_movement else "關閉"
+            print(f"🚶 移動除錯: {status} (角色: {self.player.character_name})")
+            self.ui.show_message(f"移動除錯: {status}")
+        else:
+            print("⚠️ 玩家未初始化")
 
     def print_debug_info(self):
         """顯示除錯資訊"""
@@ -1035,11 +1051,20 @@ def main():
         print("   ESC - 強制關閉所有UI / 退出")
         print("   I - 背包, M - 地圖, R - 重新開始(遊戲結束時)")
         print("")
-        print("🎭 角色選擇操作:")
+        print("🎯 角色選擇操作:")
         print("   ← → 選擇角色")
         print("   空白鍵/Enter 確認選擇")
         print("   滑鼠點擊角色卡片直接選擇")
         print("   ESC 選擇預設角色並開始遊戲")
+        print("")
+        print("🎭 角色屬性:")
+        print("   學生A: HP=100, 速度=8 (平衡型)")
+        print("   學生B: HP=120, 速度=10 (運動型)")
+        print("   學生C: HP=90, 速度=8 (理工型，修復移動問題)")  # 🔧 更新說明
+        print("")
+        print("🔧 除錯快捷鍵:")
+        print("   G鍵 - 切換移動除錯 (診斷移動問題)")
+        print("   F1 - 完整除錯模式")
         print("")
         print("🪜 樓梯圖片路徑:")
         print("   assets/images/stairs_up.png - 上樓梯圖片 (96x72)")
