@@ -51,7 +51,7 @@ class MapManager:
             ]
         }
         
-        # 戰鬥區域
+        # 戰鬥區域 - 🔧 完全隱藏，玩家無法察覺
         self.combat_zones = {
             1: [
                 {"name": "走廊1", "x": 150, "y": 150, "width": 100, "height": 80, "enemies": ["zombie_student"]},
@@ -91,6 +91,9 @@ class MapManager:
         
         # 🆕 新增：物品收集狀態追蹤
         self.collected_items = set()  # 已收集的物品ID
+        
+        # 🔧 新增：除錯模式控制戰鬥區域顯示
+        self.debug_show_combat_zones = False  # 預設關閉除錯顯示
     
     def load_floor_images(self):
         """🆕 載入地板圖片"""
@@ -381,8 +384,12 @@ class MapManager:
         # 渲染互動區域
         self.render_interactions(screen)
 
-        # 渲染戰鬥區域
-        self.render_combat_zones(screen)
+        # 🔧 只有在除錯模式下才渲染戰鬥區域
+        if self.debug_show_combat_zones:
+            self.render_combat_zones(screen)
+        else:
+            # 🆕 在戰鬥區域渲染普通地板，完全隱藏危險性
+            self.render_combat_zones_hidden(screen)
 
         # 渲染物品
         self.render_items(screen)
@@ -426,9 +433,6 @@ class MapManager:
                 # 確保不超出邊界
                 if x < 1024 and y < 768:
                     screen.blit(floor_sprite, (x, y))
-
-        # 移除這行煩人的除錯輸出
-        # print(f"🎨 使用圖片渲染地板: {cols}x{rows} 磚塊")
 
     def render_floor_with_code(self, screen):
         """🆕 使用程式繪製地板（備用方法）"""
@@ -674,13 +678,75 @@ class MapManager:
             ]
             pygame.draw.polygon(screen, (0, 255, 255), arrow_points)
 
-    def render_combat_zones(self, screen):
-        """渲染戰鬥區域"""
+    def render_combat_zones_hidden(self, screen):
+        """🆕 渲染隱藏的戰鬥區域 - 看起來像普通地板"""
         if self.current_floor not in self.combat_zones:
             return
 
         for zone in self.combat_zones[self.current_floor]:
-            # 危險區域標示
+            # 🔧 在戰鬥區域渲染普通地板紋理，完全隱藏危險性
+            if self.use_floor_sprites and self.floor_sprites:
+                self.render_hidden_zone_with_sprites(screen, zone)
+            else:
+                self.render_hidden_zone_with_code(screen, zone)
+
+    def render_hidden_zone_with_sprites(self, screen, zone):
+        """🆕 使用地板圖片渲染隱藏的戰鬥區域"""
+        # 獲取第一個可用的地板圖片
+        floor_sprite = None
+        for sprite in self.floor_sprites.values():
+            if sprite:
+                floor_sprite = sprite
+                break
+
+        if not floor_sprite:
+            # 如果沒有圖片，使用程式繪製
+            self.render_hidden_zone_with_code(screen, zone)
+            return
+
+        # 在戰鬥區域範圍內重複鋪地板圖片
+        sprite_size = 64
+        
+        # 計算區域內需要的圖片數量
+        start_x = (zone["x"] // sprite_size) * sprite_size
+        start_y = (zone["y"] // sprite_size) * sprite_size
+        end_x = zone["x"] + zone["width"]
+        end_y = zone["y"] + zone["height"]
+
+        x = start_x
+        while x < end_x:
+            y = start_y
+            while y < end_y:
+                # 只在戰鬥區域範圍內繪製
+                if (x >= zone["x"] and x < zone["x"] + zone["width"] and
+                    y >= zone["y"] and y < zone["y"] + zone["height"]):
+                    screen.blit(floor_sprite, (x, y))
+                y += sprite_size
+            x += sprite_size
+
+    def render_hidden_zone_with_code(self, screen, zone):
+        """🆕 使用程式繪製隱藏的戰鬥區域"""
+        # 使用與正常地板相同的顏色和樣式
+        tile_color = (80, 80, 80)
+        
+        # 在戰鬥區域內繪製地板磚塊
+        for x in range(zone["x"], zone["x"] + zone["width"], 64):
+            for y in range(zone["y"], zone["y"] + zone["height"], 64):
+                # 確保磚塊在區域範圍內
+                tile_width = min(64, zone["x"] + zone["width"] - x)
+                tile_height = min(64, zone["y"] + zone["height"] - y)
+                
+                if (x // 64 + y // 64) % 2 == 0:
+                    pygame.draw.rect(screen, tile_color, (x, y, tile_width, tile_height))
+                    pygame.draw.rect(screen, (60, 60, 60), (x, y, tile_width, tile_height), 1)
+
+    def render_combat_zones(self, screen):
+        """渲染戰鬥區域 - 只在除錯模式下顯示紅色框"""
+        if self.current_floor not in self.combat_zones:
+            return
+
+        for zone in self.combat_zones[self.current_floor]:
+            # 危險區域標示 - 只在除錯模式下顯示
             danger_color = (255, 0, 0, 50)
             danger_rect = pygame.Rect(zone["x"], zone["y"], zone["width"], zone["height"])
 
@@ -856,6 +922,24 @@ class MapManager:
         status_surface = font_manager.render_text(floor_status, 16, status_color)
         screen.blit(status_surface, (10, 65))
 
+        # 🔧 在除錯模式下顯示戰鬥區域狀態
+        if self.debug_show_combat_zones:
+            debug_status = "除錯: 戰鬥區域可見"
+            debug_color = (255, 100, 100)
+        else:
+            debug_status = "戰鬥區域: 隱藏"
+            debug_color = (100, 255, 100)
+        
+        debug_surface = font_manager.render_text(debug_status, 16, debug_color)
+        screen.blit(debug_surface, (10, 85))
+
+    def toggle_combat_zone_debug(self):
+        """🆕 切換戰鬥區域除錯顯示"""
+        self.debug_show_combat_zones = not self.debug_show_combat_zones
+        status = "開啟" if self.debug_show_combat_zones else "關閉"
+        print(f"🔧 戰鬥區域除錯顯示: {status}")
+        return self.debug_show_combat_zones
+
     def reload_stairs_images(self):
         """重新載入樓梯圖片（用於熱更新）"""
         print("🔄 重新載入樓梯圖片...")
@@ -931,6 +1015,16 @@ class MapManager:
                 if sprite:
                     size = sprite.get_size()
                     print(f"     - {shop_type}: {size[0]}x{size[1]} 像素")
+
+    def debug_print_combat_zones(self):
+        """🆕 除錯：印出戰鬥區域資訊"""
+        print("⚔️ 戰鬥區域偵錯資訊:")
+        print(f"   除錯顯示狀態: {self.debug_show_combat_zones}")
+        for floor, zones in self.combat_zones.items():
+            print(f"   {floor}樓戰鬥區域:")
+            for zone in zones:
+                print(f"     - {zone['name']}: ({zone['x']}, {zone['y']}) {zone['width']}x{zone['height']}")
+                print(f"       敵人類型: {zone.get('enemies', [])}")
 
     def get_available_items(self, floor=None):
         """🆕 獲取可用物品列表"""
