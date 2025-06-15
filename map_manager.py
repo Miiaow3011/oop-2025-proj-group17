@@ -217,9 +217,9 @@ class MapManager:
                     original_size = image.get_size()
                     print(f"   原始NPC圖片尺寸: {original_size}")
                     
-                    # 🎨 NPC圖片統一縮放到24x32像素
-                    target_width = 24
-                    target_height = 32
+                    # 🎨 NPC圖片統一縮放到48x64像素（放大兩倍）
+                    target_width = 48
+                    target_height = 64
                     image = pygame.transform.scale(image, (target_width, target_height))
                     self.npc_sprites[npc_type] = image
                     print(f"✅ 成功載入NPC圖片: {npc_type} - {path}")
@@ -653,9 +653,9 @@ class MapManager:
             sprite = self.npc_sprites["default_npc"]
         
         if sprite:
-            # 計算圖片繪製位置（24x32像素，置中）
-            sprite_width = 24
-            sprite_height = 32
+            # 計算圖片繪製位置（48x64像素，置中）
+            sprite_width = 48
+            sprite_height = 64
             draw_x = center_x - sprite_width // 2
             draw_y = center_y - sprite_height // 2
             
@@ -678,7 +678,7 @@ class MapManager:
     def render_npc_name(self, screen, npc, center_x, center_y):
         """🆕 渲染NPC名稱"""
         name_surface = font_manager.render_text(npc["name"], 14, (255, 255, 255))
-        name_rect = name_surface.get_rect(center=(center_x, center_y - 28))  # 🆕 調整名稱位置（24x32圖片）
+        name_rect = name_surface.get_rect(center=(center_x, center_y - 42))  # 🆕 調整名稱位置（48x64圖片）
         
         # 名稱背景（讓文字更清楚）
         bg_rect = name_rect.copy()
@@ -686,6 +686,8 @@ class MapManager:
         bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
         bg_surface.fill((0, 0, 0, 150))
         screen.blit(bg_surface, bg_rect)
+        
+        screen.blit(name_surface, name_rect)
         
         screen.blit(name_surface, name_rect)
         
