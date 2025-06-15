@@ -16,6 +16,14 @@ class MapManager:
         self.stairs_sprites = {}
         self.load_stairs_images()
         
+        # 🆕 物品圖片
+        self.item_sprites = {}
+        self.load_item_images()
+        
+        # 🆕 NPC圖片
+        self.npc_sprites = {}
+        self.load_npc_images()
+        
         # 🆕 商店圖片
         self.shop_sprites = {}
         self.load_shop_images()
@@ -37,11 +45,11 @@ class MapManager:
                 {"type": "stairs", "direction": "up", "x": 450, "y": 100, "width": 96, "height": 48, "target_floor": 2}  # 🆕 加大樓梯尺寸
             ],
             2: [  # 2樓
-                {"type": "shop", "id": "D", "name": "和食宣", "x": 100, "y": 200, "width": 80, "height": 60},
+                {"type": "shop", "id": "D", "name": "和食軒", "x": 100, "y": 200, "width": 80, "height": 60},
                 {"type": "shop", "id": "E", "name": "素怡沅", "x": 300, "y": 150, "width": 80, "height": 60},
                 {"type": "npc", "id": "npc2", "name": "受傷職員", "x": 200, "y": 300, "width": 30, "height": 30},
                 {"type": "stairs", "direction": "up", "x": 450, "y": 90, "width": 96, "height": 48, "target_floor": 3},    # 🆕 加大樓梯尺寸
-                {"type": "stairs", "direction": "down", "x": 450, "y": 600, "width": 96, "height": 48, "target_floor": 1}  # 🆕 加大樓梯尺寸
+                {"type": "stairs", "direction": "down", "x": 450, "y": 590, "width": 96, "height": 48, "target_floor": 1}  # 🆕 往上移10個像素：600→590
             ],
             3: [  # 3樓
                 {"type": "shop", "id": "L", "name": "咖啡廳", "x": 150, "y": 250, "width": 80, "height": 60},
@@ -51,11 +59,11 @@ class MapManager:
             ]
         }
         
-        # 戰鬥區域
+        # 戰鬥區域 - 🔧 完全隱藏，玩家無法察覺
         self.combat_zones = {
             1: [
                 {"name": "走廊1", "x": 150, "y": 150, "width": 100, "height": 80, "enemies": ["zombie_student"]},
-                {"name": "角落", "x": 600, "y": 300, "width": 80, "height": 80, "enemies": ["infected_staff"]}
+                {"name": "角落", "x": 540, "y": 300, "width": 80, "height": 80, "enemies": ["infected_staff"]}  # 🔧 從545再往左調整5像素到540
             ],
             2: [
                 {"name": "走廊2", "x": 500, "y": 200, "width": 120, "height": 80, "enemies": ["zombie_student", "infected_staff"]},
@@ -91,6 +99,9 @@ class MapManager:
         
         # 🆕 新增：物品收集狀態追蹤
         self.collected_items = set()  # 已收集的物品ID
+        
+        # 🔧 新增：除錯模式控制戰鬥區域顯示
+        self.debug_show_combat_zones = False  # 預設關閉除錯顯示
     
     def load_floor_images(self):
         """🆕 載入地板圖片"""
@@ -132,12 +143,14 @@ class MapManager:
             print(f"🎨 成功載入地板圖片！使用圖片渲染地板")
     
     def load_shop_images(self):
-        """🆕 載入商店圖片 - 新增茶壜支援"""
+        """🆕 載入商店圖片 - 新增茶壜、素怡沅和和食軒支援"""
         shop_paths = {
             "711": "assets/images/711.png",  # 你的7-11圖片
             "subway": "assets/images/subway.png",  # 可選的Subway圖片
             "coffee": "assets/images/coffee.png",  # 可選的咖啡廳圖片
-            "tea": "assets/images/tea.png"  # 🆕 新增茶壜圖片
+            "tea": "assets/images/tea.png",  # 🆕 新增茶壜圖片
+            "vegetarian": "assets/images/vegetarian_second_floor.png",  # 🆕 新增素怡沅圖片
+            "restaurant": "assets/images/restaurant_second_floor.png"  # 🆕 新增和食軒圖片
         }
         
         print("🏪 載入商店圖片...")
@@ -163,6 +176,14 @@ class MapManager:
                         # 🆕 茶壜設定合適尺寸：100x75像素
                         target_width = 100
                         target_height = 75
+                    elif shop_type == "vegetarian":
+                        # 🆕 素怡沅設定尺寸：128x96像素
+                        target_width = 128
+                        target_height = 96
+                    elif shop_type == "restaurant":
+                        # 🆕 和食軒設定尺寸：120x90像素
+                        target_width = 120
+                        target_height = 90
                     else:
                         # 其他商店維持原尺寸：80x60像素
                         target_width = 80
@@ -182,6 +203,76 @@ class MapManager:
             print("📦 未找到商店圖片，將使用程式繪製商店")
         else:
             print(f"🎨 成功載入 {len(self.shop_sprites)} 個商店圖片")
+    
+    def load_npc_images(self):
+        """🆕 載入NPC圖片"""
+        npc_paths = {
+            "npc3_2floor": "assets/images/npc3_2floor.png",  # 🆕 你的NPC圖片
+            "default_npc": "assets/images/npc.png"  # 可選的通用NPC圖片
+        }
+        
+        print("👤 載入NPC圖片...")
+        
+        for npc_type, path in npc_paths.items():
+            if os.path.exists(path):
+                try:
+                    # 載入NPC圖片
+                    image = pygame.image.load(path).convert_alpha()
+                    original_size = image.get_size()
+                    print(f"   原始NPC圖片尺寸: {original_size}")
+                    
+                    # 🎨 NPC圖片統一縮放到55x70像素
+                    target_width = 55
+                    target_height = 70
+                    image = pygame.transform.scale(image, (target_width, target_height))
+                    self.npc_sprites[npc_type] = image
+                    print(f"✅ 成功載入NPC圖片: {npc_type} - {path}")
+                    print(f"   縮放後尺寸: {target_width}x{target_height}")
+                except Exception as e:
+                    print(f"❌ 載入NPC圖片失敗: {npc_type} - {e}")
+        
+        # 檢查是否成功載入NPC圖片
+        self.use_npc_sprites = len(self.npc_sprites) > 0
+        
+        if not self.use_npc_sprites:
+            print("📦 未找到NPC圖片，將使用程式繪製NPC")
+        else:
+            print(f"🎨 成功載入 {len(self.npc_sprites)} 個NPC圖片")
+    
+    def load_item_images(self):
+        """🆕 載入物品圖片"""
+        item_paths = {
+            "key_2floor": "assets/images/key_2floor.png",  # 🆕 你的鑰匙卡圖片
+            "healing": "assets/images/healing.png",  # 可選的醫療包圖片
+            "special": "assets/images/special.png"  # 可選的特殊物品圖片
+        }
+        
+        print("🗝️ 載入物品圖片...")
+        
+        for item_type, path in item_paths.items():
+            if os.path.exists(path):
+                try:
+                    # 載入物品圖片
+                    image = pygame.image.load(path).convert_alpha()
+                    original_size = image.get_size()
+                    print(f"   原始物品圖片尺寸: {original_size}")
+                    
+                    # 🎨 物品圖片統一縮放到32x32像素
+                    target_size = 32
+                    image = pygame.transform.scale(image, (target_size, target_size))
+                    self.item_sprites[item_type] = image
+                    print(f"✅ 成功載入物品圖片: {item_type} - {path}")
+                    print(f"   縮放後尺寸: {target_size}x{target_size}")
+                except Exception as e:
+                    print(f"❌ 載入物品圖片失敗: {item_type} - {e}")
+        
+        # 檢查是否成功載入物品圖片
+        self.use_item_sprites = len(self.item_sprites) > 0
+        
+        if not self.use_item_sprites:
+            print("📦 未找到物品圖片，將使用程式繪製物品")
+        else:
+            print(f"🎨 成功載入 {len(self.item_sprites)} 個物品圖片")
     
     def load_stairs_images(self):
         """載入樓梯圖片"""
@@ -312,7 +403,7 @@ class MapManager:
         if floor not in self.combat_zones:
             return None
 
-        for zone in self.combat_zones[floor]:
+        for zone in self.combat_zones[self.current_floor]:
             if (zone["x"] <= player_x <= zone["x"] + zone["width"] and
                 zone["y"] <= player_y <= zone["y"] + zone["height"]):
                 return zone
@@ -381,8 +472,12 @@ class MapManager:
         # 渲染互動區域
         self.render_interactions(screen)
 
-        # 渲染戰鬥區域
-        self.render_combat_zones(screen)
+        # 🔧 只有在除錯模式下才渲染戰鬥區域
+        if self.debug_show_combat_zones:
+            self.render_combat_zones(screen)
+        else:
+            # 🆕 在戰鬥區域渲染普通地板，完全隱藏危險性
+            self.render_combat_zones_hidden(screen)
 
         # 渲染物品
         self.render_items(screen)
@@ -426,9 +521,6 @@ class MapManager:
                 # 確保不超出邊界
                 if x < 1024 and y < 768:
                     screen.blit(floor_sprite, (x, y))
-
-        # 移除這行煩人的除錯輸出
-        # print(f"🎨 使用圖片渲染地板: {cols}x{rows} 磚塊")
 
     def render_floor_with_code(self, screen):
         """🆕 使用程式繪製地板（備用方法）"""
@@ -474,7 +566,7 @@ class MapManager:
             self.render_shop_with_code(screen, shop)
     
     def render_shop_with_sprite(self, screen, shop):
-        """🆕 使用圖片渲染商店 - 新增茶壜支援"""
+        """🆕 使用圖片渲染商店 - 新增茶壜和素怡沅支援"""
         shop_id = shop["id"]
         shop_name = shop["name"]
         
@@ -505,6 +597,22 @@ class MapManager:
             y_offset = (shop["height"] - 75) // 2  # 75是茶壜圖片高度
             draw_x = shop["x"] + x_offset
             draw_y = shop["y"] + y_offset
+        elif shop_name == "素怡沅" and "vegetarian" in self.shop_sprites:
+            # 🆕 素怡沅圖片渲染 - 調整為128x96尺寸
+            sprite = self.shop_sprites["vegetarian"]
+            # 素怡沅圖片位置微調
+            x_offset = (shop["width"] - 128) // 2  # 128是素怡沅圖片寬度
+            y_offset = (shop["height"] - 96) // 2  # 96是素怡沅圖片高度
+            draw_x = shop["x"] + x_offset
+            draw_y = shop["y"] + y_offset
+        elif shop_name == "和食軒" and "restaurant" in self.shop_sprites:
+            # 🆕 和食軒圖片渲染 - 120x90尺寸
+            sprite = self.shop_sprites["restaurant"]
+            # 和食軒圖片位置微調
+            x_offset = (shop["width"] - 120) // 2  # 120是和食軒圖片寬度
+            y_offset = (shop["height"] - 90) // 2  # 90是和食軒圖片高度
+            draw_x = shop["x"] + x_offset
+            draw_y = shop["y"] + y_offset
         
         if sprite:
             # 繪製商店圖片
@@ -527,8 +635,22 @@ class MapManager:
     
     def render_shop_name(self, screen, shop):
         """🆕 渲染商店名稱"""
-        # 其他商店維持原位置
-        text_y = shop["y"] + shop["height"]//2 + 60
+        # 根據商店名稱調整文字位置
+        if shop["name"] == "素怡沅":
+            # 素怡沅的文字往下移2個像素
+            text_y = shop["y"] + shop["height"]//2 + 62
+        elif shop["name"] == "茶壜":
+            # 茶壜的文字往上移6個像素（原本-3，再-3）
+            text_y = shop["y"] + shop["height"]//2 + 54
+        elif shop["name"] == "7-11":
+            # 7-11的文字往上移3個像素
+            text_y = shop["y"] + shop["height"]//2 + 57
+        elif shop["name"] == "Subway":
+            # Subway的文字往下移2個像素（原本+1，再+1）
+            text_y = shop["y"] + shop["height"]//2 + 62
+        else:
+            # 其他商店維持原位置
+            text_y = shop["y"] + shop["height"]//2 + 60
         
         name_surface = font_manager.render_text(shop["name"], 18, (255, 255, 255))
         name_rect = name_surface.get_rect(center=(shop["x"] + shop["width"]//2, text_y))
@@ -543,18 +665,92 @@ class MapManager:
         screen.blit(name_surface, name_rect)
 
     def render_npc(self, screen, npc):
-        """渲染NPC"""
-        # NPC圓形
-        npc_color = (255, 200, 100)
+        """渲染NPC - 支援圖片和程式繪製"""
         center_x = npc["x"] + npc["width"] // 2
         center_y = npc["y"] + npc["height"] // 2
 
+        # 🎨 優先使用圖片渲染
+        if self.use_npc_sprites and self.render_npc_with_sprite(screen, npc, center_x, center_y):
+            # 圖片渲染成功，添加NPC名稱（使用調整後的位置）
+            if npc.get("name") == "受傷職員":
+                # 受傷職員使用調整後的位置
+                adjusted_center_y = center_y + 5
+                self.render_npc_name(screen, npc, center_x, adjusted_center_y)
+            else:
+                # 其他NPC使用原位置
+                self.render_npc_name(screen, npc, center_x, center_y)
+        else:
+            # 備用：程式繪製圓形NPC
+            self.render_npc_with_code(screen, npc, center_x, center_y)
+    
+    def render_npc_with_sprite(self, screen, npc, center_x, center_y):
+        """🆕 使用圖片渲染NPC"""
+        npc_id = npc.get("id", "")
+        npc_name = npc.get("name", "")
+        
+        # 🆕 根據NPC名稱調整圖片位置
+        if npc_name == "受傷職員":
+            # 受傷職員的圖片往下5個像素
+            adjusted_center_y = center_y + 5
+        else:
+            # 其他NPC維持原位置
+            adjusted_center_y = center_y
+        
+        # 根據NPC ID或名稱選擇對應圖片
+        sprite = None
+        
+        # 🎯 優先使用你的專用NPC圖片
+        if "npc3_2floor" in self.npc_sprites:
+            sprite = self.npc_sprites["npc3_2floor"]
+        elif "default_npc" in self.npc_sprites:
+            sprite = self.npc_sprites["default_npc"]
+        
+        if sprite:
+            # 計算圖片繪製位置（55x70像素，置中）
+            sprite_width = 55
+            sprite_height = 70
+            draw_x = center_x - sprite_width // 2
+            draw_y = adjusted_center_y - sprite_height // 2
+            
+            # 繪製NPC圖片
+            screen.blit(sprite, (draw_x, draw_y))
+            return True
+        
+        return False
+    
+    def render_npc_with_code(self, screen, npc, center_x, center_y):
+        """🆕 程式繪製NPC（備用方法）"""
+        # NPC圓形（原本的樣式）
+        npc_color = (255, 200, 100)
         pygame.draw.circle(screen, npc_color, (center_x, center_y), 15)
         pygame.draw.circle(screen, (255, 255, 255), (center_x, center_y), 15, 2)
-
+        
         # NPC名稱
+        self.render_npc_name(screen, npc, center_x, center_y)
+    
+    def render_npc_name(self, screen, npc, center_x, center_y):
+        """🆕 渲染NPC名稱"""
+        # 根據NPC名稱調整文字位置
+        if npc["name"] == "受傷職員":
+            # 受傷職員的文字往下移10個像素（圖片已經下移5個，文字相對再下移5個，總共-30）
+            text_y = center_y - 30
+        elif npc["name"] == "驚慌學生":
+            # 驚慌學生的文字往下移5個像素
+            text_y = center_y - 40
+        else:
+            # 其他NPC維持原位置
+            text_y = center_y - 45
+        
         name_surface = font_manager.render_text(npc["name"], 14, (255, 255, 255))
-        name_rect = name_surface.get_rect(center=(center_x, center_y - 25))
+        name_rect = name_surface.get_rect(center=(center_x, text_y))
+        
+        # 名稱背景（讓文字更清楚）
+        bg_rect = name_rect.copy()
+        bg_rect.inflate(8, 4)
+        bg_surface = pygame.Surface(bg_rect.size, pygame.SRCALPHA)
+        bg_surface.fill((0, 0, 0, 150))
+        screen.blit(bg_surface, bg_rect)
+        
         screen.blit(name_surface, name_rect)
 
     def render_stairs(self, screen, stairs):
@@ -581,14 +777,27 @@ class MapManager:
         sprite = self.stairs_sprites[direction]
 
         if sprite:
+            # 🆕 特殊處理：二樓往下樓梯和三樓往下樓梯的圖片往上移
+            draw_x = stairs["x"]
+            draw_y = stairs["y"]
+            
+            # 檢查是否為二樓往下的樓梯
+            if (direction == "down" and 
+                stairs.get("target_floor") == 1 and 
+                stairs["x"] == 450 and stairs["y"] == 590):
+                draw_y = stairs["y"] - 26  # 圖片往上移26個像素（10+8+8）
+            
+            # 🆕 檢查是否為三樓往下的樓梯
+            elif (direction == "down" and 
+                  stairs.get("target_floor") == 2 and 
+                  stairs["x"] == 450 and stairs["y"] == 600):
+                draw_y = stairs["y"] - 21  # 圖片往上移21個像素（原本23，現在減少2像素）
+            
             # 繪製樓梯圖片
-            screen.blit(sprite, (stairs["x"], stairs["y"]))
+            screen.blit(sprite, (draw_x, draw_y))
 
-            # 添加方向指示效果
+            # 添加方向箭頭（保留箭頭，移除圓圈光效）
             if direction == "up":
-                # 上樓梯：添加向上的光效
-                pygame.draw.circle(screen, (255, 255, 0, 100),
-                                 (stairs["x"] + 48, stairs["y"] + 15), 30, 2)  # 🆕 調整位置和大小
                 # 向上箭頭
                 arrow_points = [
                     (stairs["x"] + 48, stairs["y"] - 8),   # 🆕 調整箭頭位置
@@ -597,15 +806,30 @@ class MapManager:
                 ]
                 pygame.draw.polygon(screen, (255, 255, 0), arrow_points)
             else:
-                # 下樓梯：添加向下的光效
-                pygame.draw.circle(screen, (0, 255, 255, 100),
-                                 (stairs["x"] + 48, stairs["y"] + 33), 30, 2)  # 🆕 調整位置和大小
-                # 向下箭頭
-                arrow_points = [
-                    (stairs["x"] + 48, stairs["y"] + 60),  # 🆕 調整箭頭位置
-                    (stairs["x"] + 40, stairs["y"] + 45),
-                    (stairs["x"] + 56, stairs["y"] + 45)
-                ]
+                # 向下箭頭（針對特殊樓梯調整箭頭位置）
+                if (stairs.get("target_floor") == 1 and 
+                    stairs["x"] == 450 and stairs["y"] == 590):
+                    # 二樓往下樓梯的箭頭：圖片上移26像素，箭頭再下移10像素（5+5）
+                    arrow_points = [
+                        (stairs["x"] + 48, stairs["y"] + 60),  # 原本+55，現在+60（再往下5像素）
+                        (stairs["x"] + 40, stairs["y"] + 45),  # 原本+40，現在+45（再往下5像素）
+                        (stairs["x"] + 56, stairs["y"] + 45)   # 原本+40，現在+45（再往下5像素）
+                    ]
+                elif (stairs.get("target_floor") == 2 and 
+                      stairs["x"] == 450 and stairs["y"] == 600):
+                    # 🆕 三樓往下樓梯的箭頭：圖片上移26像素，箭頭再下移10像素
+                    arrow_points = [
+                        (stairs["x"] + 48, stairs["y"] + 70),  # 原本+60，現在+70（往下10像素）
+                        (stairs["x"] + 40, stairs["y"] + 55),  # 原本+45，現在+55（往下10像素）
+                        (stairs["x"] + 56, stairs["y"] + 55)   # 原本+45，現在+55（往下10像素）
+                    ]
+                else:
+                    # 其他下樓梯箭頭保持原位置
+                    arrow_points = [
+                        (stairs["x"] + 48, stairs["y"] + 60),
+                        (stairs["x"] + 40, stairs["y"] + 45),
+                        (stairs["x"] + 56, stairs["y"] + 45)
+                    ]
                 pygame.draw.polygon(screen, (0, 255, 255), arrow_points)
 
     def render_stairs_pixel(self, screen, stairs):
@@ -636,7 +860,7 @@ class MapManager:
                 pygame.draw.rect(screen, (100, 80, 60),
                                (step_x, step_y, step_width, step_height), 1)
 
-            # 上樓箭頭
+            # 上樓箭頭（保留）
             arrow_points = [
                 (x + width//2, y - 8),      # 🆕 調整箭頭位置和大小
                 (x + width//2 - 12, y + 8),
@@ -666,7 +890,7 @@ class MapManager:
                 pygame.draw.rect(screen, (120, 100, 80),
                                (step_x, step_y, step_width, step_height), 1)
 
-            # 下樓箭頭
+            # 下樓箭頭（保留）
             arrow_points = [
                 (x + width//2, y + height + 12),    # 🆕 調整箭頭位置和大小
                 (x + width//2 - 12, y + height - 3),
@@ -674,13 +898,75 @@ class MapManager:
             ]
             pygame.draw.polygon(screen, (0, 255, 255), arrow_points)
 
-    def render_combat_zones(self, screen):
-        """渲染戰鬥區域"""
+    def render_combat_zones_hidden(self, screen):
+        """🆕 渲染隱藏的戰鬥區域 - 看起來像普通地板"""
         if self.current_floor not in self.combat_zones:
             return
 
         for zone in self.combat_zones[self.current_floor]:
-            # 危險區域標示
+            # 🔧 在戰鬥區域渲染普通地板紋理，完全隱藏危險性
+            if self.use_floor_sprites and self.floor_sprites:
+                self.render_hidden_zone_with_sprites(screen, zone)
+            else:
+                self.render_hidden_zone_with_code(screen, zone)
+
+    def render_hidden_zone_with_sprites(self, screen, zone):
+        """🆕 使用地板圖片渲染隱藏的戰鬥區域"""
+        # 獲取第一個可用的地板圖片
+        floor_sprite = None
+        for sprite in self.floor_sprites.values():
+            if sprite:
+                floor_sprite = sprite
+                break
+
+        if not floor_sprite:
+            # 如果沒有圖片，使用程式繪製
+            self.render_hidden_zone_with_code(screen, zone)
+            return
+
+        # 在戰鬥區域範圍內重複鋪地板圖片
+        sprite_size = 64
+        
+        # 計算區域內需要的圖片數量
+        start_x = (zone["x"] // sprite_size) * sprite_size
+        start_y = (zone["y"] // sprite_size) * sprite_size
+        end_x = zone["x"] + zone["width"]
+        end_y = zone["y"] + zone["height"]
+
+        x = start_x
+        while x < end_x:
+            y = start_y
+            while y < end_y:
+                # 只在戰鬥區域範圍內繪製
+                if (x >= zone["x"] and x < zone["x"] + zone["width"] and
+                    y >= zone["y"] and y < zone["y"] + zone["height"]):
+                    screen.blit(floor_sprite, (x, y))
+                y += sprite_size
+            x += sprite_size
+
+    def render_hidden_zone_with_code(self, screen, zone):
+        """🆕 使用程式繪製隱藏的戰鬥區域"""
+        # 使用與正常地板相同的顏色和樣式
+        tile_color = (80, 80, 80)
+        
+        # 在戰鬥區域內繪製地板磚塊
+        for x in range(zone["x"], zone["x"] + zone["width"], 64):
+            for y in range(zone["y"], zone["y"] + zone["height"], 64):
+                # 確保磚塊在區域範圍內
+                tile_width = min(64, zone["x"] + zone["width"] - x)
+                tile_height = min(64, zone["y"] + zone["height"] - y)
+                
+                if (x // 64 + y // 64) % 2 == 0:
+                    pygame.draw.rect(screen, tile_color, (x, y, tile_width, tile_height))
+                    pygame.draw.rect(screen, (60, 60, 60), (x, y, tile_width, tile_height), 1)
+
+    def render_combat_zones(self, screen):
+        """渲染戰鬥區域 - 只在除錯模式下顯示紅色框"""
+        if self.current_floor not in self.combat_zones:
+            return
+
+        for zone in self.combat_zones[self.current_floor]:
+            # 危險區域標示 - 只在除錯模式下顯示
             danger_color = (255, 0, 0, 50)
             danger_rect = pygame.Rect(zone["x"], zone["y"], zone["width"], zone["height"])
 
@@ -721,6 +1007,65 @@ class MapManager:
         """🆕 渲染單個物品，帶有動畫效果"""
         x, y = item["x"], item["y"]
         item_type = item["type"]
+        item_name = item.get("name", "")
+
+        # 🎨 優先使用圖片渲染特定物品
+        if self.use_item_sprites and self.render_item_with_sprite(screen, item, x, y, current_time):
+            # 圖片渲染成功，添加物品名稱
+            self.render_item_name(screen, item, x, y)
+        else:
+            # 備用：程式繪製物品
+            self.render_item_with_code(screen, item, x, y, current_time)
+    
+    def render_item_with_sprite(self, screen, item, x, y, current_time):
+        """🆕 使用圖片渲染物品"""
+        item_name = item.get("name", "")
+        item_type = item.get("type", "")
+        
+        # 根據物品名稱選擇對應圖片
+        sprite = None
+        
+        if item_name == "鑰匙卡" and "key_2floor" in self.item_sprites:
+            sprite = self.item_sprites["key_2floor"]
+        elif item_type == "healing" and "healing" in self.item_sprites:
+            sprite = self.item_sprites["healing"]
+        elif item_type == "special" and "special" in self.item_sprites:
+            sprite = self.item_sprites["special"]
+        
+        if sprite:
+            # 物品光暈效果（呼吸燈）
+            pulse = abs((current_time % 2000 - 1000) / 1000.0)  # 0-1-0循環
+            glow_alpha = int(100 + 100 * pulse)
+            glow_radius = int(25 + 10 * pulse)
+
+            # 物品類型顏色
+            item_colors = {
+                "healing": (255, 100, 100),
+                "key": (255, 255, 0),
+                "special": (0, 255, 0),
+                "clue": (100, 100, 255)
+            }
+            base_color = item_colors.get(item_type, (255, 255, 255))
+
+            # 繪製光暈
+            glow_surface = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surface, (*base_color, glow_alpha//2),
+                              (glow_radius, glow_radius), glow_radius)
+            screen.blit(glow_surface, (x - glow_radius, y - glow_radius))
+
+            # 繪製物品圖片（32x32像素，置中）
+            sprite_size = 32
+            draw_x = x - sprite_size // 2
+            draw_y = y - sprite_size // 2
+            screen.blit(sprite, (draw_x, draw_y))
+            
+            return True
+        
+        return False
+    
+    def render_item_with_code(self, screen, item, x, y, current_time):
+        """🆕 程式繪製物品（備用方法）"""
+        item_type = item["type"]
 
         # 物品光暈效果（呼吸燈）
         pulse = abs((current_time % 2000 - 1000) / 1000.0)  # 0-1-0循環
@@ -743,7 +1088,7 @@ class MapManager:
                           (glow_radius, glow_radius), glow_radius)
         screen.blit(glow_surface, (x - glow_radius, y - glow_radius))
 
-        # 繪製物品圖示
+        # 繪製物品圖示（原本的程式繪製）
         if item_type == "healing":
             # 醫療包/能量包圖示
             if "醫療" in item["name"]:
@@ -784,6 +1129,11 @@ class MapManager:
             for i in range(3):
                 pygame.draw.rect(screen, (100, 100, 255), (x-4, y-6+i*3, 8, 1))
 
+        # 物品名稱
+        self.render_item_name(screen, item, x, y)
+    
+    def render_item_name(self, screen, item, x, y):
+        """🆕 渲染物品名稱"""
         # 物品名稱（帶背景）
         name_surface = font_manager.render_text(item["name"], 12, (255, 255, 255))
         name_rect = name_surface.get_rect(center=(x, y - 35))
@@ -797,7 +1147,7 @@ class MapManager:
 
         screen.blit(name_surface, name_rect)
 
-        # 物品描述（滑鼠懸停效果模擬）
+        # 物品描述（如果有的話）
         if hasattr(item, 'description') and item.get('description'):
             desc_surface = font_manager.render_text(item['description'], 10, (200, 200, 200))
             desc_rect = desc_surface.get_rect(center=(x, y + 25))
@@ -856,6 +1206,24 @@ class MapManager:
         status_surface = font_manager.render_text(floor_status, 16, status_color)
         screen.blit(status_surface, (10, 65))
 
+        # 🔧 在除錯模式下顯示戰鬥區域狀態
+        if self.debug_show_combat_zones:
+            debug_status = "除錯: 戰鬥區域可見"
+            debug_color = (255, 100, 100)
+        else:
+            debug_status = "戰鬥區域: 隱藏"
+            debug_color = (100, 255, 100)
+        
+        debug_surface = font_manager.render_text(debug_status, 16, debug_color)
+        screen.blit(debug_surface, (10, 85))
+
+    def toggle_combat_zone_debug(self):
+        """🆕 切換戰鬥區域除錯顯示"""
+        self.debug_show_combat_zones = not self.debug_show_combat_zones
+        status = "開啟" if self.debug_show_combat_zones else "關閉"
+        print(f"🔧 戰鬥區域除錯顯示: {status}")
+        return self.debug_show_combat_zones
+
     def reload_stairs_images(self):
         """重新載入樓梯圖片（用於熱更新）"""
         print("🔄 重新載入樓梯圖片...")
@@ -873,6 +1241,18 @@ class MapManager:
         print("🔄 重新載入商店圖片...")
         self.shop_sprites.clear()
         self.load_shop_images()
+    
+    def reload_npc_images(self):
+        """🆕 重新載入NPC圖片（用於熱更新）"""
+        print("🔄 重新載入NPC圖片...")
+        self.npc_sprites.clear()
+        self.load_npc_images()
+    
+    def reload_item_images(self):
+        """🆕 重新載入物品圖片（用於熱更新）"""
+        print("🔄 重新載入物品圖片...")
+        self.item_sprites.clear()
+        self.load_item_images()
 
     def get_stairs_info(self, floor=None):
         """獲取樓梯資訊"""
@@ -931,6 +1311,38 @@ class MapManager:
                 if sprite:
                     size = sprite.get_size()
                     print(f"     - {shop_type}: {size[0]}x{size[1]} 像素")
+    
+    def debug_print_npc_info(self):
+        """🆕 除錯：印出NPC圖片資訊"""
+        print("👤 NPC圖片偵錯資訊:")
+        print(f"   使用圖片渲染: {self.use_npc_sprites}")
+        print(f"   載入的NPC圖片: {list(self.npc_sprites.keys())}")
+        if self.use_npc_sprites:
+            for npc_type, sprite in self.npc_sprites.items():
+                if sprite:
+                    size = sprite.get_size()
+                    print(f"     - {npc_type}: {size[0]}x{size[1]} 像素")
+    
+    def debug_print_item_info(self):
+        """🆕 除錯：印出物品圖片資訊"""
+        print("🗝️ 物品圖片偵錯資訊:")
+        print(f"   使用圖片渲染: {self.use_item_sprites}")
+        print(f"   載入的物品圖片: {list(self.item_sprites.keys())}")
+        if self.use_item_sprites:
+            for item_type, sprite in self.item_sprites.items():
+                if sprite:
+                    size = sprite.get_size()
+                    print(f"     - {item_type}: {size[0]}x{size[1]} 像素")
+
+    def debug_print_combat_zones(self):
+        """🆕 除錯：印出戰鬥區域資訊"""
+        print("⚔️ 戰鬥區域偵錯資訊:")
+        print(f"   除錯顯示狀態: {self.debug_show_combat_zones}")
+        for floor, zones in self.combat_zones.items():
+            print(f"   {floor}樓戰鬥區域:")
+            for zone in zones:
+                print(f"     - {zone['name']}: ({zone['x']}, {zone['y']}) {zone['width']}x{zone['height']}")
+                print(f"       敵人類型: {zone.get('enemies', [])}")
 
     def get_available_items(self, floor=None):
         """🆕 獲取可用物品列表"""
