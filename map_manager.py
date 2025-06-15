@@ -16,6 +16,10 @@ class MapManager:
         self.stairs_sprites = {}
         self.load_stairs_images()
         
+        # 🆕 物品圖片
+        self.item_sprites = {}
+        self.load_item_images()
+        
         # 🆕 NPC圖片
         self.npc_sprites = {}
         self.load_npc_images()
@@ -45,7 +49,7 @@ class MapManager:
                 {"type": "shop", "id": "E", "name": "素怡沅", "x": 300, "y": 150, "width": 80, "height": 60},
                 {"type": "npc", "id": "npc2", "name": "受傷職員", "x": 200, "y": 300, "width": 30, "height": 30},
                 {"type": "stairs", "direction": "up", "x": 450, "y": 90, "width": 96, "height": 48, "target_floor": 3},    # 🆕 加大樓梯尺寸
-                {"type": "stairs", "direction": "down", "x": 450, "y": 600, "width": 96, "height": 48, "target_floor": 1}  # 🆕 加大樓梯尺寸
+                {"type": "stairs", "direction": "down", "x": 450, "y": 590, "width": 96, "height": 48, "target_floor": 1}  # 🆕 往上移10個像素：600→590
             ],
             3: [  # 3樓
                 {"type": "shop", "id": "L", "name": "咖啡廳", "x": 150, "y": 250, "width": 80, "height": 60},
@@ -234,6 +238,41 @@ class MapManager:
             print("📦 未找到NPC圖片，將使用程式繪製NPC")
         else:
             print(f"🎨 成功載入 {len(self.npc_sprites)} 個NPC圖片")
+    
+    def load_item_images(self):
+        """🆕 載入物品圖片"""
+        item_paths = {
+            "key_2floor": "assets/images/key_2floor.png",  # 🆕 你的鑰匙卡圖片
+            "healing": "assets/images/healing.png",  # 可選的醫療包圖片
+            "special": "assets/images/special.png"  # 可選的特殊物品圖片
+        }
+        
+        print("🗝️ 載入物品圖片...")
+        
+        for item_type, path in item_paths.items():
+            if os.path.exists(path):
+                try:
+                    # 載入物品圖片
+                    image = pygame.image.load(path).convert_alpha()
+                    original_size = image.get_size()
+                    print(f"   原始物品圖片尺寸: {original_size}")
+                    
+                    # 🎨 物品圖片統一縮放到32x32像素
+                    target_size = 32
+                    image = pygame.transform.scale(image, (target_size, target_size))
+                    self.item_sprites[item_type] = image
+                    print(f"✅ 成功載入物品圖片: {item_type} - {path}")
+                    print(f"   縮放後尺寸: {target_size}x{target_size}")
+                except Exception as e:
+                    print(f"❌ 載入物品圖片失敗: {item_type} - {e}")
+        
+        # 檢查是否成功載入物品圖片
+        self.use_item_sprites = len(self.item_sprites) > 0
+        
+        if not self.use_item_sprites:
+            print("📦 未找到物品圖片，將使用程式繪製物品")
+        else:
+            print(f"🎨 成功載入 {len(self.item_sprites)} 個物品圖片")
     
     def load_stairs_images(self):
         """載入樓梯圖片"""
@@ -749,11 +788,8 @@ class MapManager:
             # 繪製樓梯圖片
             screen.blit(sprite, (stairs["x"], stairs["y"]))
 
-            # 添加方向指示效果
+            # 添加方向箭頭（保留箭頭，移除圓圈光效）
             if direction == "up":
-                # 上樓梯：添加向上的光效
-                pygame.draw.circle(screen, (255, 255, 0, 100),
-                                 (stairs["x"] + 48, stairs["y"] + 15), 30, 2)  # 🆕 調整位置和大小
                 # 向上箭頭
                 arrow_points = [
                     (stairs["x"] + 48, stairs["y"] - 8),   # 🆕 調整箭頭位置
@@ -762,9 +798,6 @@ class MapManager:
                 ]
                 pygame.draw.polygon(screen, (255, 255, 0), arrow_points)
             else:
-                # 下樓梯：添加向下的光效
-                pygame.draw.circle(screen, (0, 255, 255, 100),
-                                 (stairs["x"] + 48, stairs["y"] + 33), 30, 2)  # 🆕 調整位置和大小
                 # 向下箭頭
                 arrow_points = [
                     (stairs["x"] + 48, stairs["y"] + 60),  # 🆕 調整箭頭位置
@@ -801,7 +834,7 @@ class MapManager:
                 pygame.draw.rect(screen, (100, 80, 60),
                                (step_x, step_y, step_width, step_height), 1)
 
-            # 上樓箭頭
+            # 上樓箭頭（保留）
             arrow_points = [
                 (x + width//2, y - 8),      # 🆕 調整箭頭位置和大小
                 (x + width//2 - 12, y + 8),
@@ -831,7 +864,7 @@ class MapManager:
                 pygame.draw.rect(screen, (120, 100, 80),
                                (step_x, step_y, step_width, step_height), 1)
 
-            # 下樓箭頭
+            # 下樓箭頭（保留）
             arrow_points = [
                 (x + width//2, y + height + 12),    # 🆕 調整箭頭位置和大小
                 (x + width//2 - 12, y + height - 3),
@@ -948,6 +981,65 @@ class MapManager:
         """🆕 渲染單個物品，帶有動畫效果"""
         x, y = item["x"], item["y"]
         item_type = item["type"]
+        item_name = item.get("name", "")
+
+        # 🎨 優先使用圖片渲染特定物品
+        if self.use_item_sprites and self.render_item_with_sprite(screen, item, x, y, current_time):
+            # 圖片渲染成功，添加物品名稱
+            self.render_item_name(screen, item, x, y)
+        else:
+            # 備用：程式繪製物品
+            self.render_item_with_code(screen, item, x, y, current_time)
+    
+    def render_item_with_sprite(self, screen, item, x, y, current_time):
+        """🆕 使用圖片渲染物品"""
+        item_name = item.get("name", "")
+        item_type = item.get("type", "")
+        
+        # 根據物品名稱選擇對應圖片
+        sprite = None
+        
+        if item_name == "鑰匙卡" and "key_2floor" in self.item_sprites:
+            sprite = self.item_sprites["key_2floor"]
+        elif item_type == "healing" and "healing" in self.item_sprites:
+            sprite = self.item_sprites["healing"]
+        elif item_type == "special" and "special" in self.item_sprites:
+            sprite = self.item_sprites["special"]
+        
+        if sprite:
+            # 物品光暈效果（呼吸燈）
+            pulse = abs((current_time % 2000 - 1000) / 1000.0)  # 0-1-0循環
+            glow_alpha = int(100 + 100 * pulse)
+            glow_radius = int(25 + 10 * pulse)
+
+            # 物品類型顏色
+            item_colors = {
+                "healing": (255, 100, 100),
+                "key": (255, 255, 0),
+                "special": (0, 255, 0),
+                "clue": (100, 100, 255)
+            }
+            base_color = item_colors.get(item_type, (255, 255, 255))
+
+            # 繪製光暈
+            glow_surface = pygame.Surface((glow_radius * 2, glow_radius * 2), pygame.SRCALPHA)
+            pygame.draw.circle(glow_surface, (*base_color, glow_alpha//2),
+                              (glow_radius, glow_radius), glow_radius)
+            screen.blit(glow_surface, (x - glow_radius, y - glow_radius))
+
+            # 繪製物品圖片（32x32像素，置中）
+            sprite_size = 32
+            draw_x = x - sprite_size // 2
+            draw_y = y - sprite_size // 2
+            screen.blit(sprite, (draw_x, draw_y))
+            
+            return True
+        
+        return False
+    
+    def render_item_with_code(self, screen, item, x, y, current_time):
+        """🆕 程式繪製物品（備用方法）"""
+        item_type = item["type"]
 
         # 物品光暈效果（呼吸燈）
         pulse = abs((current_time % 2000 - 1000) / 1000.0)  # 0-1-0循環
@@ -970,7 +1062,7 @@ class MapManager:
                           (glow_radius, glow_radius), glow_radius)
         screen.blit(glow_surface, (x - glow_radius, y - glow_radius))
 
-        # 繪製物品圖示
+        # 繪製物品圖示（原本的程式繪製）
         if item_type == "healing":
             # 醫療包/能量包圖示
             if "醫療" in item["name"]:
@@ -1011,6 +1103,11 @@ class MapManager:
             for i in range(3):
                 pygame.draw.rect(screen, (100, 100, 255), (x-4, y-6+i*3, 8, 1))
 
+        # 物品名稱
+        self.render_item_name(screen, item, x, y)
+    
+    def render_item_name(self, screen, item, x, y):
+        """🆕 渲染物品名稱"""
         # 物品名稱（帶背景）
         name_surface = font_manager.render_text(item["name"], 12, (255, 255, 255))
         name_rect = name_surface.get_rect(center=(x, y - 35))
@@ -1024,7 +1121,7 @@ class MapManager:
 
         screen.blit(name_surface, name_rect)
 
-        # 物品描述（滑鼠懸停效果模擬）
+        # 物品描述（如果有的話）
         if hasattr(item, 'description') and item.get('description'):
             desc_surface = font_manager.render_text(item['description'], 10, (200, 200, 200))
             desc_rect = desc_surface.get_rect(center=(x, y + 25))
@@ -1124,6 +1221,12 @@ class MapManager:
         print("🔄 重新載入NPC圖片...")
         self.npc_sprites.clear()
         self.load_npc_images()
+    
+    def reload_item_images(self):
+        """🆕 重新載入物品圖片（用於熱更新）"""
+        print("🔄 重新載入物品圖片...")
+        self.item_sprites.clear()
+        self.load_item_images()
 
     def get_stairs_info(self, floor=None):
         """獲取樓梯資訊"""
@@ -1193,6 +1296,17 @@ class MapManager:
                 if sprite:
                     size = sprite.get_size()
                     print(f"     - {npc_type}: {size[0]}x{size[1]} 像素")
+    
+    def debug_print_item_info(self):
+        """🆕 除錯：印出物品圖片資訊"""
+        print("🗝️ 物品圖片偵錯資訊:")
+        print(f"   使用圖片渲染: {self.use_item_sprites}")
+        print(f"   載入的物品圖片: {list(self.item_sprites.keys())}")
+        if self.use_item_sprites:
+            for item_type, sprite in self.item_sprites.items():
+                if sprite:
+                    size = sprite.get_size()
+                    print(f"     - {item_type}: {size[0]}x{size[1]} 像素")
 
     def debug_print_combat_zones(self):
         """🆕 除錯：印出戰鬥區域資訊"""
