@@ -37,7 +37,7 @@ class MapManager:
                 {"type": "stairs", "direction": "up", "x": 450, "y": 100, "width": 96, "height": 48, "target_floor": 2}  # 🆕 加大樓梯尺寸
             ],
             2: [  # 2樓
-                {"type": "shop", "id": "D", "name": "和食宣", "x": 100, "y": 200, "width": 80, "height": 60},
+                {"type": "shop", "id": "D", "name": "和食軒", "x": 100, "y": 200, "width": 80, "height": 60},
                 {"type": "shop", "id": "E", "name": "素怡沅", "x": 300, "y": 150, "width": 80, "height": 60},
                 {"type": "npc", "id": "npc2", "name": "受傷職員", "x": 200, "y": 300, "width": 30, "height": 30},
                 {"type": "stairs", "direction": "up", "x": 450, "y": 90, "width": 96, "height": 48, "target_floor": 3},    # 🆕 加大樓梯尺寸
@@ -135,14 +135,14 @@ class MapManager:
             print(f"🎨 成功載入地板圖片！使用圖片渲染地板")
     
     def load_shop_images(self):
-        """🆕 載入商店圖片 - 新增茶壜、素怡沅和和食宣支援"""
+        """🆕 載入商店圖片 - 新增茶壜、素怡沅和和食軒支援"""
         shop_paths = {
             "711": "assets/images/711.png",  # 你的7-11圖片
             "subway": "assets/images/subway.png",  # 可選的Subway圖片
             "coffee": "assets/images/coffee.png",  # 可選的咖啡廳圖片
             "tea": "assets/images/tea.png",  # 🆕 新增茶壜圖片
             "vegetarian": "assets/images/vegetarian_second_floor.png",  # 🆕 新增素怡沅圖片
-            "restaurant": "assets/images/restaurant_second_floor.png"  # 🆕 新增和食宣圖片
+            "restaurant": "assets/images/restaurant_second_floor.png"  # 🆕 新增和食軒圖片
         }
         
         print("🏪 載入商店圖片...")
@@ -173,7 +173,7 @@ class MapManager:
                         target_width = 128
                         target_height = 96
                     elif shop_type == "restaurant":
-                        # 🆕 和食宣設定尺寸：120x90像素
+                        # 🆕 和食軒設定尺寸：120x90像素
                         target_width = 120
                         target_height = 90
                     else:
@@ -527,12 +527,12 @@ class MapManager:
             y_offset = (shop["height"] - 96) // 2  # 96是素怡沅圖片高度
             draw_x = shop["x"] + x_offset
             draw_y = shop["y"] + y_offset
-        elif shop_name == "和食宣" and "restaurant" in self.shop_sprites:
-            # 🆕 和食宣圖片渲染 - 120x90尺寸
+        elif shop_name == "和食軒" and "restaurant" in self.shop_sprites:
+            # 🆕 和食軒圖片渲染 - 120x90尺寸
             sprite = self.shop_sprites["restaurant"]
-            # 和食宣圖片位置微調
-            x_offset = (shop["width"] - 120) // 2  # 120是和食宣圖片寬度
-            y_offset = (shop["height"] - 90) // 2  # 90是和食宣圖片高度
+            # 和食軒圖片位置微調
+            x_offset = (shop["width"] - 120) // 2  # 120是和食軒圖片寬度
+            y_offset = (shop["height"] - 90) // 2  # 90是和食軒圖片高度
             draw_x = shop["x"] + x_offset
             draw_y = shop["y"] + y_offset
         
