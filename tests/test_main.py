@@ -307,3 +307,9 @@ def setup_mocks():
     sys.modules['font_manager'] = Mock(font_manager=MockFontManager())
     
     return MockGameState, MockMapManager, MockPlayer, MockUI, MockCombatSystem, MockInventory, MockFontManager
+
+# 設置模擬
+MockGameState, MockMapManager, MockPlayer, MockUI, MockCombatSystem, MockInventory, MockFontManager = setup_mocks()
+
+# 現在可以安全地導入 main
+import main
