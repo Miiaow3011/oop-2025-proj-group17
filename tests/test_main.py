@@ -269,3 +269,20 @@ def setup_mocks():
                 pass
             
             self.player_turn = False
+
+    # Inventory 模擬
+    class MockInventory:
+        def __init__(self):
+            self.items = []
+        
+        def add_item(self, item):
+            if len(self.items) < 10:  # 假設背包容量為10
+                self.items.append(item)
+                return True
+            return False
+        
+        def get_items(self):
+            return self.items
+        
+        def has_item(self, item_name):
+            return any(item.get("name") == item_name for item in self.items)
