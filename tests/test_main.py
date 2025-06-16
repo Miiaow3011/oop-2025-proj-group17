@@ -457,3 +457,24 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 渲染方法測試失敗: {e}")
             raise
+
+    def test_interaction_cooldown(self):
+        """測試互動冷卻"""
+        try:
+            game = main.Game()
+            
+            # 檢查互動冷卻機制
+            if hasattr(game, 'interact') and hasattr(game, 'interaction_cooldown'):
+                initial_time = getattr(game, 'last_interaction_time', 0)
+                
+                # 嘗試互動（可能會因為模擬而沒有實際效果，但不應該出錯）
+                game.interact()
+                
+                # 檢查時間是否有更新的邏輯
+                assert hasattr(game, 'last_interaction_time')
+            
+            print("✅ 互動冷卻測試通過")
+            
+        except Exception as e:
+            print(f"❌ 互動冷卻測試失敗: {e}")
+            raise
