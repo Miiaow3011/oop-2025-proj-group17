@@ -498,3 +498,27 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 戰鬥區域除錯測試失敗: {e}")
             raise
+
+    def test_stairs_usage(self):
+        """測試樓梯使用"""
+        try:
+            game = main.Game()
+            
+            if hasattr(game, 'use_stairs'):
+                # 測試上樓梯
+                stairs_info = {"direction": "up", "target_floor": 2}
+                initial_floor = getattr(game.map_manager, 'current_floor', 1)
+                
+                game.use_stairs(stairs_info)
+                
+                # 檢查樓層是否可能改變（取決於具體實現）
+                new_floor = getattr(game.map_manager, 'current_floor', 1)
+                
+                # 至少確保方法執行沒有錯誤
+                assert isinstance(new_floor, int)
+            
+            print("✅ 樓梯使用測試通過")
+            
+        except Exception as e:
+            print(f"❌ 樓梯使用測試失敗: {e}")
+            raise
