@@ -166,3 +166,69 @@ def setup_mocks():
             self.is_moving = False
             self.move_target_x = self.x
             self.move_target_y = self.y
+
+    # UI 模擬
+    class MockUI:
+        def __init__(self, screen):
+            self.screen = screen
+            self.show_inventory = False
+            self.show_map = False
+            self.dialogue_active = False
+            self.dialogue_options = []
+            self.has_keycard = False
+            self.has_antidote = False
+            self.game_completed = False
+            self.game_over = False
+            self.player = None
+            self.game_state = None
+            self.inventory = None
+        
+        def render(self, game_state, player, inventory):
+            pass
+        
+        def set_player_reference(self, player):
+            self.player = player
+        
+        def set_game_state_reference(self, game_state):
+            self.game_state = game_state
+        
+        def set_inventory_reference(self, inventory):
+            self.inventory = inventory
+        
+        def toggle_inventory(self):
+            self.show_inventory = not self.show_inventory
+        
+        def toggle_map(self):
+            self.show_map = not self.show_map
+        
+        def is_any_ui_open(self):
+            return self.show_inventory or self.show_map or self.dialogue_active
+        
+        def close_all_ui(self):
+            self.show_inventory = False
+            self.show_map = False
+            self.dialogue_active = False
+        
+        def get_ui_status(self):
+            return f"inventory={self.show_inventory}, map={self.show_map}, dialogue={self.dialogue_active}"
+        
+        def show_message(self, message):
+            pass
+        
+        def start_dialogue(self, dialogue_info):
+            self.dialogue_active = True
+        
+        def select_dialogue_option(self, index):
+            pass
+        
+        def continue_dialogue(self):
+            pass
+        
+        def reset_game(self):
+            self.show_inventory = False
+            self.show_map = False
+            self.dialogue_active = False
+            self.has_keycard = False
+            self.has_antidote = False
+            self.game_completed = False
+            self.game_over = False
