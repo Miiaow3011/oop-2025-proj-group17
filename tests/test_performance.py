@@ -42,3 +42,29 @@ class PerformanceTimer:
     
     def get_duration(self):
         return self.duration if hasattr(self, 'duration') else None
+    
+class MemoryProfiler:
+    """記憶體分析器"""
+    def __init__(self, name):
+        self.name = name
+        self.start_memory = None
+        self.end_memory = None
+        self.process = psutil.Process() if 'psutil' in sys.modules else None
+    
+    def __enter__(self):
+        gc.collect()
+        if self.process:
+            self.start_memory = self.process.memory_info().rss / 1024 / 1024  # MB
+        return self
+    
+    def __exit__(self, *args):
+        gc.collect()
+        if self.process:
+            self.end_memory = self.process.memory_info().rss / 1024 / 1024  # MB
+            memory_diff = self.end_memory - self.start_memory
+            print(f"🧠 {self.name}: {memory_diff:+.2f} MB (開始: {self.start_memory:.2f} MB, 結束: {self.end_memory:.2f} MB)")
+    
+    def get_memory_diff(self):
+        if hasattr(self, 'end_memory') and self.start_memory:
+            return self.end_memory - self.start_memory
+        return 0
