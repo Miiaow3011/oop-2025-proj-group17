@@ -313,3 +313,25 @@ MockGameState, MockMapManager, MockPlayer, MockUI, MockCombatSystem, MockInvento
 
 # 現在可以安全地導入 main
 import main
+
+class TestMainGameBasic:
+    """基本主程式測試"""
+    
+    def test_game_initialization(self):
+        """測試遊戲初始化"""
+        try:
+            game = main.Game()
+            
+            # 測試基本屬性
+            assert hasattr(game, 'SCREEN_WIDTH')
+            assert hasattr(game, 'SCREEN_HEIGHT')
+            assert hasattr(game, 'FPS')
+            assert hasattr(game, 'running')
+            assert hasattr(game, 'show_intro')
+            assert hasattr(game, 'debug_mode')
+            
+            print("✅ 遊戲初始化測試通過")
+            
+        except Exception as e:
+            print(f"❌ 遊戲初始化測試失敗: {e}")
+            raise
