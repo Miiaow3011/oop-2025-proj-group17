@@ -173,9 +173,9 @@ class MapManager:
                         target_width = 100
                         target_height = 78
                     elif shop_type == "coffee":
-                        # 🔧 咖啡廳調整為與和食軒相同尺寸：120x90像素
-                        target_width = 120
-                        target_height = 90
+                        # 🔧 咖啡廳調整為與和食軒相同尺寸：115x85像素
+                        target_width = 115
+                        target_height = 85
                     elif shop_type == "tea":
                         # 🆕 茶壜設定合適尺寸：100x75像素
                         target_width = 100
