@@ -478,3 +478,23 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 互動冷卻測試失敗: {e}")
             raise
+
+    def test_combat_zone_debug(self):
+        """測試戰鬥區域除錯"""
+        try:
+            game = main.Game()
+            
+            # 測試戰鬥區域除錯切換
+            if hasattr(game, 'toggle_combat_zone_debug'):
+                initial_debug = getattr(game.map_manager, 'debug_show_combat_zones', False)
+                result = game.toggle_combat_zone_debug()
+                new_debug = getattr(game.map_manager, 'debug_show_combat_zones', False)
+                
+                # 驗證狀態已改變
+                assert new_debug != initial_debug
+            
+            print("✅ 戰鬥區域除錯測試通過")
+            
+        except Exception as e:
+            print(f"❌ 戰鬥區域除錯測試失敗: {e}")
+            raise
