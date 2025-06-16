@@ -423,3 +423,22 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 玩家位置重置測試失敗: {e}")
             raise
+
+    def test_update_method(self):
+        """測試更新方法"""
+        try:
+            game = main.Game()
+            
+            # 設置非介紹狀態
+            if hasattr(game, 'show_intro'):
+                game.show_intro = False
+            
+            # 調用更新方法（不應該拋出異常）
+            if hasattr(game, 'update'):
+                game.update()
+            
+            print("✅ 更新方法測試通過")
+            
+        except Exception as e:
+            print(f"❌ 更新方法測試失敗: {e}")
+            raise
