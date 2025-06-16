@@ -53,8 +53,8 @@ class MapManager:
             ],
             3: [  # 3樓
                 {"type": "shop", "id": "L", "name": "咖啡廳", "x": 150, "y": 250, "width": 80, "height": 60},
-                {"type": "npc", "id": "npc3", "name": "神秘研究員", "x": 400, "y": 200, "width": 30, "height": 30},
-                {"type": "npc", "id": "npc4", "name": "最後的研究者", "x": 300, "y": 350, "width": 30, "height": 30},
+                {"type": "npc", "id": "npc4", "name": "神秘研究員", "x": 400, "y": 200, "width": 30, "height": 30},  # 🎯 改為npc4
+                {"type": "npc", "id": "npc5", "name": "最後的研究者", "x": 300, "y": 350, "width": 30, "height": 30},  # 🎯 改為npc5
                 {"type": "stairs", "direction": "down", "x": 450, "y": 600, "width": 96, "height": 48, "target_floor": 2}  # 🆕 加大樓梯尺寸
             ]
         }
@@ -209,9 +209,11 @@ class MapManager:
             print(f"🎨 成功載入 {len(self.shop_sprites)} 個商店圖片")
     
     def load_npc_images(self):
-        """🆕 載入NPC圖片"""
+        """🆕 載入NPC圖片 - 🎯 新增三樓專用NPC圖片"""
         npc_paths = {
-            "npc3_2floor": "assets/images/npc3_2floor.png",  # 🆕 你的NPC圖片
+            "npc3_2floor": "assets/images/npc3_2floor.png",  # 🆕 二樓NPC圖片
+            "npc4_mystery": "assets/images/npc4_mystery.png",  # 🎯 神秘研究員專用圖片
+            "npc5_last_worker": "assets/images/npc5_last_worker.png",  # 🎯 最後的研究者專用圖片
             "default_npc": "assets/images/npc.png"  # 可選的通用NPC圖片
         }
         
@@ -242,6 +244,11 @@ class MapManager:
             print("📦 未找到NPC圖片，將使用程式繪製NPC")
         else:
             print(f"🎨 成功載入 {len(self.npc_sprites)} 個NPC圖片")
+            # 🎯 顯示三樓NPC載入狀態
+            if "npc4_mystery" in self.npc_sprites:
+                print("   🎯 神秘研究員圖片: 已載入 ✓")
+            if "npc5_last_worker" in self.npc_sprites:
+                print("   🎯 最後的研究者圖片: 已載入 ✓")
     
     def load_item_images(self):
         """🆕 載入物品圖片"""
@@ -677,7 +684,7 @@ class MapManager:
         screen.blit(name_surface, name_rect)
 
     def render_npc(self, screen, npc):
-        """渲染NPC - 支援圖片和程式繪製"""
+        """渲染NPC - 支援圖片和程式繪製，🎯 新增三樓專用NPC支援"""
         center_x = npc["x"] + npc["width"] // 2
         center_y = npc["y"] + npc["height"] // 2
 
@@ -696,7 +703,7 @@ class MapManager:
             self.render_npc_with_code(screen, npc, center_x, center_y)
     
     def render_npc_with_sprite(self, screen, npc, center_x, center_y):
-        """🆕 使用圖片渲染NPC"""
+        """🆕 使用圖片渲染NPC - 🎯 新增三樓專用NPC支援"""
         npc_id = npc.get("id", "")
         npc_name = npc.get("name", "")
         
@@ -708,13 +715,22 @@ class MapManager:
             # 其他NPC維持原位置
             adjusted_center_y = center_y
         
-        # 根據NPC ID或名稱選擇對應圖片
+        # 🎯 根據NPC ID和名稱選擇對應圖片
         sprite = None
         
-        # 🎯 優先使用你的專用NPC圖片
-        if "npc3_2floor" in self.npc_sprites:
+        if npc_id == "npc4" and npc_name == "神秘研究員" and "npc4_mystery" in self.npc_sprites:
+            # 🎯 神秘研究員使用專用圖片
+            sprite = self.npc_sprites["npc4_mystery"]
+            print(f"🎯 渲染神秘研究員: 使用專用圖片 npc4_mystery.png")
+        elif npc_id == "npc5" and npc_name == "最後的研究者" and "npc5_last_worker" in self.npc_sprites:
+            # 🎯 最後的研究者使用專用圖片
+            sprite = self.npc_sprites["npc5_last_worker"]
+            print(f"🎯 渲染最後的研究者: 使用專用圖片 npc5_last_worker.png")
+        elif npc_id == "npc2" and "npc3_2floor" in self.npc_sprites:
+            # 二樓NPC使用專用圖片
             sprite = self.npc_sprites["npc3_2floor"]
         elif "default_npc" in self.npc_sprites:
+            # 其他NPC使用通用圖片
             sprite = self.npc_sprites["default_npc"]
         
         if sprite:
@@ -727,6 +743,12 @@ class MapManager:
             # 繪製NPC圖片
             screen.blit(sprite, (draw_x, draw_y))
             return True
+        else:
+            # 🎯 如果沒有找到對應圖片，顯示提示
+            if npc_id == "npc4" and npc_name == "神秘研究員":
+                print(f"⚠️ 神秘研究員圖片未找到: assets/images/npc4_mystery.png")
+            elif npc_id == "npc5" and npc_name == "最後的研究者":
+                print(f"⚠️ 最後的研究者圖片未找到: assets/images/npc5_last_worker.png")
         
         return False
     
@@ -749,6 +771,12 @@ class MapManager:
         elif npc["name"] == "驚慌學生":
             # 驚慌學生的文字往下移5個像素
             text_y = center_y - 40
+        elif npc["name"] == "神秘研究員":
+            # 🎯 神秘研究員的文字位置調整
+            text_y = center_y - 45
+        elif npc["name"] == "最後的研究者":
+            # 🎯 最後的研究者的文字位置調整
+            text_y = center_y - 45
         else:
             # 其他NPC維持原位置
             text_y = center_y - 45
@@ -1229,6 +1257,7 @@ class MapManager:
         debug_surface = font_manager.render_text(debug_status, 16, debug_color)
         screen.blit(debug_surface, (10, 85))
 
+    # 🆕 實用方法和除錯功能
     def toggle_combat_zone_debug(self):
         """🆕 切換戰鬥區域除錯顯示"""
         self.debug_show_combat_zones = not self.debug_show_combat_zones
@@ -1255,8 +1284,9 @@ class MapManager:
         self.load_shop_images()
     
     def reload_npc_images(self):
-        """🆕 重新載入NPC圖片（用於熱更新）"""
+        """🆕 重新載入NPC圖片（用於熱更新）- 🎯 三樓NPC專用"""
         print("🔄 重新載入NPC圖片...")
+        print("   🎯 檢查三樓NPC圖片...")
         self.npc_sprites.clear()
         self.load_npc_images()
     
@@ -1325,7 +1355,7 @@ class MapManager:
                     print(f"     - {shop_type}: {size[0]}x{size[1]} 像素")
     
     def debug_print_npc_info(self):
-        """🆕 除錯：印出NPC圖片資訊"""
+        """🆕 除錯：印出NPC圖片資訊 - 🎯 新增三樓NPC資訊"""
         print("👤 NPC圖片偵錯資訊:")
         print(f"   使用圖片渲染: {self.use_npc_sprites}")
         print(f"   載入的NPC圖片: {list(self.npc_sprites.keys())}")
@@ -1334,6 +1364,25 @@ class MapManager:
                 if sprite:
                     size = sprite.get_size()
                     print(f"     - {npc_type}: {size[0]}x{size[1]} 像素")
+        
+        # 🎯 顯示三樓NPC對應關係和載入狀態
+        print("   🎯 三樓NPC圖片對應和狀態:")
+        print("     - 神秘研究員 (npc4) → npc4_mystery.png", end="")
+        if "npc4_mystery" in self.npc_sprites:
+            print(" ✓ 已載入")
+        else:
+            print(" ❌ 未載入")
+        
+        print("     - 最後的研究者 (npc5) → npc5_last_worker.png", end="")
+        if "npc5_last_worker" in self.npc_sprites:
+            print(" ✓ 已載入")
+        else:
+            print(" ❌ 未載入")
+        
+        # 🎯 顯示需要的檔案路徑
+        print("   📁 所需檔案路徑:")
+        print("     - assets/images/npc4_mystery.png")
+        print("     - assets/images/npc5_last_worker.png")
     
     def debug_print_item_info(self):
         """🆕 除錯：印出物品圖片資訊"""
