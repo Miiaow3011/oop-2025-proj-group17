@@ -522,3 +522,30 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 樓梯使用測試失敗: {e}")
             raise
+
+    def test_restart_game(self):
+        """測試重新開始遊戲"""
+        try:
+            game = main.Game()
+            
+            if hasattr(game, 'restart_game'):
+                # 修改一些狀態
+                if hasattr(game.player, 'x'):
+                    game.player.x = 100
+                if hasattr(game.ui, 'show_inventory'):
+                    game.ui.show_inventory = True
+                
+                # 重新開始遊戲
+                game.restart_game()
+                
+                # 檢查狀態是否重置
+                if hasattr(game.player, 'x'):
+                    assert game.player.x == 400
+                if hasattr(game.ui, 'show_inventory'):
+                    assert game.ui.show_inventory == False
+            
+            print("✅ 重新開始遊戲測試通過")
+            
+        except Exception as e:
+            print(f"❌ 重新開始遊戲測試失敗: {e}")
+            raise
