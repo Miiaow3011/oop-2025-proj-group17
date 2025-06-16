@@ -48,3 +48,70 @@ class MockGameState:
     
     def add_exp(self, exp):
         self.player_stats["exp"] += exp
+
+class MockMapManager:
+    def __init__(self):
+        self.current_floor = 1
+        self.use_sprites = False
+        self.use_floor_sprites = False
+        self.use_shop_sprites = False
+        self.debug_show_combat_zones = False
+        self.collected_items = set()
+    
+    def render(self, screen):
+        pass
+    
+    def update(self):
+        pass
+    
+    def get_current_floor(self):
+        return self.current_floor
+    
+    def check_interaction(self, x, y, floor):
+        return None
+    
+    def check_item_pickup(self, x, y, floor):
+        return None
+    
+    def check_combat_zone(self, x, y, floor):
+        return None
+    
+    def change_floor(self, floor):
+        self.current_floor = floor
+    
+    def debug_print_stairs(self):
+        pass
+    
+    def debug_print_floor_info(self):
+        pass
+    
+    def debug_print_items(self):
+        pass
+    
+    def debug_print_combat_zones(self):
+        pass
+    
+    def debug_print_shop_info(self):
+        pass
+    
+    def reload_stairs_images(self):
+        pass
+    
+    def reload_floor_images(self):
+        pass
+    
+    def reload_shop_images(self):
+        pass
+    
+    def reset_items(self):
+        self.collected_items.clear()
+    
+    def toggle_combat_zone_debug(self):
+        self.debug_show_combat_zones = not self.debug_show_combat_zones
+        return self.debug_show_combat_zones
+    
+    def collect_item(self, item_id):
+        self.collected_items.add(item_id)
+    
+    def remove_combat_zone(self, zone, floor):
+        pass
