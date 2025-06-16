@@ -269,3 +269,12 @@ class MockInventory:
     
     def has_item(self, item_name):
         return any(item.get("name") == item_name for item in self.items)
+
+class MockFontManager:
+    def install_chinese_font(self):
+        return True
+    
+    def render_text(self, text, size, color):
+        mock_surface = Mock()
+        mock_surface.get_rect.return_value = Mock(center=Mock())
+        return mock_surface
