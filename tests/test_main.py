@@ -549,3 +549,114 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 重新開始遊戲測試失敗: {e}")
             raise
+
+class TestEventHandling:
+    """事件處理測試"""
+    
+    def test_handle_events_method_exists(self):
+        """測試事件處理方法存在"""
+        try:
+            game = main.Game()
+            assert hasattr(game, 'handle_events')
+            print("✅ 事件處理方法存在測試通過")
+            
+        except Exception as e:
+            print(f"❌ 事件處理方法存在測試失敗: {e}")
+            raise
+
+    def test_exploration_input_handling(self):
+        """測試探索輸入處理"""
+        try:
+            game = main.Game()
+            
+            if hasattr(game, 'handle_exploration_input'):
+                # 創建模擬事件
+                mock_event = Mock()
+                mock_event.key = 273  # K_UP
+                
+                # 調用處理方法（不應該出錯）
+                game.handle_exploration_input(mock_event)
+            
+            print("✅ 探索輸入處理測試通過")
+            
+        except Exception as e:
+            print(f"❌ 探索輸入處理測試失敗: {e}")
+            raise
+
+    def test_combat_input_handling(self):
+        """測試戰鬥輸入處理"""
+        try:
+            game = main.Game()
+            
+            if hasattr(game, 'handle_combat_input'):
+                # 設置戰鬥狀態
+                if hasattr(game.combat_system, 'in_combat'):
+                    game.combat_system.in_combat = True
+                if hasattr(game.combat_system, 'player_turn'):
+                    game.combat_system.player_turn = True
+                
+                # 創建模擬事件
+                mock_event = Mock()
+                mock_event.key = 49  # K_1
+                
+                # 調用處理方法（不應該出錯）
+                game.handle_combat_input(mock_event)
+            
+            print("✅ 戰鬥輸入處理測試通過")
+            
+        except Exception as e:
+            print(f"❌ 戰鬥輸入處理測試失敗: {e}")
+            raise
+
+
+# 主程序
+if __name__ == "__main__":
+    print("🚀 開始運行修復的主程式測試...")
+    
+    # 手動運行測試
+    test_classes = [TestMainGameBasic, TestEventHandling]
+    
+    total_passed = 0
+    total_failed = 0
+    
+    for test_class in test_classes:
+        print(f"\n📦 測試類別: {test_class.__name__}")
+        print("=" * 50)
+        
+        # 獲取測試方法
+        test_methods = [method for method in dir(test_class) if method.startswith('test_')]
+        
+        class_passed = 0
+        class_failed = 0
+        
+        for method_name in test_methods:
+            try:
+                print(f"🧪 運行測試: {method_name}")
+                
+                # 創建測試實例並運行測試
+                test_instance = test_class()
+                test_method = getattr(test_instance, method_name)
+                test_method()
+                
+                print(f"✅ {method_name} 通過")
+                class_passed += 1
+                total_passed += 1
+                
+            except Exception as e:
+                print(f"❌ {method_name} 失敗:")
+                print(f"   錯誤: {e}")
+                class_failed += 1
+                total_failed += 1
+        
+        print(f"\n📊 {test_class.__name__} 結果:")
+        print(f"✅ 通過: {class_passed}")
+        print(f"❌ 失敗: {class_failed}")
+        if class_passed + class_failed > 0:
+            print(f"📈 成功率: {class_passed/(class_passed+class_failed)*100:.1f}%")
+    
+    print(f"\n" + "=" * 70)
+    print(f"📊 總體測試結果:")
+    print(f"✅ 通過: {total_passed}")
+    print(f"❌ 失敗: {total_failed}")
+    if total_passed + total_failed > 0:
+        print(f"📈 總成功率: {total_passed/(total_passed+total_failed)*100:.1f}%")
