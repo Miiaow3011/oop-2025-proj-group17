@@ -593,6 +593,11 @@ class MapManager:
             sprite = self.shop_sprites["subway"]
         elif shop_name == "咖啡廳" and "coffee" in self.shop_sprites:
             sprite = self.shop_sprites["coffee"]
+            # 🆕 咖啡廳圖片往下移5個像素
+            x_offset = (shop["width"] - 115) // 2  # 115是咖啡廳圖片寬度
+            y_offset = (shop["height"] - 85) // 2 + 5  # 85是咖啡廳圖片高度，往下移5像素
+            draw_x = shop["x"] + x_offset
+            draw_y = shop["y"] + y_offset
         elif shop_name == "茶壜" and "tea" in self.shop_sprites:
             # 🆕 茶壜圖片渲染
             sprite = self.shop_sprites["tea"]
@@ -652,6 +657,9 @@ class MapManager:
         elif shop["name"] == "Subway":
             # Subway的文字往下移2個像素（原本+1，再+1）
             text_y = shop["y"] + shop["height"]//2 + 62
+        elif shop["name"] == "咖啡廳":
+            # 🆕 咖啡廳的文字往下移5個像素（配合圖片位置）
+            text_y = shop["y"] + shop["height"]//2 + 65  # 原本60，現在65（往下5像素）
         else:
             # 其他商店維持原位置
             text_y = shop["y"] + shop["height"]//2 + 60
