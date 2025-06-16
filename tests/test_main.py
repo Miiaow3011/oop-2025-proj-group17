@@ -442,3 +442,18 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 更新方法測試失敗: {e}")
             raise
+
+    def test_render_method(self):
+        """測試渲染方法"""
+        try:
+            game = main.Game()
+            
+            # 調用渲染方法（不應該拋出異常）
+            if hasattr(game, 'render'):
+                game.render()
+            
+            print("✅ 渲染方法測試通過")
+            
+        except Exception as e:
+            print(f"❌ 渲染方法測試失敗: {e}")
+            raise
