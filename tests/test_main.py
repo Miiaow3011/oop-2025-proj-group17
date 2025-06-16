@@ -335,3 +335,22 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 遊戲初始化測試失敗: {e}")
             raise
+    
+    def test_game_components_exist(self):
+        """測試遊戲組件存在"""
+        try:
+            game = main.Game()
+            
+            # 檢查關鍵組件是否存在
+            assert hasattr(game, 'game_state')
+            assert hasattr(game, 'map_manager')
+            assert hasattr(game, 'player')
+            assert hasattr(game, 'ui')
+            assert hasattr(game, 'combat_system')
+            assert hasattr(game, 'inventory')
+            
+            print("✅ 遊戲組件存在測試通過")
+            
+        except Exception as e:
+            print(f"❌ 遊戲組件存在測試失敗: {e}")
+            raise
