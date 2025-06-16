@@ -23,9 +23,9 @@ class TestRunner:
             'tests/test_game_state.py',
             'tests/test_combat.py', 
             'tests/test_inventory.py',
-            'tests/test_main.py',
-            'tests/test_integration.py',
-            'tests/test_performance.py'
+            'tests/test_main_fixed.py',           # 使用修復版
+            'tests/test_integration_fixed.py',   # 使用修復版
+            'tests/test_performance_fixed.py'    # 使用修復版
         ]
         self.results = {}
         self.start_time = None
