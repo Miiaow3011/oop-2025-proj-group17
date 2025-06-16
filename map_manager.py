@@ -227,9 +227,17 @@ class MapManager:
                     original_size = image.get_size()
                     print(f"   原始NPC圖片尺寸: {original_size}")
                     
-                    # 🎨 NPC圖片統一縮放到55x70像素
-                    target_width = 55
-                    target_height = 70
+                    # 🎨 根據NPC類型設定不同尺寸
+                    if npc_type in ["npc4_mystery", "npc5_last_worker"]:
+                        # 🎯 三樓NPC使用縮小的尺寸：28x35像素（原本55x70的一半）
+                        target_width = 28
+                        target_height = 35
+                        print(f"   🎯 三樓NPC縮小尺寸: {target_width}x{target_height}")
+                    else:
+                        # 其他NPC維持原尺寸：55x70像素
+                        target_width = 55
+                        target_height = 70
+                    
                     image = pygame.transform.scale(image, (target_width, target_height))
                     self.npc_sprites[npc_type] = image
                     print(f"✅ 成功載入NPC圖片: {npc_type} - {path}")
@@ -246,9 +254,9 @@ class MapManager:
             print(f"🎨 成功載入 {len(self.npc_sprites)} 個NPC圖片")
             # 🎯 顯示三樓NPC載入狀態
             if "npc4_mystery" in self.npc_sprites:
-                print("   🎯 神秘研究員圖片: 已載入 ✓")
+                print("   🎯 神秘研究員圖片: 已載入 ✓ (縮小版 28x35)")
             if "npc5_last_worker" in self.npc_sprites:
-                print("   🎯 最後的研究者圖片: 已載入 ✓")
+                print("   🎯 最後的研究者圖片: 已載入 ✓ (縮小版 28x35)")
     
     def load_item_images(self):
         """🆕 載入物品圖片"""
@@ -717,38 +725,38 @@ class MapManager:
         
         # 🎯 根據NPC ID和名稱選擇對應圖片
         sprite = None
+        sprite_width = 55  # 預設尺寸
+        sprite_height = 70
         
         if npc_id == "npc4" and npc_name == "神秘研究員" and "npc4_mystery" in self.npc_sprites:
-            # 🎯 神秘研究員使用專用圖片
+            # 🎯 神秘研究員使用專用圖片（縮小版）
             sprite = self.npc_sprites["npc4_mystery"]
-            print(f"🎯 渲染神秘研究員: 使用專用圖片 npc4_mystery.png")
+            sprite_width = 28  # 🎯 縮小版尺寸
+            sprite_height = 35
         elif npc_id == "npc5" and npc_name == "最後的研究者" and "npc5_last_worker" in self.npc_sprites:
-            # 🎯 最後的研究者使用專用圖片
+            # 🎯 最後的研究者使用專用圖片（縮小版）
             sprite = self.npc_sprites["npc5_last_worker"]
-            print(f"🎯 渲染最後的研究者: 使用專用圖片 npc5_last_worker.png")
+            sprite_width = 28  # 🎯 縮小版尺寸
+            sprite_height = 35
         elif npc_id == "npc2" and "npc3_2floor" in self.npc_sprites:
-            # 二樓NPC使用專用圖片
+            # 二樓NPC使用專用圖片（標準尺寸）
             sprite = self.npc_sprites["npc3_2floor"]
-        elif "default_npc" in self.npc_sprites:
-            # 其他NPC使用通用圖片
-            sprite = self.npc_sprites["default_npc"]
-        
-        if sprite:
-            # 計算圖片繪製位置（55x70像素，置中）
             sprite_width = 55
             sprite_height = 70
+        elif "default_npc" in self.npc_sprites:
+            # 其他NPC使用通用圖片（標準尺寸）
+            sprite = self.npc_sprites["default_npc"]
+            sprite_width = 55
+            sprite_height = 70
+        
+        if sprite:
+            # 🎯 根據NPC類型計算圖片繪製位置
             draw_x = center_x - sprite_width // 2
             draw_y = adjusted_center_y - sprite_height // 2
             
             # 繪製NPC圖片
             screen.blit(sprite, (draw_x, draw_y))
             return True
-        else:
-            # 🎯 如果沒有找到對應圖片，顯示提示
-            if npc_id == "npc4" and npc_name == "神秘研究員":
-                print(f"⚠️ 神秘研究員圖片未找到: assets/images/npc4_mystery.png")
-            elif npc_id == "npc5" and npc_name == "最後的研究者":
-                print(f"⚠️ 最後的研究者圖片未找到: assets/images/npc5_last_worker.png")
         
         return False
     
@@ -1363,26 +1371,32 @@ class MapManager:
             for npc_type, sprite in self.npc_sprites.items():
                 if sprite:
                     size = sprite.get_size()
-                    print(f"     - {npc_type}: {size[0]}x{size[1]} 像素")
+                    if npc_type in ["npc4_mystery", "npc5_last_worker"]:
+                        print(f"     - {npc_type}: {size[0]}x{size[1]} 像素 🎯 (縮小版)")
+                    else:
+                        print(f"     - {npc_type}: {size[0]}x{size[1]} 像素")
         
         # 🎯 顯示三樓NPC對應關係和載入狀態
         print("   🎯 三樓NPC圖片對應和狀態:")
-        print("     - 神秘研究員 (npc4) → npc4_mystery.png", end="")
+        print("     - 神秘研究員 (npc4) → npc4_mystery.png [28x35像素]", end="")
         if "npc4_mystery" in self.npc_sprites:
             print(" ✓ 已載入")
         else:
             print(" ❌ 未載入")
         
-        print("     - 最後的研究者 (npc5) → npc5_last_worker.png", end="")
+        print("     - 最後的研究者 (npc5) → npc5_last_worker.png [28x35像素]", end="")
         if "npc5_last_worker" in self.npc_sprites:
             print(" ✓ 已載入")
         else:
             print(" ❌ 未載入")
         
-        # 🎯 顯示需要的檔案路徑
+        # 🎯 顯示需要的檔案路徑和尺寸說明
         print("   📁 所需檔案路徑:")
-        print("     - assets/images/npc4_mystery.png")
-        print("     - assets/images/npc5_last_worker.png")
+        print("     - assets/images/npc4_mystery.png (將縮放至 28x35 像素)")
+        print("     - assets/images/npc5_last_worker.png (將縮放至 28x35 像素)")
+        print("   📏 尺寸說明:")
+        print("     - 三樓NPC: 28x35像素 (縮小版，原本55x70的一半)")
+        print("     - 其他NPC: 55x70像素 (標準尺寸)")
     
     def debug_print_item_info(self):
         """🆕 除錯：印出物品圖片資訊"""
