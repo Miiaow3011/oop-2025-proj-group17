@@ -287,3 +287,380 @@ sys.modules['ui'] = Mock(UI=MockUI)
 sys.modules['combat'] = Mock(CombatSystem=MockCombatSystem)
 sys.modules['inventory'] = Mock(Inventory=MockInventory)
 sys.modules['font_manager'] = Mock(font_manager=MockFontManager())
+
+class TestGame:
+    """Game 類別的測試"""
+    
+    def setup_method(self):
+        """每個測試方法執行前的設置"""
+        with patch('pygame.init'), \
+             patch('pygame.display.set_mode'), \
+             patch('pygame.display.set_caption'), \
+             patch('pygame.time.Clock'):
+            # 導入並創建遊戲實例
+            import main
+            self.game_class = main.Game
+    
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_game_initialization(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試遊戲初始化"""
+        mock_font.install_chinese_font.return_value = True
+        mock_display.return_value = Mock()
+        mock_clock.return_value = Mock()
+        
+        game = self.game_class()
+        
+        assert game.SCREEN_WIDTH == 1024
+        assert game.SCREEN_HEIGHT == 768
+        assert game.FPS == 60
+        assert game.running == True
+        assert game.show_intro == True
+        assert game.debug_mode == False
+        assert game.interaction_cooldown == 0.5
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_toggle_debug_mode(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試除錯模式切換"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        assert game.debug_mode == False
+        
+        game.toggle_debug_mode()
+        assert game.debug_mode == True
+        
+        game.toggle_debug_mode()
+        assert game.debug_mode == False
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_force_exploration_state(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試強制探索狀態"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 設置非探索狀態
+        game.game_state.current_state = "combat"
+        game.ui.show_inventory = True
+        game.player.is_moving = True
+        
+        game.force_exploration_state()
+        
+        assert game.game_state.current_state == "exploration"
+        assert game.ui.show_inventory == False
+        assert game.ui.show_map == False
+        assert game.ui.dialogue_active == False
+        assert game.player.is_moving == False
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_handle_inventory_toggle(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試背包切換"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        assert game.ui.show_inventory == False
+        
+        game.handle_inventory_toggle()
+        assert game.ui.show_inventory == True
+        
+        game.handle_inventory_toggle()
+        assert game.ui.show_inventory == False
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_handle_map_toggle(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試地圖切換"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        assert game.ui.show_map == False
+        
+        game.handle_map_toggle()
+        assert game.ui.show_map == True
+        
+        game.handle_map_toggle()
+        assert game.ui.show_map == False
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_reset_player_position(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試重置玩家位置"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 設置玩家到其他位置
+        game.player.x = 100
+        game.player.y = 200
+        
+        game.reset_player_position()
+        
+        assert game.player.x == 400
+        assert game.player.y == 300
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_toggle_combat_zone_debug(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試戰鬥區域除錯切換"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        assert game.map_manager.debug_show_combat_zones == False
+        
+        game.toggle_combat_zone_debug()
+        assert game.map_manager.debug_show_combat_zones == True
+        
+        game.toggle_combat_zone_debug()
+        assert game.map_manager.debug_show_combat_zones == False
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    @patch('time.time')
+    def test_interact_cooldown(self, mock_time, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試互動冷卻機制"""
+        mock_font.install_chinese_font.return_value = True
+        mock_time.side_effect = [0, 0.2, 0.6]  # 模擬時間序列
+        
+        game = self.game_class()
+        game.last_interaction_time = 0
+        
+        # 第一次互動 - 應該成功
+        game.interact()
+        assert game.last_interaction_time == 0
+        
+        # 立即第二次互動 - 應該被冷卻阻止
+        game.interact()
+        # 由於冷卻，last_interaction_time 不應該更新
+        
+        # 等待冷卻時間後再次互動 - 應該成功
+        game.interact()
+        assert game.last_interaction_time == 0.6
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_use_stairs(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試樓梯使用"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 測試從1樓上2樓
+        stairs_info = {"direction": "up", "target_floor": 2}
+        game.map_manager.current_floor = 1
+        
+        game.use_stairs(stairs_info)
+        
+        assert game.map_manager.current_floor == 2
+        assert game.player.x == 450
+        assert game.player.y == 600
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_use_stairs_need_keycard(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試需要鑰匙卡的樓梯"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 測試從2樓上3樓（沒有鑰匙卡）
+        stairs_info = {"direction": "up", "target_floor": 3}
+        game.map_manager.current_floor = 2
+        
+        game.use_stairs(stairs_info)
+        
+        # 沒有鑰匙卡，應該還在2樓
+        assert game.map_manager.current_floor == 2
+        
+        # 給玩家鑰匙卡
+        game.ui.has_keycard = True
+        
+        game.use_stairs(stairs_info)
+        
+        # 有鑰匙卡，應該能上3樓
+        assert game.map_manager.current_floor == 3
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_start_combat_in_zone(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試在戰鬥區域開始戰鬥"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        combat_zone = {
+            "name": "危險區域",
+            "enemies": ["zombie_student"]
+        }
+        
+        game.start_combat_in_zone(combat_zone)
+        
+        assert game.game_state.current_state == "combat"
+        assert game.combat_system.in_combat == True
+        assert hasattr(game, 'current_combat_zone')
+        assert game.current_combat_zone == combat_zone
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_handle_combat_end_win(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試戰鬥勝利結束"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 設置戰鬥狀態
+        game.combat_system.combat_result = "win"
+        game.combat_system.in_combat = True
+        game.game_state.current_state = "combat"
+        
+        game.handle_combat_end()
+        
+        assert game.combat_system.in_combat == False
+        assert game.combat_system.combat_result == None
+        assert game.game_state.current_state == "exploration"
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_collect_item_new(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試新的物品收集方法"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        item_pickup = {
+            "item": {"name": "測試物品", "type": "healing", "value": 20},
+            "item_id": "test_item_1"
+        }
+        
+        # 確保背包有空間
+        assert len(game.inventory.items) == 0
+        
+        game.collect_item_new(item_pickup)
+        
+        # 檢查物品是否添加到背包
+        assert len(game.inventory.items) == 1
+        assert game.inventory.items[0]["name"] == "測試物品"
+        
+        # 檢查物品是否標記為已收集
+        assert "test_item_1" in game.map_manager.collected_items
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_restart_game(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試重新開始遊戲"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 修改一些狀態
+        game.player.x = 100
+        game.player.y = 200
+        game.ui.show_inventory = True
+        game.ui.has_keycard = True
+        game.map_manager.current_floor = 3
+        game.map_manager.collected_items.add("test_item")
+        
+        game.restart_game()
+        
+        # 檢查狀態是否重置
+        assert game.player.x == 400
+        assert game.player.y == 300
+        assert game.ui.show_inventory == False
+        assert game.ui.has_keycard == False
+        assert game.map_manager.current_floor == 1
+        assert len(game.map_manager.collected_items) == 0
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_get_item_exp_reward(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試物品經驗值獎勵計算"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 測試不同類型物品的經驗值
+        healing_item = {"type": "healing"}
+        key_item = {"type": "key"}
+        special_item = {"type": "special"}
+        unknown_item = {"type": "unknown"}
+        
+        assert game.get_item_exp_reward(healing_item) == 5
+        assert game.get_item_exp_reward(key_item) == 20
+        assert game.get_item_exp_reward(special_item) == 50
+        assert game.get_item_exp_reward(unknown_item) == 3
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_handle_exploration_input(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試探索模式輸入處理"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 模擬按鍵事件
+        mock_event = Mock()
+        mock_event.key = 273  # pygame.K_UP
+        
+        original_y = game.player.y
+        
+        game.handle_exploration_input(mock_event)
+        
+        # 檢查玩家是否開始移動
+        assert game.player.is_moving == True
+        assert game.player.move_target_y == original_y - 32
+
