@@ -374,3 +374,28 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 除錯模式切換測試失敗: {e}")
             raise
+
+    def test_ui_toggles(self):
+        """測試UI切換"""
+        try:
+            game = main.Game()
+            
+            # 測試背包切換
+            if hasattr(game, 'handle_inventory_toggle'):
+                initial_inventory = getattr(game.ui, 'show_inventory', False)
+                game.handle_inventory_toggle()
+                new_inventory = getattr(game.ui, 'show_inventory', False)
+                assert new_inventory != initial_inventory
+            
+            # 測試地圖切換
+            if hasattr(game, 'handle_map_toggle'):
+                initial_map = getattr(game.ui, 'show_map', False)
+                game.handle_map_toggle()
+                new_map = getattr(game.ui, 'show_map', False)
+                assert new_map != initial_map
+            
+            print("✅ UI切換測試通過")
+            
+        except Exception as e:
+            print(f"❌ UI切換測試失敗: {e}")
+            raise
