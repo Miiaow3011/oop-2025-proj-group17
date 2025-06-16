@@ -296,3 +296,14 @@ def setup_mocks():
             mock_surface = Mock()
             mock_surface.get_rect.return_value = Mock(center=Mock())
             return mock_surface
+        
+    # 設置模組模擬
+    sys.modules['game_state'] = Mock(GameState=MockGameState)
+    sys.modules['map_manager'] = Mock(MapManager=MockMapManager)
+    sys.modules['player'] = Mock(Player=MockPlayer)
+    sys.modules['ui'] = Mock(UI=MockUI)
+    sys.modules['combat'] = Mock(CombatSystem=MockCombatSystem)
+    sys.modules['inventory'] = Mock(Inventory=MockInventory)
+    sys.modules['font_manager'] = Mock(font_manager=MockFontManager())
+    
+    return MockGameState, MockMapManager, MockPlayer, MockUI, MockCombatSystem, MockInventory, MockFontManager
