@@ -435,3 +435,90 @@ class TestGamePerformance:
         
         # 實際FPS應該接近目標FPS
         assert actual_fps >= target_fps * 0.8, f"FPS性能不足: 實際 {actual_fps:.2f}, 目標 {target_fps}"
+
+class TestStressTests:
+    """壓力測試"""
+    
+    def setup_method(self):
+        with patch('pygame.init'), \
+             patch('pygame.display.set_mode'), \
+             patch('pygame.display.set_caption'), \
+             patch('pygame.time.Clock'), \
+             patch('main.font_manager'):
+            import main
+            self.game_class = main.Game
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_long_running_stability(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試長時間運行穩定性"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        game.show_intro = False
+        
+        # 模擬長時間運行
+        duration = 10  # 10秒
+        start_time = time.time()
+        frame_count = 0
+        
+        with MemoryProfiler("長時間運行穩定性") as memory:
+            while time.time() - start_time < duration:
+                game.update()
+                game.render()
+                frame_count += 1
+                
+                # 每秒進行一次垃圾回收
+                if frame_count % 60 == 0:
+                    gc.collect()
+        
+        actual_duration = time.time() - start_time
+        avg_fps = frame_count / actual_duration
+        
+        print(f"   運行時間: {actual_duration:.2f} 秒")
+        print(f"   總幀數: {frame_count}")
+        print(f"   平均FPS: {avg_fps:.2f}")
+        
+        memory_growth = memory.get_memory_diff()
+        if memory_growth > 0:
+            print(f"   記憶體增長: {memory_growth:.2f} MB")
+            # 長時間運行記憶體增長應該有限
+            assert memory_growth < 100, f"長時間運行記憶體洩漏: {memory_growth:.2f} MB"
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_extreme_load(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試極限負載"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        game.show_intro = False
+        
+        # 創建極限負載場景
+        extreme_operations = 10000
+        
+        with PerformanceTimer(f"極限負載測試 ({extreme_operations} 次複合操作)") as timer:
+            for i in range(extreme_operations):
+                # 複合操作
+                game.update()
+                game.player.move(32, 0)
+                game.player.is_moving = False
+                game.handle_inventory_toggle()
+                game.handle_map_toggle()
+                game.ui.close_all_ui()
+                
+                # 每1000次操作清理一次
+                if i % 1000 == 0:
+                    gc.collect()
+        
+        avg_time = timer.get_duration() / extreme_operations
+        print(f"   平均複合操作時間: {avg_time*1000:.4f} 毫秒")
+        
+        # 即使在極限負載下也應該保持響應
+        assert avg_time < 0.01, f"極限負載下性能不足: {avg_time*1000:.4f}毫秒/操作"
