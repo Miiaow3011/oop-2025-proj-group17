@@ -115,3 +115,40 @@ class MockMapManager:
     
     def remove_combat_zone(self, zone, floor):
         pass
+
+class MockPlayer:
+    def __init__(self, x=400, y=300):
+        self.x = x
+        self.y = y
+        self.is_moving = False
+        self.move_target_x = x
+        self.move_target_y = y
+    
+    def update(self):
+        pass
+    
+    def render(self, screen):
+        pass
+    
+    def move(self, dx, dy):
+        if not self.is_moving:
+            self.move_target_x = self.x + dx
+            self.move_target_y = self.y + dy
+            self.is_moving = True
+            return True
+        return False
+    
+    def set_position(self, x, y):
+        self.x = x
+        self.y = y
+        self.move_target_x = x
+        self.move_target_y = y
+        self.is_moving = False
+    
+    def reset(self):
+        self.set_position(400, 300)
+    
+    def force_stop_movement(self):
+        self.is_moving = False
+        self.move_target_x = self.x
+        self.move_target_y = self.y
