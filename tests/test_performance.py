@@ -522,3 +522,78 @@ class TestStressTests:
         
         # 即使在極限負載下也應該保持響應
         assert avg_time < 0.01, f"極限負載下性能不足: {avg_time*1000:.4f}毫秒/操作"
+
+# 主程序
+if __name__ == "__main__":
+    print("🚀 開始運行性能測試...")
+    print("⚠️  注意: 性能測試可能需要較長時間")
+    
+    # 檢查是否有psutil（用於記憶體監控）
+    try:
+        import psutil
+        print("✅ psutil 可用 - 將進行記憶體監控")
+    except ImportError:
+        print("⚠️  psutil 不可用 - 跳過記憶體監控測試")
+        print("   安裝psutil: pip install psutil")
+    
+    # 運行性能測試
+    test_classes = [TestGamePerformance, TestStressTests]
+    
+    total_passed = 0
+    total_failed = 0
+    
+    for test_class in test_classes:
+        print(f"\n📦 性能測試類別: {test_class.__name__}")
+        print("=" * 60)
+        
+        test_methods = [method for method in dir(test_class) if method.startswith('test_')]
+        
+        class_passed = 0
+        class_failed = 0
+        
+        for method_name in test_methods:
+            try:
+                print(f"\n🧪 運行測試: {method_name}")
+                
+                test_instance = test_class()
+                test_instance.setup_method()
+                test_method = getattr(test_instance, method_name)
+                test_method()
+                
+                print(f"✅ {method_name} 通過")
+                class_passed += 1
+                total_passed += 1
+                
+            except Exception as e:
+                import traceback
+                print(f"❌ {method_name} 失敗:")
+                print(f"   錯誤: {e}")
+                tb_lines = traceback.format_tb(e.__traceback__)
+                for line in tb_lines[-2:]:
+                    print(f"   {line.strip()}")
+                class_failed += 1
+                total_failed += 1
+        
+        print(f"\n📊 {test_class.__name__} 結果:")
+        print(f"✅ 通過: {class_passed}")
+        print(f"❌ 失敗: {class_failed}")
+        if class_passed + class_failed > 0:
+            print(f"📈 成功率: {class_passed/(class_passed+class_failed)*100:.1f}%")
+    
+    print(f"\n" + "=" * 70)
+    print(f"📊 性能測試總結:")
+    print(f"✅ 通過: {total_passed}")
+    print(f"❌ 失敗: {total_failed}")
+    if total_passed + total_failed > 0:
+        print(f"📈 總成功率: {total_passed/(total_passed+total_failed)*100:.1f}%")
+    
+    if total_failed == 0:
+        print("\n🎉 所有性能測試通過！")
+        print("🚀 遊戲性能表現良好")
+    else:
+        print(f"\n⚠️  有 {total_failed} 個性能測試失敗")
+        print("🔧 建議檢查性能瓶頸")
+    
+    print("\n💡 你也可以用 pytest 運行:")
+    print("   pytest tests/test_performance.py -v")
+    print("   pytest tests/ -v  # 運行所有測試")
