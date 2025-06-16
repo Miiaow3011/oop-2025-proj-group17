@@ -232,3 +232,40 @@ def setup_mocks():
             self.has_antidote = False
             self.game_completed = False
             self.game_over = False
+
+    # CombatSystem 模擬
+    class MockCombatSystem:
+        def __init__(self):
+            self.in_combat = False
+            self.combat_result = None
+            self.current_enemy = None
+            self.player_turn = True
+            self.animation_timer = 0
+            self.combat_log = []
+        
+        def start_combat(self, enemy):
+            self.in_combat = True
+            self.current_enemy = enemy.copy()
+            self.combat_result = None
+            self.player_turn = True
+            self.combat_log = [f"遭遇 {enemy['name']}！"]
+        
+        def update(self, game_state):
+            if self.animation_timer > 0:
+                self.animation_timer -= 1
+        
+        def render(self, screen, game_state):
+            pass
+        
+        def player_action(self, action):
+            if not self.in_combat or not self.player_turn or self.combat_result:
+                return None
+            
+            if action == "attack":
+                self.combat_result = "win"  # 簡化測試
+            elif action == "escape":
+                self.combat_result = "escape"
+            elif action == "defend":
+                pass
+            
+            self.player_turn = False
