@@ -915,3 +915,71 @@ class TestGameRender:
         # 檢查是否調用了畫面填充和翻轉
         mock_screen.fill.assert_called()
         mock_flip.assert_called()
+
+# 主程序 - 在所有類別定義之後
+if __name__ == "__main__":
+    print("🚀 開始運行主程式測試...")
+    
+    # 手動運行每個測試類別
+    test_classes = [TestGame, TestGameEvents, TestGameUpdate, TestGameRender]
+    
+    total_passed = 0
+    total_failed = 0
+    
+    for test_class in test_classes:
+        print(f"\n📦 測試類別: {test_class.__name__}")
+        print("=" * 50)
+        
+        # 獲取測試方法
+        test_methods = [method for method in dir(test_class) if method.startswith('test_')]
+        
+        class_passed = 0
+        class_failed = 0
+        
+        for method_name in test_methods:
+            try:
+                print(f"🧪 運行測試: {method_name}")
+                
+                # 創建測試實例並運行測試
+                test_instance = test_class()
+                test_instance.setup_method()
+                test_method = getattr(test_instance, method_name)
+                test_method()
+                
+                print(f"✅ {method_name} 通過")
+                class_passed += 1
+                total_passed += 1
+                
+            except Exception as e:
+                import traceback
+                print(f"❌ {method_name} 失敗:")
+                print(f"   錯誤: {e}")
+                if hasattr(e, '__traceback__'):
+                    tb_lines = traceback.format_tb(e.__traceback__)
+                    # 只顯示最後幾行錯誤訊息
+                    for line in tb_lines[-2:]:
+                        print(f"   {line.strip()}")
+                class_failed += 1
+                total_failed += 1
+        
+        print(f"\n📊 {test_class.__name__} 結果:")
+        print(f"✅ 通過: {class_passed}")
+        print(f"❌ 失敗: {class_failed}")
+        if class_passed + class_failed > 0:
+            print(f"📈 成功率: {class_passed/(class_passed+class_failed)*100:.1f}%")
+    
+    print(f"\n" + "=" * 70)
+    print(f"📊 總體測試結果:")
+    print(f"✅ 通過: {total_passed}")
+    print(f"❌ 失敗: {total_failed}")
+    if total_passed + total_failed > 0:
+        print(f"📈 總成功率: {total_passed/(total_passed+total_failed)*100:.1f}%")
+    
+    if total_failed == 0:
+        print("\n🎉 所有測試通過！")
+    else:
+        print(f"\n⚠️  有 {total_failed} 個測試失敗")
+    
+    print("\n💡 你也可以用 pytest 運行:")
+    print("   pytest tests/test_main.py -v")
+    print("   pytest tests/ -v  # 運行所有測試")
