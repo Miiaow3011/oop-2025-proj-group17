@@ -29,4 +29,22 @@ if 'pygame' not in sys.modules:
     pygame_mock.key.name = MagicMock(return_value="test_key")
     sys.modules['pygame'] = pygame_mock
 
+# 模擬依賴模組
+class MockGameState:
+    def __init__(self):
+        self.current_state = "exploration"
+        self.player_stats = {"hp": 100, "max_hp": 100, "attack": 10, "defense": 5, "level": 1, "exp": 0}
+        self.enemies = [{"name": "Test Enemy", "hp": 30, "attack": 8, "defense": 2}]
+        self.flags = {}
     
+    def set_state(self, state):
+        self.current_state = state
+    
+    def get_flag(self, flag):
+        return self.flags.get(flag, False)
+    
+    def set_flag(self, flag, value):
+        self.flags[flag] = value
+    
+    def add_exp(self, exp):
+        self.player_stats["exp"] += exp
