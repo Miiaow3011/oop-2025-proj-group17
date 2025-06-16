@@ -839,3 +839,79 @@ class TestGameUpdate:
         
         # 介紹狀態下不應該更新遊戲邏輯
         assert game.show_intro == True
+
+class TestGameRender:
+    """測試遊戲渲染邏輯"""
+    
+    def setup_method(self):
+        with patch('pygame.init'), \
+             patch('pygame.display.set_mode'), \
+             patch('pygame.display.set_caption'), \
+             patch('pygame.time.Clock'):
+            import main
+            self.game_class = main.Game
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    @patch('pygame.display.flip')
+    def test_render_intro(self, mock_flip, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試介紹畫面渲染"""
+        mock_font.install_chinese_font.return_value = True
+        mock_screen = Mock()
+        mock_display.return_value = mock_screen
+        
+        game = self.game_class()
+        game.show_intro = True
+        
+        game.render()
+        
+        # 檢查是否調用了畫面填充和翻轉
+        mock_screen.fill.assert_called()
+        mock_flip.assert_called()
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    @patch('pygame.display.flip')
+    def test_render_exploration(self, mock_flip, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試探索畫面渲染"""
+        mock_font.install_chinese_font.return_value = True
+        mock_screen = Mock()
+        mock_display.return_value = mock_screen
+        
+        game = self.game_class()
+        game.show_intro = False
+        game.game_state.current_state = "exploration"
+        
+        game.render()
+        
+        # 檢查是否調用了畫面填充和翻轉
+        mock_screen.fill.assert_called()
+        mock_flip.assert_called()
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    @patch('pygame.display.flip')
+    def test_render_combat(self, mock_flip, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試戰鬥畫面渲染"""
+        mock_font.install_chinese_font.return_value = True
+        mock_screen = Mock()
+        mock_display.return_value = mock_screen
+        
+        game = self.game_class()
+        game.show_intro = False
+        game.game_state.current_state = "combat"
+        
+        game.render()
+        
+        # 檢查是否調用了畫面填充和翻轉
+        mock_screen.fill.assert_called()
+        mock_flip.assert_called()
