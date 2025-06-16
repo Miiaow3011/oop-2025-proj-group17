@@ -209,8 +209,9 @@ class MapManager:
             print(f"🎨 成功載入 {len(self.shop_sprites)} 個商店圖片")
     
     def load_npc_images(self):
-        """🆕 載入NPC圖片 - 🎯 新增三樓專用NPC圖片"""
+        """🆕 載入NPC圖片 - 🎯 新增一樓和三樓專用NPC圖片"""
         npc_paths = {
+            "npc1_1floor": "assets/images/npc_1floor.png",  # 🆕 一樓驚慌學生專用圖片
             "npc3_2floor": "assets/images/npc3_2floor.png",  # 🆕 二樓NPC圖片
             "npc4_mystery": "assets/images/npc4_mystery.png",  # 🎯 神秘研究員專用圖片
             "npc5_last_worker": "assets/images/npc5_last_worker.png",  # 🎯 最後的研究者專用圖片
@@ -233,6 +234,11 @@ class MapManager:
                         target_width = 28
                         target_height = 35
                         print(f"   🎯 三樓NPC縮小尺寸: {target_width}x{target_height}")
+                    elif npc_type == "npc1_1floor":
+                        # 🆕 一樓驚慌學生使用標準尺寸：55x70像素
+                        target_width = 55
+                        target_height = 70
+                        print(f"   🆕 一樓NPC標準尺寸: {target_width}x{target_height}")
                     else:
                         # 其他NPC維持原尺寸：55x70像素
                         target_width = 55
@@ -252,6 +258,9 @@ class MapManager:
             print("📦 未找到NPC圖片，將使用程式繪製NPC")
         else:
             print(f"🎨 成功載入 {len(self.npc_sprites)} 個NPC圖片")
+            # 🆕 顯示一樓NPC載入狀態
+            if "npc1_1floor" in self.npc_sprites:
+                print("   🆕 一樓驚慌學生圖片: 已載入 ✓ (標準版 55x70)")
             # 🎯 顯示三樓NPC載入狀態
             if "npc4_mystery" in self.npc_sprites:
                 print("   🎯 神秘研究員圖片: 已載入 ✓ (縮小版 28x35)")
@@ -692,7 +701,7 @@ class MapManager:
         screen.blit(name_surface, name_rect)
 
     def render_npc(self, screen, npc):
-        """渲染NPC - 支援圖片和程式繪製，🎯 新增三樓專用NPC支援"""
+        """渲染NPC - 支援圖片和程式繪製，🎯 新增一樓和三樓專用NPC支援"""
         center_x = npc["x"] + npc["width"] // 2
         center_y = npc["y"] + npc["height"] // 2
 
@@ -711,7 +720,7 @@ class MapManager:
             self.render_npc_with_code(screen, npc, center_x, center_y)
     
     def render_npc_with_sprite(self, screen, npc, center_x, center_y):
-        """🆕 使用圖片渲染NPC - 🎯 新增三樓專用NPC支援"""
+        """🆕 使用圖片渲染NPC - 🎯 新增一樓和三樓專用NPC支援"""
         npc_id = npc.get("id", "")
         npc_name = npc.get("name", "")
         
@@ -728,7 +737,12 @@ class MapManager:
         sprite_width = 55  # 預設尺寸
         sprite_height = 70
         
-        if npc_id == "npc4" and npc_name == "神秘研究員" and "npc4_mystery" in self.npc_sprites:
+        if npc_id == "npc1" and npc_name == "驚慌學生" and "npc1_1floor" in self.npc_sprites:
+            # 🆕 一樓驚慌學生使用專用圖片（標準版）
+            sprite = self.npc_sprites["npc1_1floor"]
+            sprite_width = 55  # 🆕 標準版尺寸
+            sprite_height = 70
+        elif npc_id == "npc4" and npc_name == "神秘研究員" and "npc4_mystery" in self.npc_sprites:
             # 🎯 神秘研究員使用專用圖片（縮小版）
             sprite = self.npc_sprites["npc4_mystery"]
             sprite_width = 28  # 🎯 縮小版尺寸
@@ -1292,8 +1306,9 @@ class MapManager:
         self.load_shop_images()
     
     def reload_npc_images(self):
-        """🆕 重新載入NPC圖片（用於熱更新）- 🎯 三樓NPC專用"""
+        """🆕 重新載入NPC圖片（用於熱更新）- 🎯 一樓和三樓NPC專用"""
         print("🔄 重新載入NPC圖片...")
+        print("   🆕 檢查一樓NPC圖片...")
         print("   🎯 檢查三樓NPC圖片...")
         self.npc_sprites.clear()
         self.load_npc_images()
@@ -1363,7 +1378,7 @@ class MapManager:
                     print(f"     - {shop_type}: {size[0]}x{size[1]} 像素")
     
     def debug_print_npc_info(self):
-        """🆕 除錯：印出NPC圖片資訊 - 🎯 新增三樓NPC資訊"""
+        """🆕 除錯：印出NPC圖片資訊 - 🎯 新增一樓和三樓NPC資訊"""
         print("👤 NPC圖片偵錯資訊:")
         print(f"   使用圖片渲染: {self.use_npc_sprites}")
         print(f"   載入的NPC圖片: {list(self.npc_sprites.keys())}")
@@ -1373,8 +1388,18 @@ class MapManager:
                     size = sprite.get_size()
                     if npc_type in ["npc4_mystery", "npc5_last_worker"]:
                         print(f"     - {npc_type}: {size[0]}x{size[1]} 像素 🎯 (縮小版)")
+                    elif npc_type == "npc1_1floor":
+                        print(f"     - {npc_type}: {size[0]}x{size[1]} 像素 🆕 (一樓標準版)")
                     else:
                         print(f"     - {npc_type}: {size[0]}x{size[1]} 像素")
+        
+        # 🆕 顯示一樓NPC對應關係和載入狀態
+        print("   🆕 一樓NPC圖片對應和狀態:")
+        print("     - 驚慌學生 (npc1) → npc_1floor.png [55x70像素]", end="")
+        if "npc1_1floor" in self.npc_sprites:
+            print(" ✓ 已載入")
+        else:
+            print(" ❌ 未載入")
         
         # 🎯 顯示三樓NPC對應關係和載入狀態
         print("   🎯 三樓NPC圖片對應和狀態:")
@@ -1392,9 +1417,11 @@ class MapManager:
         
         # 🎯 顯示需要的檔案路徑和尺寸說明
         print("   📁 所需檔案路徑:")
+        print("     - assets/images/npc_1floor.png (將縮放至 55x70 像素) 🆕")
         print("     - assets/images/npc4_mystery.png (將縮放至 28x35 像素)")
         print("     - assets/images/npc5_last_worker.png (將縮放至 28x35 像素)")
         print("   📏 尺寸說明:")
+        print("     - 一樓NPC: 55x70像素 (標準尺寸) 🆕")
         print("     - 三樓NPC: 28x35像素 (縮小版，原本55x70的一半)")
         print("     - 其他NPC: 55x70像素 (標準尺寸)")
     
