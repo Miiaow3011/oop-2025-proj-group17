@@ -354,3 +354,23 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ 遊戲組件存在測試失敗: {e}")
             raise
+
+    def test_toggle_debug_mode(self):
+        """測試除錯模式切換"""
+        try:
+            game = main.Game()
+            
+            # 初始狀態
+            initial_debug = getattr(game, 'debug_mode', False)
+            
+            # 切換除錯模式
+            if hasattr(game, 'toggle_debug_mode'):
+                game.toggle_debug_mode()
+                new_debug = getattr(game, 'debug_mode', False)
+                assert new_debug != initial_debug
+            
+            print("✅ 除錯模式切換測試通過")
+            
+        except Exception as e:
+            print(f"❌ 除錯模式切換測試失敗: {e}")
+            raise
