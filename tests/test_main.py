@@ -664,3 +664,108 @@ class TestGame:
         assert game.player.is_moving == True
         assert game.player.move_target_y == original_y - 32
 
+class TestGameEvents:
+    """測試遊戲事件處理"""
+    
+    def setup_method(self):
+        with patch('pygame.init'), \
+             patch('pygame.display.set_mode'), \
+             patch('pygame.display.set_caption'), \
+             patch('pygame.time.Clock'):
+            import main
+            self.game_class = main.Game
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_handle_events_escape_key(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試ESC鍵處理"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 設置戰鬥狀態
+        game.game_state.current_state = "combat"
+        game.combat_system.in_combat = True
+        
+        # 模擬ESC鍵事件
+        mock_event = Mock()
+        mock_event.type = 2  # pygame.KEYDOWN
+        mock_event.key = 27  # pygame.K_ESCAPE
+        
+        with patch('pygame.event.get', return_value=[mock_event]):
+            game.handle_events()
+        
+        # 檢查是否強制結束戰鬥
+        assert game.game_state.current_state == "exploration"
+        assert game.combat_system.in_combat == False
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_handle_events_inventory_key(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試I鍵（背包）處理"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 模擬I鍵事件
+        mock_event = Mock()
+        mock_event.type = 2  # pygame.KEYDOWN
+        mock_event.key = 105  # pygame.K_i
+        
+        assert game.ui.show_inventory == False
+        
+        with patch('pygame.event.get', return_value=[mock_event]):
+            game.handle_events()
+        
+        assert game.ui.show_inventory == True
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_handle_events_debug_keys(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試除錯快捷鍵處理"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        
+        # 測試F1鍵（除錯模式切換）
+        mock_event = Mock()
+        mock_event.type = 2  # pygame.KEYDOWN
+        mock_event.key = 282  # pygame.K_F1
+        
+        assert game.debug_mode == False
+        
+        with patch('pygame.event.get', return_value=[mock_event]):
+            game.handle_events()
+        
+        assert game.debug_mode == True
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_handle_events_intro_space(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試介紹畫面空白鍵處理"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        game.show_intro = True
+        
+        # 模擬空白鍵事件
+        mock_event = Mock()
+        mock_event.type = 2  # pygame.KEYDOWN
+        mock_event.key = 32  # pygame.K_SPACE
+        
+        with patch('pygame.event.get', return_value=[mock_event]):
+            game.handle_events()
+        
+        assert game.show_intro == False
