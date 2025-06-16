@@ -399,3 +399,27 @@ class TestMainGameBasic:
         except Exception as e:
             print(f"❌ UI切換測試失敗: {e}")
             raise
+
+    def test_player_position_reset(self):
+        """測試玩家位置重置"""
+        try:
+            game = main.Game()
+            
+            # 修改玩家位置
+            if hasattr(game.player, 'x') and hasattr(game.player, 'y'):
+                game.player.x = 100
+                game.player.y = 200
+                
+                # 重置位置
+                if hasattr(game, 'reset_player_position'):
+                    game.reset_player_position()
+                    
+                    # 檢查是否重置到預設位置
+                    assert game.player.x == 400
+                    assert game.player.y == 300
+            
+            print("✅ 玩家位置重置測試通過")
+            
+        except Exception as e:
+            print(f"❌ 玩家位置重置測試失敗: {e}")
+            raise
