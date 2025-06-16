@@ -411,3 +411,57 @@ class TestGameIntegration:
         assert game.player.is_moving == False
         assert game.ui.show_inventory == False
         assert game.ui.dialogue_active == False
+
+# 主程序
+if __name__ == "__main__":
+    print("🚀 開始運行整合測試...")
+    
+    # 獲取測試方法
+    test_class = TestGameIntegration
+    test_methods = [method for method in dir(test_class) if method.startswith('test_')]
+    
+    passed = 0
+    failed = 0
+    
+    print(f"📦 整合測試類別: {test_class.__name__}")
+    print("=" * 60)
+    
+    for method_name in test_methods:
+        try:
+            print(f"🧪 運行測試: {method_name}")
+            
+            # 創建測試實例並運行測試
+            test_instance = test_class()
+            test_instance.setup_method()
+            test_method = getattr(test_instance, method_name)
+            test_method()
+            
+            print(f"✅ {method_name} 通過")
+            passed += 1
+            
+        except Exception as e:
+            import traceback
+            print(f"❌ {method_name} 失敗:")
+            print(f"   錯誤: {e}")
+            # 顯示簡化的錯誤訊息
+            tb_lines = traceback.format_tb(e.__traceback__)
+            for line in tb_lines[-2:]:
+                print(f"   {line.strip()}")
+            failed += 1
+    
+    print(f"\n📊 整合測試結果:")
+    print(f"✅ 通過: {passed}")
+    print(f"❌ 失敗: {failed}")
+    if passed + failed > 0:
+        print(f"📈 成功率: {passed/(passed+failed)*100:.1f}%")
+    
+    if failed == 0:
+        print("\n🎉 所有整合測試通過！")
+        print("🔧 系統各組件之間的互動正常")
+    else:
+        print(f"\n⚠️  有 {failed} 個整合測試失敗")
+        print("🔧 建議檢查系統組件間的互動邏輯")
+    
+    print("\n💡 你也可以用 pytest 運行:")
+    print("   pytest tests/test_integration.py -v")
+    print("   pytest tests/ -v  # 運行所有測試")
