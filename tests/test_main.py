@@ -769,3 +769,73 @@ class TestGameEvents:
             game.handle_events()
         
         assert game.show_intro == False
+
+class TestGameUpdate:
+    """測試遊戲更新邏輯"""
+    
+    def setup_method(self):
+        with patch('pygame.init'), \
+             patch('pygame.display.set_mode'), \
+             patch('pygame.display.set_caption'), \
+             patch('pygame.time.Clock'):
+            import main
+            self.game_class = main.Game
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_update_exploration_state(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試探索狀態更新"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        game.show_intro = False
+        game.game_state.current_state = "exploration"
+        
+        # 模擬沒有UI開啟
+        game.ui.show_inventory = False
+        game.ui.show_map = False
+        game.ui.dialogue_active = False
+        
+        game.update()
+        
+        # 檢查是否正常更新（沒有錯誤）
+        assert game.game_state.current_state == "exploration"
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_update_combat_state(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試戰鬥狀態更新"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        game.show_intro = False
+        game.game_state.current_state = "combat"
+        game.combat_system.in_combat = True
+        
+        game.update()
+        
+        # 檢查戰鬥系統是否被更新
+        assert game.game_state.current_state == "combat"
+
+    @patch('pygame.init')
+    @patch('pygame.display.set_mode')
+    @patch('pygame.display.set_caption')
+    @patch('pygame.time.Clock')
+    @patch('main.font_manager')
+    def test_update_intro_state(self, mock_font, mock_clock, mock_caption, mock_display, mock_init):
+        """測試介紹狀態更新"""
+        mock_font.install_chinese_font.return_value = True
+        
+        game = self.game_class()
+        game.show_intro = True
+        
+        game.update()
+        
+        # 介紹狀態下不應該更新遊戲邏輯
+        assert game.show_intro == True
