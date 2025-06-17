@@ -9,33 +9,38 @@ class TestItemSystem(unittest.TestCase):
         self.mock_inventory = MagicMock()
         self.ui.set_inventory_reference(self.mock_inventory)
 
-    def test_radio_assembly(self):
-        """測試無線電組裝系統"""
-        required_parts = ["電路板", "電池", "天線"]
+    def test_weapon_upgrade(self):
+        """测试武器升级材料检查"""
+        required_materials = {"金属零件": 3, "工具组": 1}
         self.mock_inventory.get_items.return_value = [
-            {"name": "電路板", "quantity": 1},
-            {"name": "電池", "quantity": 3}
+            {"name": "金属零件", "quantity": 5},
+            {"name": "工具组", "quantity": 0}
         ]
         
-        # 測試缺少零件
-        self.assertFalse(self.ui.check_assembly(required_parts))
+        # 测试材料不足
+        self.assertFalse(self.ui.check_upgrade_materials(required_materials))
         
-        # 測試零件齊全
-        self.mock_inventory.get_items.return_value.append({"name": "天線", "quantity": 1})
-        self.assertTrue(self.ui.check_assembly(required_parts))
+        # 测试材料足够
+        self.mock_inventory.get_items.return_value[1]["quantity"] = 2
+        self.assertTrue(self.ui.check_upgrade_materials(required_materials))
 
-    def test_medicine_combine(self):
-        """測試藥物合成系統"""
+    def test_medicine_crafting(self):
+        """测试药物制作系统"""
+        recipe = {
+            "inputs": [("草药", 2), ("酒精", 1)],
+            "output": ("消毒剂", 1)
+        }
+        
         self.mock_inventory.get_items.return_value = [
-            {"name": "草藥", "quantity": 3},
+            {"name": "草药", "quantity": 3},
             {"name": "酒精", "quantity": 1}
         ]
         
-        result = self.ui.combine_items(["草藥", "酒精"], "急救包")
-        self.assertTrue(result)
-        self.mock_inventory.remove_item.assert_any_call("草藥", 2)
+        success = self.ui.craft_item(recipe)
+        self.assertTrue(success)
+        self.mock_inventory.remove_item.assert_any_call("草药", 2)
         self.mock_inventory.remove_item.assert_any_call("酒精", 1)
-        self.mock_inventory.add_item.assert_called_with("急救包", 1)
+        self.mock_inventory.add_item.assert_called_with("消毒剂", 1)
 
 if __name__ == '__main__':
     unittest.main()
