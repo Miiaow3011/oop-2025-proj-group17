@@ -1,5 +1,6 @@
 import pygame
 from font_manager import font_manager
+from sound_manager import sound_manager  # 🆕 導入音效管理器
 
 class UI:
     def __init__(self, screen):
@@ -210,6 +211,14 @@ class UI:
                     "詢問使用方法",
                     "離開"
                 ]
+        else:
+            # 🔧 修復：為其他未定義的NPC提供預設對話
+            self.dialogue_text = f"這是{npc_data.get('name', '神秘人物')}..."
+            self.dialogue_options = [
+                "詢問情況",
+                "尋求幫助",
+                "離開"
+            ]
         
         self.selected_option = 0
     
@@ -263,9 +272,13 @@ class UI:
                     game_state.player_stats["hp"] + 30
                 )
                 game_state.add_exp(10)  # 修復：使用遊戲狀態的方法
+                # 🎵 播放成功音效
+                sound_manager.play_sfx("success")
                 self.show_message("購買成功！HP +30, EXP +10")
                 print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             else:
+                # 🎵 播放錯誤音效
+                sound_manager.play_sfx("error")
                 self.show_message("你的血量已滿！")
             self.end_dialogue()
             
@@ -275,6 +288,8 @@ class UI:
                 game_state.player_stats["hp"] + 20
             )
             game_state.add_exp(5)
+            # 🎵 播放成功音效
+            sound_manager.play_sfx("success")
             self.show_message("食物補充！HP +20, EXP +5")
             print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
@@ -285,6 +300,8 @@ class UI:
                 game_state.player_stats["hp"] + 15
             )
             game_state.add_exp(8)
+            # 🎵 播放成功音效
+            sound_manager.play_sfx("success")
             self.show_message("找到能量飲料！HP +15, EXP +8")
             print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
@@ -294,10 +311,14 @@ class UI:
                 self.has_antidote = True
                 game_state.add_exp(100)
                 game_state.level_up()  # 直接呼叫升級
+                # 🎵 播放升級音效
+                sound_manager.play_sfx("level_up")
                 self.show_message("找到解藥！等級提升！經驗值大幅增加！")
                 print(f"✅ 大量經驗值增加後 - Level: {game_state.player_stats['level']}, EXP: {game_state.player_stats['exp']}")
                 self.check_victory_condition(game_state)
             else:
+                # 🎵 播放錯誤音效
+                sound_manager.play_sfx("error")
                 self.show_message("你已經有解藥了！")
             self.end_dialogue()
             
@@ -307,14 +328,20 @@ class UI:
                 if not self.has_keycard:
                     self.has_keycard = True
                     game_state.add_exp(50)
+                    # 🎵 播放成功音效
+                    sound_manager.play_sfx("success")
                     self.show_message("找到了鑰匙卡！這應該能開啟特殊區域！EXP +50")
                     print(f"✅ 找到鑰匙卡，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
                 else:
                     game_state.add_exp(15)
+                    # 🎵 播放收集音效
+                    sound_manager.play_sfx("collect_item")
                     self.show_message("找到了一些有用的物品！EXP +15")
                     print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             else:
                 game_state.add_exp(10)
+                # 🎵 播放收集音效
+                sound_manager.play_sfx("collect_item")
                 self.show_message("搜查完畢，找到了一些小物品。EXP +10")
                 print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
@@ -324,11 +351,15 @@ class UI:
                 self.has_antidote = True
                 game_state.add_exp(100)
                 game_state.level_up()
+                # 🎵 播放升級音效
+                sound_manager.play_sfx("level_up")
                 self.show_message("成功取得解藥！等級提升！")
                 print(f"✅ 取得解藥，經驗值增加後 - Level: {game_state.player_stats['level']}, EXP: {game_state.player_stats['exp']}")
                 self.check_victory_condition(game_state)
             else:
                 game_state.damage_player(20)
+                # 🎵 播放錯誤音效
+                sound_manager.play_sfx("error")
                 self.show_message("等級不足！受到傷害！HP -20")
                 self.check_game_over(game_state)
             self.end_dialogue()
@@ -338,24 +369,32 @@ class UI:
             
         elif "冷靜一點" in option_text:
             game_state.add_exp(5)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
             self.show_message("學生: 我看到他們拿著什麼東西往樓上跑... (EXP +5)")
             print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "樓上有什麼" in option_text:
             game_state.add_exp(5)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
             self.show_message("學生: 聽說研究生們在三樓做實驗... (EXP +5)")
             print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "解藥在哪" in option_text:
             game_state.add_exp(10)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
             self.show_message("職員: 三樓...咖啡廳附近...快去... (EXP +10)")
             print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "你還好嗎" in option_text:
             game_state.add_exp(5)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
             self.show_message("職員: 還撐得住...你快去找解藥... (EXP +5)")
             print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
@@ -366,6 +405,8 @@ class UI:
             if has_medical_item:
                 self.consume_medical_item(inventory)
                 game_state.add_exp(25)
+                # 🎵 播放成功音效
+                sound_manager.play_sfx("success")
                 self.show_message("你給了職員醫療用品！EXP +25")
                 print(f"✅ 幫助他人，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
                 
@@ -377,21 +418,24 @@ class UI:
                 self.show_message("獲得重要線索！額外 EXP +15")
                 print(f"✅ 獲得線索，總經驗值 - EXP: {game_state.player_stats['exp']}")
             else:
+                # 🎵 播放錯誤音效
+                sound_manager.play_sfx("error")
                 self.show_message("你沒有醫療用品可以給予！先去商店購買一些吧。")
             self.end_dialogue()
             
         elif "鑰匙卡在哪" in option_text:
             game_state.add_exp(15)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
             self.show_message("研究員: 應該在二樓的某個商店裡... (EXP +15)")
             print(f"✅ 獲得線索，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
-            if self.player_reference:
-                self.player_reference.x = 300
-                self.player_reference.y = 150
-                self.show_message("研究員指引你到2樓搜尋！")
+            # 🔧 修復：移除自動瞬移，讓玩家自己探索
             self.end_dialogue()
             
         elif "實驗室在哪裡" in option_text:
             game_state.add_exp(15)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
             self.show_message("研究員: 三樓需要鑰匙卡才能進入... (EXP +15)")
             print(f"✅ 獲得資訊，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
@@ -400,28 +444,58 @@ class UI:
             if game_state.player_stats["level"] >= 2:
                 game_state.add_exp(30)
                 self.has_keycard = True
+                # 🎵 播放成功音效
+                sound_manager.play_sfx("success")
                 self.show_message("研究員感謝你的幫助，給了你鑰匙卡！EXP +30")
                 print(f"✅ 幫助成功，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             else:
                 game_state.add_exp(10)
+                # 🎵 播放錯誤音效
+                sound_manager.play_sfx("error")
                 self.show_message("研究員: 你還太弱了，先去提升實力吧... (EXP +10)")
                 print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "詢問使用方法" in option_text:
             game_state.add_exp(20)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
             self.show_message("研究者: 直接使用就行了，它會拯救所有人... (EXP +20)")
             print(f"✅ 學習知識，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "如何使用解藥" in option_text:
             if self.has_antidote:
+                # 🎵 播放成功音效
+                sound_manager.play_sfx("success")
                 self.show_message("研究者: 在建築物頂樓使用，它會擴散到整個區域！")
-                if self.player_reference:
-                    self.player_reference.x = 500
-                    self.player_reference.y = 50
-                    self.show_message("你被帶到了頂樓！準備拯救所有人！")
+                # 🔧 修復：不要自動瞬移到頂樓，讓玩家選擇
+                self.show_message("你需要找到通往頂樓的路...")
                 self.check_victory_condition(game_state)
+            self.end_dialogue()
+            
+        elif "還有其他倖存者嗎" in option_text:
+            game_state.add_exp(10)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
+            self.show_message("研究者: 還有一些人躲在安全的地方，你的解藥會拯救他們... (EXP +10)")
+            print(f"✅ 獲得資訊，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
+            self.end_dialogue()
+            
+        elif "詢問情況" in option_text:
+            game_state.add_exp(5)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
+            self.show_message("情況很危險，但還有希望... (EXP +5)")
+            print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
+            self.end_dialogue()
+            
+        elif "尋求幫助" in option_text:
+            game_state.add_exp(8)
+            # 🎵 播放對話音效
+            sound_manager.play_sfx("dialogue_beep")
+            self.show_message("我會盡力幫助你的，小心行事... (EXP +8)")
+            print(f"✅ 尋求幫助，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         else:
@@ -430,9 +504,16 @@ class UI:
                 self.show_message("你離開了對話。")
             else:
                 game_state.add_exp(2)
+                # 🎵 播放對話音效
+                sound_manager.play_sfx("dialogue_beep")
                 self.show_message(f"你選擇了：{option_text} (EXP +2)")
                 print(f"✅ 其他選項，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
+        
+        # 🎵 檢查是否有升級音效需要播放
+        if hasattr(game_state, 'just_leveled_up') and game_state.just_leveled_up:
+            sound_manager.play_sfx("level_up")
+            game_state.just_leveled_up = False  # 重置升級標記
     
     def check_level_up(self, game_state):
         """檢查是否升級 - 移除，改用遊戲狀態的升級系統"""
@@ -440,19 +521,23 @@ class UI:
         pass
     
     def check_victory_condition(self, game_state):
-        """檢查勝利條件"""
+        """檢查勝利條件 + 音效"""
         if (self.has_antidote and 
             game_state.player_stats["level"] >= 3 and 
             game_state.player_stats["hp"] >= 50):
             self.game_completed = True
+            # 🎵 播放勝利音效
+            sound_manager.play_sfx("success")
             self.show_message("🎉 恭喜！你成功找到解藥並拯救了所有人！遊戲完成！")
         elif self.has_antidote:
             self.show_message("你有解藥了！但還需要更強的實力才能完成任務...")
     
     def check_game_over(self, game_state):
-        """檢查遊戲結束條件"""
+        """檢查遊戲結束條件 + 音效"""
         if game_state.player_stats["hp"] <= 0:
             self.game_over = True
+            # 🎵 播放失敗音效
+            sound_manager.play_sfx("error")
             self.show_message("💀 你倒下了...遊戲結束！")
     
     def end_dialogue(self):
@@ -536,7 +621,7 @@ class UI:
         """更新訊息顯示"""
         if self.message_display_time > 0:
             self.message_display_time -= 1
-    
+
     def render_hud(self, game_state, player):
         # 血量條
         hp_ratio = game_state.player_stats["hp"] / game_state.player_stats["max_hp"]
@@ -567,7 +652,7 @@ class UI:
         exp_surface = font_manager.render_text(exp_text, 18, (255, 255, 255))
         self.screen.blit(exp_surface, (80, self.screen_height - 65))
         
-        # 經驗值條 - 新增視覺化經驗值條
+        # 經驗值條 - 視覺化經驗值條
         exp_ratio = game_state.player_stats['exp'] / required_exp
         exp_bar_width = 150
         exp_bar_height = 8
@@ -581,6 +666,41 @@ class UI:
         # 經驗值條
         exp_rect = pygame.Rect(exp_bar_x, exp_bar_y, exp_bar_width * exp_ratio, exp_bar_height)
         pygame.draw.rect(self.screen, (0, 255, 255), exp_rect)
+        
+        # 🆕 角色資訊顯示
+        character_name = player.get_character_name()
+        character_text = f"🎭 {character_name}"
+        character_surface = font_manager.render_text(character_text, 16, (255, 150, 255))
+        self.screen.blit(character_surface, (10, self.screen_height - 90))
+        
+        # 🆕 角色屬性顯示（顯示速度）
+        character_stats = player.get_character_stats()
+        speed_text = f"速度: {character_stats.get('speed', 8)}"
+        speed_surface = font_manager.render_text(speed_text, 14, (150, 255, 150))
+        self.screen.blit(speed_surface, (150, self.screen_height - 90))
+        
+        # 🎵 音效狀態顯示 (右上角)
+        sound_status_x = self.screen_width - 200
+        sound_status_y = 50
+        
+        music_status = "🎵ON" if sound_manager.is_music_enabled else "🎵OFF"
+        music_color = (100, 255, 100) if sound_manager.is_music_enabled else (255, 100, 100)
+        music_surface = font_manager.render_text(music_status, 14, music_color)
+        self.screen.blit(music_surface, (sound_status_x, sound_status_y))
+        
+        sfx_status = "🔊ON" if sound_manager.is_sfx_enabled else "🔊OFF"
+        sfx_color = (100, 255, 100) if sound_manager.is_sfx_enabled else (255, 100, 100)
+        sfx_surface = font_manager.render_text(sfx_status, 14, sfx_color)
+        self.screen.blit(sfx_surface, (sound_status_x + 60, sound_status_y))
+        
+        # 音量顯示
+        music_vol_text = f"M:{int(sound_manager.music_volume * 100)}%"
+        music_vol_surface = font_manager.render_text(music_vol_text, 12, (200, 200, 200))
+        self.screen.blit(music_vol_surface, (sound_status_x, sound_status_y + 20))
+        
+        sfx_vol_text = f"S:{int(sound_manager.sfx_volume * 100)}%"
+        sfx_vol_surface = font_manager.render_text(sfx_vol_text, 12, (200, 200, 200))
+        self.screen.blit(sfx_vol_surface, (sound_status_x + 60, sound_status_y + 20))
         
         # 道具狀態
         item_y = 10
@@ -601,11 +721,13 @@ class UI:
                 "方向鍵: 移動",
                 "空白鍵: 互動",
                 "I: 背包",
-                "M: 地圖"
+                "M: 地圖",
+                "F6: 音樂 F7: 音效"  # 🎵 新增音效控制提示
             ]
             
             for i, control in enumerate(controls):
-                control_surface = font_manager.render_text(control, 18, (200, 200, 200))
+                color = (100, 255, 255) if "F6:" in control or "F7:" in control else (200, 200, 200)
+                control_surface = font_manager.render_text(control, 16 if "F6:" in control else 18, color)
                 self.screen.blit(control_surface, (self.screen_width - 150, 10 + i * 20))
     
     def render_messages(self, game_state):
@@ -783,86 +905,3 @@ class UI:
         self.message_display_time = 0
         self.current_message = ""
         print("遊戲狀態已重置")
-
-    def render_hud(self, game_state, player):
-        # 血量條
-        hp_ratio = game_state.player_stats["hp"] / game_state.player_stats["max_hp"]
-        hp_bar_width = 200
-        hp_bar_height = 20
-        
-        # 血量條背景
-        hp_bg_rect = pygame.Rect(10, self.screen_height - 40, hp_bar_width, hp_bar_height)
-        pygame.draw.rect(self.screen, (100, 100, 100), hp_bg_rect)
-        
-        # 血量條
-        hp_rect = pygame.Rect(10, self.screen_height - 40, hp_bar_width * hp_ratio, hp_bar_height)
-        hp_color = (255, 0, 0) if hp_ratio < 0.3 else (255, 255, 0) if hp_ratio < 0.6 else (0, 255, 0)
-        pygame.draw.rect(self.screen, hp_color, hp_rect)
-        
-        # 血量文字
-        hp_text = f"HP: {game_state.player_stats['hp']}/{game_state.player_stats['max_hp']}"
-        hp_surface = font_manager.render_text(hp_text, 18, (255, 255, 255))
-        self.screen.blit(hp_surface, (220, self.screen_height - 35))
-        
-        # 等級和經驗值 - 修復：確保正確顯示
-        level_text = f"Lv.{game_state.player_stats['level']}"
-        level_surface = font_manager.render_text(level_text, 18, (255, 255, 255))
-        self.screen.blit(level_surface, (10, self.screen_height - 65))
-        
-        required_exp = game_state.player_stats['level'] * 100
-        exp_text = f"EXP: {game_state.player_stats['exp']}/{required_exp}"
-        exp_surface = font_manager.render_text(exp_text, 18, (255, 255, 255))
-        self.screen.blit(exp_surface, (80, self.screen_height - 65))
-        
-        # 經驗值條 - 視覺化經驗值條
-        exp_ratio = game_state.player_stats['exp'] / required_exp
-        exp_bar_width = 150
-        exp_bar_height = 8
-        exp_bar_x = 250
-        exp_bar_y = self.screen_height - 60
-        
-        # 經驗值條背景
-        exp_bg_rect = pygame.Rect(exp_bar_x, exp_bar_y, exp_bar_width, exp_bar_height)
-        pygame.draw.rect(self.screen, (50, 50, 50), exp_bg_rect)
-        
-        # 經驗值條
-        exp_rect = pygame.Rect(exp_bar_x, exp_bar_y, exp_bar_width * exp_ratio, exp_bar_height)
-        pygame.draw.rect(self.screen, (0, 255, 255), exp_rect)
-        
-        # 🆕 角色資訊顯示
-        character_name = player.get_character_name()
-        character_text = f"🎭 {character_name}"
-        character_surface = font_manager.render_text(character_text, 16, (255, 150, 255))
-        self.screen.blit(character_surface, (10, self.screen_height - 90))
-        
-        # 🆕 角色屬性顯示（顯示速度）
-        character_stats = player.get_character_stats()
-        speed_text = f"速度: {character_stats.get('speed', 8)}"
-        speed_surface = font_manager.render_text(speed_text, 14, (150, 255, 150))
-        self.screen.blit(speed_surface, (150, self.screen_height - 90))
-        
-        # 道具狀態
-        item_y = 10
-        if self.has_keycard:
-            keycard_text = "🔑 鑰匙卡"
-            keycard_surface = font_manager.render_text(keycard_text, 18, (255, 255, 0))
-            self.screen.blit(keycard_surface, (10, item_y))
-            item_y += 25
-        
-        if self.has_antidote:
-            antidote_text = "💉 解藥"
-            antidote_surface = font_manager.render_text(antidote_text, 18, (0, 255, 0))
-            self.screen.blit(antidote_surface, (10, item_y))
-        
-        # 操作提示
-        if not self.dialogue_active:
-            controls = [
-                "方向鍵: 移動",
-                "空白鍵: 互動",
-                "I: 背包",
-                "M: 地圖"
-            ]
-            
-            for i, control in enumerate(controls):
-                control_surface = font_manager.render_text(control, 18, (200, 200, 200))
-                self.screen.blit(control_surface, (self.screen_width - 150, 10 + i * 20))
