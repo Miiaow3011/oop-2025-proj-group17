@@ -9,54 +9,60 @@ class TestShopDialogue(unittest.TestCase):
         self.mock_game_state = MagicMock()
         self.ui.set_game_state_reference(self.mock_game_state)
 
-    def test_weapon_store_rank_access(self):
-        """测试武器商店的军衔准入系统"""
+    def test_military_depot_access(self):
+        """测试军事仓库的权限等级系统"""
         shop_data = {
             "type": "shop",
-            "id": "ARMORY",
-            "name": "军械库",
-            "required_rank": 5
+            "id": "DEPOT",
+            "name": "军事仓库",
+            "access_level": 3,
+            "inventory": ["突击步枪", "防弹衣"]
         }
         
-        # 军衔不足
-        self.mock_game_state.player_stats = {"rank": 3}
+        # 权限不足
+        self.mock_game_state.player_stats = {"clearance": 2}
         self.ui.start_dialogue(shop_data)
-        self.assertIn("需要上尉军衔", self.ui.dialogue_text)
+        self.assertIn("需要3级权限", self.ui.dialogue_text)
         
-        # 军衔足够
-        self.mock_game_state.player_stats = {"rank": 6}
+        # 权限足够
+        self.mock_game_state.player_stats = {"clearance": 3}
         self.ui.start_dialogue(shop_data)
         self.assertEqual(self.ui.dialogue_options[0], "购买突击步枪")
 
-    def test_pharmacy_medicine_restock(self):
-        """测试药局的药品补货机制"""
+    def test_medical_clinic_restock(self):
+        """测试医疗诊所的库存刷新机制"""
         shop_data = {
             "type": "shop",
-            "id": "PHARM",
-            "name": "应急药局",
-            "restock_timer": 24
+            "id": "CLINIC",
+            "name": "应急诊所",
+            "restock_hours": 6,
+            "stock": ["抗生素", "止痛药"]
         }
         
         # 首次访问
         self.ui.start_dialogue(shop_data)
-        self.assertEqual(self.ui.dialogue_options[0], "购买抗生素")
+        self.assertEqual(len(self.ui.dialogue_options), 2)
         
         # 模拟立即再次访问
+        shop_data["last_restock"] = 0  # 未到补货时间
         self.ui.start_dialogue(shop_data)
-        self.assertIn("补货中", self.ui.dialogue_text)
+        self.assertIn("库存不足", self.ui.dialogue_text)
 
-    def test_black_market_currency(self):
-        """测试黑市的特殊货币系统"""
+    def test_trader_barter_ui(self):
+        """测试商人的实物交易界面"""
         shop_data = {
             "type": "shop",
-            "id": "BLACK",
-            "name": "黑市",
-            "currency": "信用点"
+            "id": "TRADER",
+            "name": "流浪商人",
+            "barter": [("子弹", "抗生素", 30)]
         }
         
-        self.mock_game_state.player_stats = {"credits": 150}
+        self.mock_inventory = MagicMock()
+        self.mock_inventory.get_items.return_value = [{"name": "子弹", "quantity": 50}]
+        self.ui.set_inventory_reference(self.mock_inventory)
+        
         self.ui.start_dialogue(shop_data)
-        self.assertIn("当前信用点:150", self.ui.dialogue_text)
+        self.assertEqual(self.ui.dialogue_options[0], "用30子弹换抗生素")
 
 if __name__ == '__main__':
     unittest.main()
