@@ -9,38 +9,48 @@ class TestItemSystem(unittest.TestCase):
         self.mock_inventory = MagicMock()
         self.ui.set_inventory_reference(self.mock_inventory)
 
-    def test_weapon_upgrade(self):
-        """测试武器升级材料检查"""
-        required_materials = {"金属零件": 3, "工具组": 1}
+    def test_weapon_repair_kit(self):
+        """测试武器维修套件的使用条件"""
         self.mock_inventory.get_items.return_value = [
-            {"name": "金属零件", "quantity": 5},
-            {"name": "工具组", "quantity": 0}
+            {"name": "维修套件", "quantity": 1, "durability": 100},
+            {"name": "AK-47", "durability": 30}
         ]
         
-        # 测试材料不足
-        self.assertFalse(self.ui.check_upgrade_materials(required_materials))
+        # 测试可以维修
+        self.assertTrue(self.ui.can_repair("AK-47"))
         
-        # 测试材料足够
-        self.mock_inventory.get_items.return_value[1]["quantity"] = 2
-        self.assertTrue(self.ui.check_upgrade_materials(required_materials))
+        # 测试耐久度已满
+        self.mock_inventory.get_items.return_value[1]["durability"] = 100
+        self.assertFalse(self.ui.can_repair("AK-47"))
 
-    def test_medicine_crafting(self):
-        """测试药物制作系统"""
-        recipe = {
-            "inputs": [("草药", 2), ("酒精", 1)],
-            "output": ("消毒剂", 1)
-        }
-        
+    def test_medicine_expiration(self):
+        """测试药品过期系统"""
         self.mock_inventory.get_items.return_value = [
-            {"name": "草药", "quantity": 3},
-            {"name": "酒精", "quantity": 1}
+            {"name": "抗生素", "expiry": 3},
+            {"name": "止痛药", "expiry": 0}
         ]
         
-        success = self.ui.craft_item(recipe)
-        self.assertTrue(success)
-        self.mock_inventory.remove_item.assert_any_call("草药", 2)
-        self.mock_inventory.remove_item.assert_any_call("酒精", 1)
-        self.mock_inventory.add_item.assert_called_with("消毒剂", 1)
+        # 测试过期药品
+        self.assertFalse(self.ui.is_usable("止痛药"))
+        
+        # 测试有效药品
+        self.assertTrue(self.ui.is_usable("抗生素"))
+
+    def test_radio_assembly(self):
+        """测试无线电组装系统"""
+        required_parts = ["电路板", "电池", "天线"]
+        self.mock_inventory.get_items.return_value = [
+            {"name": "电路板", "quantity": 2},
+            {"name": "电池", "quantity": 1},
+            {"name": "电线", "quantity": 3}
+        ]
+        
+        # 缺少天线
+        self.assertFalse(self.ui.check_assembly(required_parts))
+        
+        # 添加天线后
+        self.mock_inventory.get_items.return_value.append({"name": "天线", "quantity": 1})
+        self.assertTrue(self.ui.check_assembly(required_parts))
 
 if __name__ == '__main__':
     unittest.main()
