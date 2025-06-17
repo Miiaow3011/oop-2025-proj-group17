@@ -2,63 +2,65 @@ import unittest
 from unittest.mock import MagicMock
 from ui import UI
 
-class TestNPCDialogue(unittest.TestCase):
+class TestItemSystem(unittest.TestCase):
     def setUp(self):
         self.mock_screen = MagicMock()
         self.ui = UI(self.mock_screen)
-        self.mock_game_state = MagicMock()
-        self.ui.set_game_state_reference(self.mock_game_state)
+        self.mock_inventory = MagicMock()
+        self.ui.set_inventory_reference(self.mock_inventory)
 
-    def test_trauma_system(self):
-        """测试NPC创伤记忆系统"""
-        npc_data = {
-            "type": "npc",
-            "id": "WAR_VETERAN",
-            "name": "老兵",
-            "trauma_triggers": ["枪声", "爆炸"],
-            "calm_methods": ["安抚", "给酒"]
-        }
+    def test_weapon_jamming(self):
+        """测试武器卡弹概率系统"""
+        weapons = [
+            {"name": "AK47", "jam_chance": 0.15, "condition": 70},
+            {"name": "保养良好的手枪", "jam_chance": 0.02, "condition": 95}
+        ]
+        self.mock_inventory.get_items.return_value = weapons
         
-        # 测试触发创伤状态
-        self.ui.dialogue_data = {"triggered": True}
-        self.ui.setup_npc_dialogue(npc_data)
-        self.assertEqual(self.ui.dialogue_options[0], "安抚")
+        # 测试卡弹概率计算
+        self.assertAlmostEqual(
+            self.ui.calculate_jam_chance("AK47"),
+            0.15 * (1 - 0.7),
+            delta=0.01
+        )
+        
+        # 测试保养良好的武器
+        self.assertLess(
+            self.ui.calculate_jam_chance("保养良好的手枪"),
+            0.05
+        )
 
-    def test_language_barrier(self):
-        """测试语言障碍沟通系统"""
-        npc_data = {
-            "type": "npc",
-            "id": "FOREIGNER",
-            "name": "外国商人",
-            "language": "russian",
-            "comprehension": 0.4
-        }
+    def test_food_spoilage_rate(self):
+        """测试食物腐败速率系统"""
+        environment_conditions = [
+            {"temp": 30, "humidity": 0.8, "expected_rate": 1.5},
+            {"temp": 10, "humidity": 0.3, "expected_rate": 0.5}
+        ]
         
-        # 测试语言技能不足
-        self.mock_game_state.player_skills = {"russian": 30}
-        self.ui.start_dialogue(npc_data)
-        self.assertIn("理解困难", self.ui.dialogue_text)
-        
-        # 测试语言技能足够
-        self.mock_game_state.player_skills = {"russian": 80}
-        self.ui.setup_npc_dialogue(npc_data)
-        self.assertIn("沟通顺畅", self.ui.dialogue_text)
+        for cond in environment_conditions:
+            with self.subTest(temp=cond["temp"]):
+                self.mock_game_state.environment = {
+                    "temperature": cond["temp"],
+                    "humidity": cond["humidity"]
+                }
+                self.assertEqual(
+                    self.ui.calculate_spoilage_rate(),
+                    cond["expected_rate"]
+                )
 
-    def test_negotiation_minigame(self):
-        """测试谈判小游戏系统"""
-        npc_data = {
-            "type": "npc",
-            "id": "HOSTAGE_TAKER",
-            "name": "绑匪",
-            "negotiation": {
-                "rounds": 3,
-                "win_condition": 2
-            }
-        }
+    def test_chemical_stability(self):
+        """测试化学品稳定性系统"""
+        chemicals = [
+            {"name": "硝酸甘油", "stability": 0.3, "temp_sensitive": True},
+            {"name": "食盐", "stability": 1.0, "temp_sensitive": False}
+        ]
         
-        self.ui.start_dialogue(npc_data)
-        self.assertEqual(self.ui.dialogue_data["rounds"], 3)
-        self.assertEqual(self.ui.dialogue_data["wins_required"], 2)
+        # 测试不稳定化学品
+        self.mock_game_state.environment = {"temperature": 35}
+        self.assertTrue(self.ui.check_chemical_stability("硝酸甘油"))
+        
+        # 测试稳定物品
+        self.assertFalse(self.ui.check_chemical_stability("食盐"))
 
 if __name__ == '__main__':
     unittest.main()
