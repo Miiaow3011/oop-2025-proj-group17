@@ -10,40 +10,46 @@ class TestUIRendering(unittest.TestCase):
         self.ui.set_game_state_reference(self.mock_game_state)
 
     @patch('pygame.draw.rect')
-    def test_stamina_bar(self, mock_draw):
-        """测试耐力条动态渲染"""
+    def test_toxin_meter_rendering(self, mock_draw):
+        """测试毒素计量表颜色变化"""
         self.mock_game_state.player_stats = {
-            "stamina": 40,
-            "max_stamina": 100
+            "toxin": 65,
+            "max_toxin": 100
         }
         
         self.ui.render_hud(self.mock_game_state, None)
         
-        # 验证耐力条长度和颜色
-        args, _ = mock_draw.call_args_list[1]
-        self.assertAlmostEqual(args[0].width, 200 * 0.4, delta=1)
-        self.assertEqual(args[2], (0, 200, 255))  # 蓝色耐力条
+        # 验证毒素条颜色
+        args, _ = mock_draw.call_args_list[3]
+        self.assertEqual(args[2], (200, 0, 0))  # 红色毒素条
 
     @patch('pygame.Surface')
-    def test_rain_effect(self, mock_surface):
-        """测试下雨特效渲染"""
-        self.mock_game_state.environment = {"weather": "rain"}
-        self.ui.render(self.mock_game_state, None, None)
+    def test_weather_overlay_intensity(self, mock_surface):
+        """测试天气特效强度控制"""
+        self.mock_game_state.environment = {
+            "weather": "rain",
+            "intensity": 0.7
+        }
+        
+        self.ui.render_weather_effects()
         mock_surface.assert_called_with(
-            (self.ui.screen_width, self.ui.screen_height), 
+            (self.ui.screen_width, self.ui.screen_height),
             pygame.SRCALPHA
         )
 
     @patch('font_manager.render_text')
-    def test_interaction_prompt(self, mock_render):
-        """测试交互提示渲染"""
-        self.ui.show_interaction_prompt("按E打开")
-        mock_render.assert_called_with(
-            "按E打开", 
-            20, 
-            (255, 255, 0),  # 黄色提示
-            font_name="Arial"
-        )
+    def test_dynamic_quest_markers(self, mock_render):
+        """测试动态任务标记颜色"""
+        self.ui.active_quests = [
+            {"name": "主线任务", "priority": "high"},
+            {"name": "支线任务", "priority": "low"}
+        ]
+        
+        self.ui.render_quest_markers()
+        
+        # 验证不同优先级颜色
+        mock_render.assert_any_call("主线任务", 18, (255, 0, 0))  # 红色高优先级
+        mock_render.assert_any_call("支线任务", 16, (150, 150, 150))  # 灰色低优先级
 
 if __name__ == '__main__':
     unittest.main()
