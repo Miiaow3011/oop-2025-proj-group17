@@ -9,42 +9,29 @@ class TestShopDialogue(unittest.TestCase):
         self.mock_game_state = MagicMock()
         self.ui.set_game_state_reference(self.mock_game_state)
 
-    def test_7eleven_shop(self):
-        """測試7-11商店對話"""
+    def test_hardware_store(self):
+        """測試五金行特殊對話"""
         shop_data = {
             "type": "shop",
-            "id": "A",
-            "name": "7-11"
+            "id": "HW",
+            "name": "緊急五金行",
+            "special_items": ["鐵鎚", "鐵絲", "鎖具"]
         }
         self.ui.start_dialogue(shop_data)
-        
-        self.assertIn("歡迎來到7-11", self.ui.dialogue_text)
-        self.assertEqual(len(self.ui.dialogue_options), 3)
-        self.assertEqual(self.ui.dialogue_options[0], "購買醫療用品")
+        self.assertIn("五金行貨架", self.ui.dialogue_text)
+        self.assertEqual(self.ui.dialogue_options[0], "購買工具")
 
-    def test_subway_shop(self):
-        """測試Subway商店對話"""
+    def test_pharmacy_night(self):
+        """測試夜間藥局限制"""
         shop_data = {
             "type": "shop",
-            "id": "B",
-            "name": "Subway"
+            "id": "PH",
+            "name": "24小時藥局",
+            "night_only": True
         }
+        self.mock_game_state.is_night = False
         self.ui.start_dialogue(shop_data)
-        
-        self.assertIn("Subway已經沒有新鮮食材", self.ui.dialogue_text)
-        self.assertEqual(self.ui.dialogue_options[0], "購買罐頭食品")
-
-    def test_tea_shop(self):
-        """測試茶壜商店對話"""
-        shop_data = {
-            "type": "shop",
-            "id": "C",
-            "name": "茶壜"
-        }
-        self.ui.start_dialogue(shop_data)
-        
-        self.assertIn("茶壜的飲料機還在運作", self.ui.dialogue_text)
-        self.assertEqual(self.ui.dialogue_options[0], "搜尋飲料")
+        self.assertIn("晚上8點後營業", self.ui.dialogue_text)
 
 if __name__ == '__main__':
     unittest.main()
