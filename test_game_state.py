@@ -9,48 +9,42 @@ class TestGameState(unittest.TestCase):
         self.mock_game_state = MagicMock()
         self.ui.set_game_state_reference(self.mock_game_state)
 
-    def test_toxin_accumulation(self):
-        """测试毒素累积阶段系统"""
-        stages = {
-            30: "轻度中毒",
-            70: "器官损伤",
-            100: "生命危险"
+    def test_mental_health_system(self):
+        """测试心理健康状态系统"""
+        test_cases = [
+            (30, "焦虑", {"accuracy": -0.2}),
+            (70, "崩溃", {"speed": -0.5})
+        ]
+        
+        for stress, effect, impacts in test_cases:
+            with self.subTest(stress=stress):
+                self.mock_game_state.player_stats = {"stress": stress}
+                self.ui.check_mental_health()
+                self.assertIn(effect, self.ui.current_message)
+                self.mock_game_state.apply_effects.assert_called_with(impacts)
+
+    def test_biome_effects(self):
+        """测试不同生物群落影响"""
+        biomes = {
+            "wasteland": {"radiation": +0.1},
+            "forest": {"stamina_regen": +0.3}
         }
         
-        for level, effect in stages.items():
-            with self.subTest(level=level):
-                self.mock_game_state.player_stats = {"toxin": level}
-                self.ui.check_toxin_effects()
-                self.assertIn(effect, self.ui.current_message)
-
-    def test_weather_impact_system(self):
-        """测试复合天气影响系统"""
-        weather_cases = [
-            ("sandstorm", {"visibility": 0.3, "damage": 5}),
-            ("blizzard", {"stamina": 0.5, "damage": 8})
-        ]
-        
-        for weather, effects in weather_cases:
-            with self.subTest(weather=weather):
-                self.mock_game_state.environment = {"weather": weather}
-                self.ui.check_weather_impact()
+        for biome, effects in biomes.items():
+            with self.subTest(biome=biome):
+                self.mock_game_state.environment = {"biome": biome}
+                self.ui.check_biome_effects()
                 self.mock_game_state.apply_effects.assert_called_with(effects)
 
-    def test_faction_relations(self):
-        """测试阵营关系影响"""
-        actions = [
-            ("帮派任务", {"gang": +10}),
-            ("袭击哨站", {"military": -20})
-        ]
-        
-        for action, impact in actions:
-            with self.subTest(action=action):
-                self.mock_game_state.factions = {"gang": 50, "military": 50}
-                self.ui.record_faction_action(action, impact)
-                self.assertEqual(
-                    self.mock_game_state.factions[list(impact.keys())[0]],
-                    50 + list(impact.values())[0]
-                )
+    def test_day_night_cycle(self):
+        """测试昼夜循环影响NPC行为"""
+        self.mock_game_state.game_time = {"hour": 3}  # 凌晨
+        self.ui.check_night_effects()
+        self.mock_game_state.update_npc_status.assert_called_with("sleeping")
+
+        self.mock_game_state.game_time = {"hour": 14}  # 下午
+        self.ui.check_day_effects()
+        self.mock_game_state.update_npc_status.assert_called_with("active")
 
 if __name__ == '__main__':
     unittest.main()
