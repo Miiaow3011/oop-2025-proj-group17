@@ -9,53 +9,54 @@ class TestItemSystem(unittest.TestCase):
         self.mock_inventory = MagicMock()
         self.ui.set_inventory_reference(self.mock_inventory)
 
-    def test_weapon_attachment_compatibility(self):
-        """测试武器配件兼容性系统"""
+    def test_equipment_set_bonus(self):
+        """测试装备套装效果激活"""
         inventory = [
-            {"name": "AK47", "type": "rifle"},
-            {"name": "红点瞄准镜", "compatible": ["rifle", "smg"]}
+            {"name": "反抗军头盔", "set": "rebel"},
+            {"name": "反抗军护甲", "set": "rebel"},
+            {"name": "普通手套", "set": None}
         ]
         self.mock_inventory.get_items.return_value = inventory
         
-        # 测试兼容配件
-        self.assertTrue(self.ui.check_compatibility("AK47", "红点瞄准镜"))
+        # 测试套装激活
+        self.assertTrue(self.ui.check_set_bonus("rebel", 2))
         
-        # 测试不兼容情况
-        self.mock_inventory.get_items.return_value[0]["name"] = "手枪"
-        self.assertFalse(self.ui.check_compatibility("手枪", "红点瞄准镜"))
+        # 测试套装不完整
+        self.assertFalse(self.ui.check_set_bonus("rebel", 3))
 
-    def test_food_spoilage_system(self):
-        """测试食物腐败度系统"""
-        items = [
-            {"name": "罐头", "spoilage": 0.1},
-            {"name": "鲜肉", "spoilage": 0.8}
+    def test_weapon_condition_impact(self):
+        """测试武器状态影响伤害"""
+        weapons = [
+            {"name": "AK47", "condition": 80},
+            {"name": "生锈手枪", "condition": 20}
         ]
-        self.mock_inventory.get_items.return_value = items
+        self.mock_inventory.get_items.return_value = weapons
         
-        # 测试可食用状态
-        self.assertTrue(self.ui.is_edible("罐头"))
+        # 测试状态影响
+        self.assertAlmostEqual(
+            self.ui.calculate_damage("AK47", 100),
+            100 * 0.8,
+            delta=0.1
+        )
         
-        # 测试腐败状态
-        self.assertFalse(self.ui.is_edible("鲜肉"))
+        # 测试低状态武器
+        self.assertLess(
+            self.ui.calculate_damage("生锈手枪", 50),
+            25
+        )
 
-    def test_chemistry_crafting(self):
-        """测试化学合成系统"""
-        recipe = {
-            "inputs": [("酒精", 1), ("草药", 3)],
-            "output": ("消毒剂", 2),
-            "skill": "chemistry"
-        }
-        
-        self.mock_inventory.get_items.return_value = [
-            {"name": "酒精", "quantity": 2},
-            {"name": "草药", "quantity": 5}
+    def test_chemical_mixing(self):
+        """测试化学品混合危险性"""
+        recipes = [
+            {"inputs": ["硝酸", "甘油"], "danger": True},
+            {"inputs": ["水", "盐"], "danger": False}
         ]
-        self.mock_game_state.player_skills = {"chemistry": 2}
         
-        success = self.ui.chemistry_craft(recipe)
-        self.assertTrue(success)
-        self.mock_inventory.remove_item.assert_any_call("酒精", 1)
-        self.mock_inventory.add_item.assert_called_with("消毒剂", 2)
+        # 测试危险组合
+        self.assertTrue(self.ui.check_chemical_danger(["硝酸", "甘油"]))
+        
+        # 测试安全组合
+        self.assertFalse(self.ui.check_chemical_danger(["水", "盐"]))
 
 if __name__ == '__main__':
     unittest.main()
