@@ -9,63 +9,62 @@ class TestShopDialogue(unittest.TestCase):
         self.mock_game_state = MagicMock()
         self.ui.set_game_state_reference(self.mock_game_state)
 
-    def test_faction_locked_vendor(self):
-        """测试阵营专属商店访问控制"""
+    def test_reputation_based_discounts(self):
+        """测试基于声望的动态折扣系统"""
         shop_data = {
             "type": "shop",
-            "id": "FACTION_ARMORY",
-            "name": "阵营军械库",
-            "required_faction": "resistance",
-            "inventory": ["原型武器"]
+            "id": "TOWN_STORE",
+            "name": "城镇商店",
+            "rep_tiers": [
+                {"level": 50, "discount": 0.1},
+                {"level": 100, "discount": 0.2}
+            ]
         }
         
-        # 测试阵营不符
-        self.mock_game_state.player_faction = "bandits"
-        self.ui.start_dialogue(shop_data)
-        self.assertIn("拒绝进入", self.ui.dialogue_text)
+        # 测试不同声望等级的折扣
+        test_cases = [
+            (30, "原价"),
+            (60, "9折优惠"),
+            (110, "8折优惠")
+        ]
         
-        # 测试阵营匹配
-        self.mock_game_state.player_faction = "resistance"
-        self.ui.start_dialogue(shop_data)
-        self.assertEqual(self.ui.dialogue_options[0], "购买原型武器")
+        for rep, expected in test_cases:
+            with self.subTest(rep=rep):
+                self.mock_game_state.player_stats = {"reputation": rep}
+                self.ui.start_dialogue(shop_data)
+                self.assertIn(expected, self.ui.dialogue_text)
 
-    def test_dynamic_stock_rotation(self):
-        """测试动态库存轮换系统"""
+    def test_supply_chain_disruption(self):
+        """测试供应链中断场景"""
         shop_data = {
             "type": "shop",
-            "id": "TRAVELING_MERCHANT",
-            "name": "旅行商人",
-            "stock_rotation": {
-                "days": [1, 3, 5],
-                "items": ["稀有零件", "古董武器"]
+            "id": "RURAL_CLINIC",
+            "name": "乡村诊所",
+            "supply_chain": {
+                "disrupted": True,
+                "alternatives": ["草药", "自制绷带"]
             }
         }
         
-        # 测试库存更新日
-        self.mock_game_state.game_time = {"day": 3}
+        # 测试供应链中断状态
+        self.mock_game_state.world_events = {"supply_disruption": True}
         self.ui.start_dialogue(shop_data)
-        self.assertIn("稀有零件", self.ui.dialogue_text)
-        
-        # 测试非库存日
-        self.mock_game_state.game_time = {"day": 2}
-        self.ui.start_dialogue(shop_data)
-        self.assertIn("下次到货", self.ui.dialogue_text)
+        self.assertEqual(self.ui.dialogue_options[0], "购买草药")
 
-    @patch('ui.random.randint')
-    def test_haggling_system(self, mock_rand):
-        """测试议价系统成功率"""
-        mock_rand.return_value = 65  # 设置随机数
+    @patch('ui.random.random')
+    def test_black_market_raid_risk(self, mock_random):
+        """测试黑市交易被突袭风险"""
+        mock_random.return_value = 0.05  # 5%风险触发
         shop_data = {
             "type": "shop",
-            "id": "MARKET",
-            "name": "集市",
-            "haggle_difficulty": 60
+            "id": "BLACK_MARKET",
+            "name": "黑市",
+            "raid_risk": 0.1
         }
         
-        self.mock_game_state.player_skills = {"barter": 70}
         self.ui.start_dialogue(shop_data)
-        self.ui.select_dialogue_option(0)  # 选择议价
-        self.assertIn("议价成功", self.ui.current_message)
+        self.ui.select_dialogue_option(0)  # 选择交易
+        self.assertIn("警察突袭", self.ui.current_message)
 
 if __name__ == '__main__':
     unittest.main()
