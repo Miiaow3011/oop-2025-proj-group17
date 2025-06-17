@@ -9,69 +9,56 @@ class TestNPCDialogue(unittest.TestCase):
         self.mock_game_state = MagicMock()
         self.ui.set_game_state_reference(self.mock_game_state)
 
-    def test_memory_system(self):
-        """测试NPC记忆系统（基于历史交互）"""
+    def test_trauma_system(self):
+        """测试NPC创伤记忆系统"""
         npc_data = {
             "type": "npc",
-            "id": "OLD_MAN",
-            "name": "老杰克",
-            "memory": {
-                "last_met": 5,
-                "favor": 30
+            "id": "WAR_VETERAN",
+            "name": "老兵",
+            "trauma_triggers": ["枪声", "爆炸"],
+            "calm_methods": ["安抚", "给酒"]
+        }
+        
+        # 测试触发创伤状态
+        self.ui.dialogue_data = {"triggered": True}
+        self.ui.setup_npc_dialogue(npc_data)
+        self.assertEqual(self.ui.dialogue_options[0], "安抚")
+
+    def test_language_barrier(self):
+        """测试语言障碍沟通系统"""
+        npc_data = {
+            "type": "npc",
+            "id": "FOREIGNER",
+            "name": "外国商人",
+            "language": "russian",
+            "comprehension": 0.4
+        }
+        
+        # 测试语言技能不足
+        self.mock_game_state.player_skills = {"russian": 30}
+        self.ui.start_dialogue(npc_data)
+        self.assertIn("理解困难", self.ui.dialogue_text)
+        
+        # 测试语言技能足够
+        self.mock_game_state.player_skills = {"russian": 80}
+        self.ui.setup_npc_dialogue(npc_data)
+        self.assertIn("沟通顺畅", self.ui.dialogue_text)
+
+    def test_negotiation_minigame(self):
+        """测试谈判小游戏系统"""
+        npc_data = {
+            "type": "npc",
+            "id": "HOSTAGE_TAKER",
+            "name": "绑匪",
+            "negotiation": {
+                "rounds": 3,
+                "win_condition": 2
             }
         }
         
-        # 测试记忆影响对话
-        self.mock_game_state.game_time = {"day": 10}
         self.ui.start_dialogue(npc_data)
-        self.assertIn("5天没见了", self.ui.dialogue_text)
-        
-        # 测试好感度影响
-        npc_data["memory"]["favor"] = 80
-        self.ui.setup_npc_dialogue(npc_data)
-        self.assertIn("老朋友", self.ui.dialogue_text)
-
-    def test_skill_check_dialogue(self):
-        """测试技能检查对话选项"""
-        npc_data = {
-            "type": "npc",
-            "id": "ENGINEER",
-            "name": "工程师",
-            "skill_checks": {
-                "repair": 60,
-                "hack": 40
-            }
-        }
-        
-        # 测试技能不足
-        self.mock_game_state.player_skills = {"repair": 50}
-        self.ui.start_dialogue(npc_data)
-        self.assertIn("技术不够", self.ui.dialogue_text)
-        
-        # 测试技能足够
-        self.mock_game_state.player_skills = {"hack": 45}
-        self.ui.setup_npc_dialogue(npc_data)
-        self.assertEqual(self.ui.dialogue_options[0], "尝试破解")
-
-    def test_conditional_branches(self):
-        """测试条件分支对话系统"""
-        npc_data = {
-            "type": "npc",
-            "id": "INFORMANT",
-            "name": "线人",
-            "branches": [
-                {"condition": "has_item('证据')", "text": "感谢证据"},
-                {"condition": "default", "text": "需要证据"}
-            ]
-        }
-        
-        # 测试条件分支
-        self.mock_inventory = MagicMock()
-        self.mock_inventory.has_item.return_value = True
-        self.ui.set_inventory_reference(self.mock_inventory)
-        
-        self.ui.start_dialogue(npc_data)
-        self.assertIn("感谢证据", self.ui.dialogue_text)
+        self.assertEqual(self.ui.dialogue_data["rounds"], 3)
+        self.assertEqual(self.ui.dialogue_data["wins_required"], 2)
 
 if __name__ == '__main__':
     unittest.main()
