@@ -7,26 +7,26 @@ class TestResetFunction(unittest.TestCase):
         self.mock_screen = MagicMock()
         self.ui = UI(self.mock_screen)
 
-    def test_full_reset(self):
-        """測試完整遊戲重置"""
-        # 設置各種遊戲狀態
+    def test_hard_reset(self):
+        """测试硬重置所有游戏系统"""
+        # 设置各种状态
         self.ui.has_keycard = True
         self.ui.has_antidote = True
         self.ui.game_completed = True
         self.ui.active_quests = ["q1", "q2"]
-        self.ui.hallucination_active = True
-        self.ui.weather_effects = ["rain"]
+        self.ui.showing_symptoms = True
+        self.ui.environment_effects = ["blizzard"]
         
-        # 執行重置
-        self.ui.reset_game()
+        # 执行重置
+        self.ui.hard_reset_game()
         
-        # 驗證所有狀態重置
+        # 验证所有状态重置
         self.assertFalse(self.ui.has_keycard)
         self.assertFalse(self.ui.has_antidote)
         self.assertFalse(self.ui.game_completed)
         self.assertEqual(len(self.ui.active_quests), 0)
-        self.assertFalse(self.ui.hallucination_active)
-        self.assertEqual(len(self.ui.weather_effects), 0)
+        self.assertFalse(self.ui.showing_symptoms)
+        self.assertEqual(len(self.ui.environment_effects), 0)
 
 if __name__ == '__main__':
     unittest.main()
