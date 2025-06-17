@@ -9,62 +9,69 @@ class TestNPCDialogue(unittest.TestCase):
         self.mock_game_state = MagicMock()
         self.ui.set_game_state_reference(self.mock_game_state)
 
-    def test_scientist_research_progress(self):
-        """测试科研进度追踪系统"""
+    def test_memory_system(self):
+        """测试NPC记忆系统（基于历史交互）"""
         npc_data = {
             "type": "npc",
-            "id": "DR_WANG",
-            "name": "王博士",
-            "research_progress": {
-                "materials": 0,
-                "stages": ["收集材料", "数据分析", "制作原型"]
+            "id": "OLD_MAN",
+            "name": "老杰克",
+            "memory": {
+                "last_met": 5,
+                "favor": 30
             }
         }
         
-        # 初始阶段
+        # 测试记忆影响对话
+        self.mock_game_state.game_time = {"day": 10}
         self.ui.start_dialogue(npc_data)
-        self.assertIn("收集材料", self.ui.dialogue_text)
+        self.assertIn("5天没见了", self.ui.dialogue_text)
         
-        # 提交材料后
-        npc_data["research_progress"]["materials"] = 1
+        # 测试好感度影响
+        npc_data["memory"]["favor"] = 80
         self.ui.setup_npc_dialogue(npc_data)
-        self.assertIn("数据分析", self.ui.dialogue_text)
+        self.assertIn("老朋友", self.ui.dialogue_text)
 
-    def test_prisoner_interrogation_techniques(self):
-        """测试多种审讯技术效果"""
+    def test_skill_check_dialogue(self):
+        """测试技能检查对话选项"""
         npc_data = {
             "type": "npc",
-            "id": "PRISONER_X",
-            "name": "战俘X",
-            "techniques": {
-                "threaten": {"stress": 20, "info": 30},
-                "bargain": {"stress": -10, "info": 50}
+            "id": "ENGINEER",
+            "name": "工程师",
+            "skill_checks": {
+                "repair": 60,
+                "hack": 40
             }
         }
         
-        # 测试威胁技术
+        # 测试技能不足
+        self.mock_game_state.player_skills = {"repair": 50}
         self.ui.start_dialogue(npc_data)
-        self.ui.select_dialogue_option(0)  # 选择威胁
-        self.assertEqual(self.ui.dialogue_data["stress"], 20)
+        self.assertIn("技术不够", self.ui.dialogue_text)
         
-        # 测试交易技术
-        self.ui.select_dialogue_option(1)  # 选择交易
-        self.assertEqual(self.ui.dialogue_data["stress"], 10)
+        # 测试技能足够
+        self.mock_game_state.player_skills = {"hack": 45}
+        self.ui.setup_npc_dialogue(npc_data)
+        self.assertEqual(self.ui.dialogue_options[0], "尝试破解")
 
-    def test_merchant_supply_demand(self):
-        """测试商人供需经济系统"""
+    def test_conditional_branches(self):
+        """测试条件分支对话系统"""
         npc_data = {
             "type": "npc",
-            "id": "MERCHANT_Y",
-            "name": "旅行商人Y",
-            "supply_factor": {
-                "antibiotics": 1.8  # 稀缺系数
-            }
+            "id": "INFORMANT",
+            "name": "线人",
+            "branches": [
+                {"condition": "has_item('证据')", "text": "感谢证据"},
+                {"condition": "default", "text": "需要证据"}
+            ]
         }
         
-        self.mock_game_state.economy = {"antibiotics_demand": "high"}
+        # 测试条件分支
+        self.mock_inventory = MagicMock()
+        self.mock_inventory.has_item.return_value = True
+        self.ui.set_inventory_reference(self.mock_inventory)
+        
         self.ui.start_dialogue(npc_data)
-        self.assertIn("抗生素紧缺", self.ui.dialogue_text)
+        self.assertIn("感谢证据", self.ui.dialogue_text)
 
 if __name__ == '__main__':
     unittest.main()
