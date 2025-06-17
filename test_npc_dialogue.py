@@ -6,47 +6,45 @@ class TestNPCDialogue(unittest.TestCase):
     def setUp(self):
         self.mock_screen = MagicMock()
         self.ui = UI(self.mock_screen)
-        self.mock_inventory = MagicMock()
-        self.ui.set_inventory_reference(self.mock_inventory)
 
-    def test_scientist_rescue(self):
-        """測試科學家救援任務多階段對話"""
+    def test_mayor_quest(self):
+        """测试市长多阶段任务对话"""
         npc_data = {
             "type": "npc",
-            "id": "sci1",
-            "name": "被困科學家",
-            "phases": {
-                "start": "請幫我找實驗筆記...",
-                "progress": "筆記在3樓實驗室",
-                "complete": "你救了我一命！"
+            "id": "mayor",
+            "name": "避难所市长",
+            "quest_stages": {
+                1: "我们需要建立防御工事...",
+                2: "请收集10个钢材",
+                3: "太感谢你了！"
             }
         }
         
-        # 初始階段
+        # 第一阶段
         self.ui.start_dialogue(npc_data)
-        self.assertEqual(self.ui.dialogue_text, "請幫我找實驗筆記...")
+        self.assertEqual(self.ui.dialogue_text, "我们需要建立防御工事...")
         
-        # 進度更新階段
-        self.ui.dialogue_data["phase"] = "progress"
+        # 模拟任务进展
+        self.ui.dialogue_data["stage"] = 2
         self.ui.setup_npc_dialogue(npc_data)
-        self.assertEqual(self.ui.dialogue_text, "筆記在3樓實驗室")
+        self.assertEqual(self.ui.dialogue_text, "请收集10个钢材")
 
-    def test_trader_barter(self):
-        """測試商人以物易物系統"""
+    def test_prisoner_negotiation(self):
+        """测试囚犯谈判系统"""
         npc_data = {
             "type": "npc",
-            "id": "trd1",
-            "name": "流浪商人",
-            "barter_items": ["罐頭", "電池", "藥品"]
+            "id": "prisoner",
+            "name": "被俘士兵",
+            "negotiation_options": [
+                "释放他（需要开锁器）",
+                "审问情报",
+                "要求加入队伍"
+            ]
         }
         
-        self.mock_inventory.get_items.return_value = [
-            {"name": "罐頭", "quantity": 5},
-            {"name": "子彈", "quantity": 20}
-        ]
-        
         self.ui.start_dialogue(npc_data)
-        self.assertEqual(self.ui.dialogue_options[0], "交易罐頭(庫存:5)")
+        self.assertEqual(len(self.ui.dialogue_options), 3)
+        self.assertEqual(self.ui.dialogue_options[1], "审问情报")
 
 if __name__ == '__main__':
     unittest.main()
