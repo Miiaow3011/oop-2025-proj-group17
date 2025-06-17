@@ -32,6 +32,7 @@ class TestUIInitialization(unittest.TestCase):
         self.ui.set_inventory_reference(mock_inventory)
         self.ui.set_game_state_reference(mock_game_state)
         
+        
         self.assertEqual(self.ui.player_reference, mock_player)
         self.assertEqual(self.ui.inventory_reference, mock_inventory)
         self.assertEqual(self.ui.game_state_reference, mock_game_state)
