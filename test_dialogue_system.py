@@ -8,66 +8,64 @@ class TestShopDialogue(unittest.TestCase):
         self.ui = UI(self.mock_screen)
         self.mock_game_state = MagicMock()
         self.ui.set_game_state_reference(self.mock_game_state)
-        self.mock_inventory = MagicMock()
-        self.ui.set_inventory_reference(self.mock_inventory)
 
-    def test_weapon_store_attitude_system(self):
-        """测试武器店态度系统（基于玩家声望）"""
+    def test_faction_locked_vendor(self):
+        """测试阵营专属商店访问控制"""
         shop_data = {
             "type": "shop",
-            "id": "GUNSHOP",
-            "name": "枪械商店",
-            "attitude_thresholds": {
-                "friendly": 70,
-                "neutral": 30
+            "id": "FACTION_ARMORY",
+            "name": "阵营军械库",
+            "required_faction": "resistance",
+            "inventory": ["原型武器"]
+        }
+        
+        # 测试阵营不符
+        self.mock_game_state.player_faction = "bandits"
+        self.ui.start_dialogue(shop_data)
+        self.assertIn("拒绝进入", self.ui.dialogue_text)
+        
+        # 测试阵营匹配
+        self.mock_game_state.player_faction = "resistance"
+        self.ui.start_dialogue(shop_data)
+        self.assertEqual(self.ui.dialogue_options[0], "购买原型武器")
+
+    def test_dynamic_stock_rotation(self):
+        """测试动态库存轮换系统"""
+        shop_data = {
+            "type": "shop",
+            "id": "TRAVELING_MERCHANT",
+            "name": "旅行商人",
+            "stock_rotation": {
+                "days": [1, 3, 5],
+                "items": ["稀有零件", "古董武器"]
             }
         }
         
-        # 测试敌对态度
-        self.mock_game_state.player_stats = {"reputation": 20}
+        # 测试库存更新日
+        self.mock_game_state.game_time = {"day": 3}
         self.ui.start_dialogue(shop_data)
-        self.assertIn("不欢迎你", self.ui.dialogue_text)
+        self.assertIn("稀有零件", self.ui.dialogue_text)
         
-        # 测试友好态度
-        self.mock_game_state.player_stats = {"reputation": 80}
+        # 测试非库存日
+        self.mock_game_state.game_time = {"day": 2}
         self.ui.start_dialogue(shop_data)
-        self.assertIn("老朋友", self.ui.dialogue_text)
+        self.assertIn("下次到货", self.ui.dialogue_text)
 
-    def test_hospital_emergency_triage(self):
-        """测试医院急诊分诊系统"""
+    @patch('ui.random.randint')
+    def test_haggling_system(self, mock_rand):
+        """测试议价系统成功率"""
+        mock_rand.return_value = 65  # 设置随机数
         shop_data = {
             "type": "shop",
-            "id": "HOSPITAL",
-            "name": "战地医院",
-            "triage_levels": {
-                "critical": 20,
-                "serious": 50
-            }
+            "id": "MARKET",
+            "name": "集市",
+            "haggle_difficulty": 60
         }
         
-        # 测试危急状态优先治疗
-        self.mock_game_state.player_stats = {"hp": 15}
+        self.mock_game_state.player_skills = {"barter": 70}
         self.ui.start_dialogue(shop_data)
-        self.assertEqual(self.ui.dialogue_options[0], "立即抢救（优先）")
-        
-        # 测试轻伤状态
-        self.mock_game_state.player_stats = {"hp": 60}
-        self.ui.start_dialogue(shop_data)
-        self.assertIn("请排队", self.ui.dialogue_text)
-
-    @patch('random.randint')
-    def test_black_market_dynamic_pricing(self, mock_rand):
-        """测试黑市动态随机定价"""
-        mock_rand.return_value = 80  # 模拟随机数
-        shop_data = {
-            "type": "shop",
-            "id": "BLACK",
-            "name": "黑市",
-            "price_range": {"min": 50, "max": 100}
-        }
-        
-        self.ui.start_dialogue(shop_data)
-        self.assertIn("价格:80", self.ui.dialogue_text)
+        self.ui.select_dialogue_option(0)  # 选择议价
+        self.assertIn("议价成功", self.ui.current_message)
 
 if __name__ == '__main__':
     unittest.main()
