@@ -9,23 +9,27 @@ class TestGameState(unittest.TestCase):
         self.mock_game_state = MagicMock()
         self.ui.set_game_state_reference(self.mock_game_state)
 
-    def test_sanity_mechanic(self):
-        """測試精神值系統影響"""
+    def test_infection_progression(self):
+        """测试感染状态系统"""
         self.mock_game_state.player_stats = {
-            "sanity": 30,  # 低於50會產生幻覺
-            "max_sanity": 100
+            "infection_level": 60,  # 超过50会有症状
+            "max_infection": 100
         }
         
-        self.ui.check_sanity_effects()
-        self.assertTrue(self.ui.hallucination_active)
-        self.assertIn("幻覺", self.ui.current_message)
+        self.ui.check_infection_effects()
+        self.assertTrue(self.ui.showing_symptoms)
+        self.assertIn("感染症状", self.ui.current_message)
 
-    def test_weather_effects(self):
-        """測試天氣系統影響"""
-        self.mock_game_state.weather = "acid_rain"
-        self.ui.render_weather_effects()
-        self.assertIn("酸雨", self.ui.current_message)
-        self.mock_game_state.damage_player.assert_called_with(5)
+    def test_temperature_effects(self):
+        """测试极端温度影响"""
+        self.mock_game_state.environment = {
+            "temperature": -15,  # 极寒状态
+            "weather": "blizzard"
+        }
+        
+        self.ui.check_environment_effects()
+        self.mock_game_state.damage_player.assert_called_with(10)
+        self.assertIn("极寒", self.ui.current_message)
 
 if __name__ == '__main__':
     unittest.main()
