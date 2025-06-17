@@ -9,48 +9,50 @@ class TestItemSystem(unittest.TestCase):
         self.mock_inventory = MagicMock()
         self.ui.set_inventory_reference(self.mock_inventory)
 
-    def test_weapon_repair_kit(self):
-        """测试武器维修套件的使用条件"""
+    def test_weapon_durability(self):
+        """测试武器耐久度系统"""
         self.mock_inventory.get_items.return_value = [
-            {"name": "维修套件", "quantity": 1, "durability": 100},
-            {"name": "AK-47", "durability": 30}
+            {"name": "手枪", "durability": 30},
+            {"name": "维修套件", "quantity": 1}
         ]
         
-        # 测试可以维修
-        self.assertTrue(self.ui.can_repair("AK-47"))
+        # 测试可维修状态
+        self.assertTrue(self.ui.can_repair("手枪"))
         
-        # 测试耐久度已满
-        self.mock_inventory.get_items.return_value[1]["durability"] = 100
-        self.assertFalse(self.ui.can_repair("AK-47"))
+        # 测试耐久度满的情况
+        self.mock_inventory.get_items.return_value[0]["durability"] = 100
+        self.assertFalse(self.ui.can_repair("手枪"))
 
-    def test_medicine_expiration(self):
-        """测试药品过期系统"""
+    def test_medicine_quality(self):
+        """测试药品品质系统"""
         self.mock_inventory.get_items.return_value = [
-            {"name": "抗生素", "expiry": 3},
-            {"name": "止痛药", "expiry": 0}
+            {"name": "抗生素", "quality": 80},
+            {"name": "过期止痛药", "quality": 10}
         ]
-        
-        # 测试过期药品
-        self.assertFalse(self.ui.is_usable("止痛药"))
         
         # 测试有效药品
-        self.assertTrue(self.ui.is_usable("抗生素"))
+        self.assertTrue(self.ui.is_effective("抗生素"))
+        
+        # 测试失效药品
+        self.assertFalse(self.ui.is_effective("过期止痛药"))
 
-    def test_radio_assembly(self):
-        """测试无线电组装系统"""
-        required_parts = ["电路板", "电池", "天线"]
+    def test_crafting_system(self):
+        """测试物品合成系统"""
+        recipe = {
+            "inputs": [("金属", 2), ("零件", 1)],
+            "output": ("陷阱", 1)
+        }
+        
         self.mock_inventory.get_items.return_value = [
-            {"name": "电路板", "quantity": 2},
-            {"name": "电池", "quantity": 1},
-            {"name": "电线", "quantity": 3}
+            {"name": "金属", "quantity": 3},
+            {"name": "零件", "quantity": 1}
         ]
         
-        # 缺少天线
-        self.assertFalse(self.ui.check_assembly(required_parts))
-        
-        # 添加天线后
-        self.mock_inventory.get_items.return_value.append({"name": "天线", "quantity": 1})
-        self.assertTrue(self.ui.check_assembly(required_parts))
+        success = self.ui.craft_item(recipe)
+        self.assertTrue(success)
+        self.mock_inventory.remove_item.assert_any_call("金属", 2)
+        self.mock_inventory.remove_item.assert_any_call("零件", 1)
+        self.mock_inventory.add_item.assert_called_with("陷阱", 1)
 
 if __name__ == '__main__':
     unittest.main()
