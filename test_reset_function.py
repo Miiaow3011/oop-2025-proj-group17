@@ -7,37 +7,38 @@ class TestResetFunction(unittest.TestCase):
         self.mock_screen = MagicMock()
         self.ui = UI(self.mock_screen)
 
-    def test_new_game_plus(self):
-        """测试新游戏+模式重置"""
-        # 设置NG+状态
-        self.ui.completed_game = True
-        self.ui.ng_plus = True
-        self.ui.carried_over_items = ["传奇武器", "研究数据"]
+    def test_chapter_based_reset(self):
+        """测试章节进度重置系统"""
+        self.ui.completed_chapters = [1, 2]
+        self.ui.current_chapter = 3
+        self.ui.chapter_reset()
         
-        # 执行NG+重置
-        self.ui.reset_for_new_game_plus()
-        
-        # 验证保留内容
-        self.assertIn("传奇武器", self.ui.carried_over_items)
-        self.assertEqual(self.ui.difficulty, "hard")
+        self.assertEqual(len(self.ui.completed_chapters), 0)
+        self.assertEqual(self.ui.current_chapter, 1)
 
-    def test_hardcore_mode_reset(self):
-        """测试硬核模式重置"""
-        self.ui.hardcore_mode = True
-        self.ui.player_deaths = 3
+    def test_permadeath_reset(self):
+        """测试永久死亡模式重置"""
+        self.ui.permadeath_mode = True
+        self.ui.character_progression = {"level": 10}
         
         self.ui.hard_reset()
-        self.assertEqual(self.ui.player_deaths, 0)
-        self.assertTrue(self.ui.permadeath)
+        self.assertEqual(self.ui.character_progression, {})
 
-    def test_sector_based_reset(self):
-        """测试区域进度重置"""
-        self.ui.completed_sectors = ["A", "B"]
-        self.ui.current_sector = "C"
+    def test_difficulty_scaling(self):
+        """测试难度缩放重置"""
+        difficulties = {
+            "easy": {"enemy_health": 0.8},
+            "hard": {"enemy_damage": 1.5}
+        }
         
-        self.ui.reset_sector_progress()
-        self.assertEqual(len(self.ui.completed_sectors), 0)
-        self.assertEqual(self.ui.current_sector, "A")
+        for mode, scaling in difficulties.items():
+            with self.subTest(mode=mode):
+                self.ui.difficulty = mode
+                self.ui.reset_difficulty()
+                self.assertEqual(
+                    self.ui.game_scaling,
+                    scaling
+                )
 
 if __name__ == '__main__':
     unittest.main()
