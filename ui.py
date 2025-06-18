@@ -172,6 +172,8 @@ class UI:
     
     def setup_npc_dialogue(self, npc_data):
         npc_id = npc_data["id"]
+
+        game_state = self.get_game_state()
         
         if npc_id == "npc1":  # 驚慌學生
             self.dialogue_text = "救命！外面到處都是殭屍！我看到研究生們往樓上跑了！"
@@ -196,7 +198,8 @@ class UI:
                 "我可以幫你什麼？",
                 "離開"
             ]
-        elif npc_id == "npc4":  # 最後的研究者
+        
+        elif npc_id == "npc4":  # 神秘研究員（三樓第一個NPC）
             if self.has_antidote:
                 self.dialogue_text = "太好了！你已經有解藥了，現在可以拯救所有人！"
                 self.dialogue_options = [
@@ -205,12 +208,66 @@ class UI:
                     "離開"
                 ]
             else:
-                self.dialogue_text = "你找到了！解藥就在這裡，但要小心，外面的情況更糟了..."
+                # 🔧 修改：需要更高的條件才能獲得解藥提示
+                if self.has_keycard and game_state.player_stats["level"] >= 3:
+                    self.dialogue_text = "你有鑰匙卡了！但解藥很危險，需要更高的等級才能安全使用..."
+                    self.dialogue_options = [
+                        "我需要多少等級？",
+                        "如何提升等級？",
+                        "我已經準備好了",
+                        "離開"
+                    ]
+                elif self.has_keycard:
+                    self.dialogue_text = "你有鑰匙卡了，但你還不夠強。繼續積累經驗吧..."
+                    self.dialogue_options = [
+                        "我需要多強？",
+                        "如何變強？",
+                        "先去訓練",
+                        "離開"
+                    ]
+                else:
+                    self.dialogue_text = "你找到了研究室，但需要特殊鑰匙卡才能進入核心區域..."
+                    self.dialogue_options = [
+                        "鑰匙卡在哪？",
+                        "我可以幫你什麼？",
+                        "離開"
+                    ]
+
+        # 同時找到 npc_id == "npc5" 的部分（如果有的話），或者新增：
+        elif npc_id == "npc5":  # 最後的研究者（三樓第二個NPC）
+            if self.has_antidote:
+                self.dialogue_text = "太好了！你已經有解藥了，現在可以拯救所有人！"
                 self.dialogue_options = [
-                    "拿取解藥",
-                    "詢問使用方法",
+                    "如何使用解藥？",
+                    "還有其他倖存者嗎？",
                     "離開"
                 ]
+            else:
+                # 🆕 這個NPC專門負責給予解藥
+                if self.has_keycard and game_state.player_stats["level"] >= 4:
+                    self.dialogue_text = "你找到了！而且你已經夠強了！解藥就在這裡，但要小心..."
+                    self.dialogue_options = [
+                        "拿取解藥",
+                        "詢問使用方法",
+                        "我還需要準備什麼？",
+                        "離開"
+                    ]
+                elif self.has_keycard:
+                    self.dialogue_text = "你有鑰匙卡了，但你還不夠強。解藥很危險，需要等級4以上..."
+                    self.dialogue_options = [
+                        "我需要多少等級？",
+                        "如何提升等級？",
+                        "先去訓練",
+                        "離開"
+                    ]
+                else:
+                    self.dialogue_text = "我是最後的研究者...解藥就在這裡，但需要鑰匙卡..."
+                    self.dialogue_options = [
+                        "鑰匙卡在哪？",
+                        "實驗室在哪裡？",
+                        "我可以幫你什麼？",
+                        "離開"
+                    ]
         else:
             # 🔧 修復：為其他未定義的NPC提供預設對話
             self.dialogue_text = f"這是{npc_data.get('name', '神秘人物')}..."
@@ -271,14 +328,10 @@ class UI:
                     game_state.player_stats["max_hp"],
                     game_state.player_stats["hp"] + 30
                 )
-                game_state.add_exp(10)  # 修復：使用遊戲狀態的方法
-                # 🎵 播放成功音效
-                sound_manager.play_sfx("success")
+                game_state.add_exp(10)
                 self.show_message("購買成功！HP +30, EXP +10")
                 print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             else:
-                # 🎵 播放錯誤音效
-                sound_manager.play_sfx("error")
                 self.show_message("你的血量已滿！")
             self.end_dialogue()
             
@@ -288,8 +341,6 @@ class UI:
                 game_state.player_stats["hp"] + 20
             )
             game_state.add_exp(5)
-            # 🎵 播放成功音效
-            sound_manager.play_sfx("success")
             self.show_message("食物補充！HP +20, EXP +5")
             print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
@@ -300,26 +351,24 @@ class UI:
                 game_state.player_stats["hp"] + 15
             )
             game_state.add_exp(8)
-            # 🎵 播放成功音效
-            sound_manager.play_sfx("success")
             self.show_message("找到能量飲料！HP +15, EXP +8")
             print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "深入搜查" in option_text and self.has_keycard:
-            if not self.has_antidote:
-                self.has_antidote = True
-                game_state.add_exp(100)
-                game_state.level_up()  # 直接呼叫升級
-                # 🎵 播放升級音效
-                sound_manager.play_sfx("level_up")
-                self.show_message("找到解藥！等級提升！經驗值大幅增加！")
-                print(f"✅ 大量經驗值增加後 - Level: {game_state.player_stats['level']}, EXP: {game_state.player_stats['exp']}")
-                self.check_victory_condition(game_state)
-            else:
-                # 🎵 播放錯誤音效
-                sound_manager.play_sfx("error")
-                self.show_message("你已經有解藥了！")
+            # 🔧 修復：不再直接觸發勝利，改為劇情推進
+            game_state.add_exp(30)
+            self.show_message("你在咖啡廳深處發現了一些重要研究資料！(EXP +30)")
+            print(f"✅ 深入搜查咖啡廳，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
+            
+            # 🆕 根據等級給予不同的劇情反饋
+            if game_state.player_stats["level"] >= 3:
+                game_state.add_exp(20)
+                self.show_message("你的等級足夠高，理解了這些研究的重要性！額外 EXP +20")
+                print(f"✅ 高等級額外獎勵 - EXP: {game_state.player_stats['exp']}")
+            
+            # 🆕 提示玩家可能需要找到真正的解藥位置
+            self.show_message("研究資料顯示：真正的解藥可能在三樓的研究員那裡...")
             self.end_dialogue()
             
         elif "仔細搜查" in option_text or "搜查" in option_text or "搜尋物品" in option_text:
@@ -328,39 +377,30 @@ class UI:
                 if not self.has_keycard:
                     self.has_keycard = True
                     game_state.add_exp(50)
-                    # 🎵 播放成功音效
-                    sound_manager.play_sfx("success")
                     self.show_message("找到了鑰匙卡！這應該能開啟特殊區域！EXP +50")
                     print(f"✅ 找到鑰匙卡，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
                 else:
                     game_state.add_exp(15)
-                    # 🎵 播放收集音效
-                    sound_manager.play_sfx("collect_item")
                     self.show_message("找到了一些有用的物品！EXP +15")
                     print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             else:
                 game_state.add_exp(10)
-                # 🎵 播放收集音效
-                sound_manager.play_sfx("collect_item")
                 self.show_message("搜查完畢，找到了一些小物品。EXP +10")
                 print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "拿取解藥" in option_text:
-            if game_state.player_stats["level"] >= 3:  # 需要等級3以上才能安全拿取
+            # 🔧 提高獲得解藥的門檻
+            if game_state.player_stats["level"] >= 4:  # 需要等級4以上
                 self.has_antidote = True
                 game_state.add_exp(100)
                 game_state.level_up()
-                # 🎵 播放升級音效
-                sound_manager.play_sfx("level_up")
                 self.show_message("成功取得解藥！等級提升！")
                 print(f"✅ 取得解藥，經驗值增加後 - Level: {game_state.player_stats['level']}, EXP: {game_state.player_stats['exp']}")
                 self.check_victory_condition(game_state)
             else:
                 game_state.damage_player(20)
-                # 🎵 播放錯誤音效
-                sound_manager.play_sfx("error")
-                self.show_message("等級不足！受到傷害！HP -20")
+                self.show_message(f"等級不足！需要等級4以上！受到傷害！HP -20 (目前等級: {game_state.player_stats['level']})")
                 self.check_game_over(game_state)
             self.end_dialogue()
             
@@ -369,32 +409,24 @@ class UI:
             
         elif "冷靜一點" in option_text:
             game_state.add_exp(5)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
             self.show_message("學生: 我看到他們拿著什麼東西往樓上跑... (EXP +5)")
             print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "樓上有什麼" in option_text:
             game_state.add_exp(5)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
             self.show_message("學生: 聽說研究生們在三樓做實驗... (EXP +5)")
             print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "解藥在哪" in option_text:
             game_state.add_exp(10)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
             self.show_message("職員: 三樓...咖啡廳附近...快去... (EXP +10)")
             print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "你還好嗎" in option_text:
             game_state.add_exp(5)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
             self.show_message("職員: 還撐得住...你快去找解藥... (EXP +5)")
             print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
@@ -405,8 +437,6 @@ class UI:
             if has_medical_item:
                 self.consume_medical_item(inventory)
                 game_state.add_exp(25)
-                # 🎵 播放成功音效
-                sound_manager.play_sfx("success")
                 self.show_message("你給了職員醫療用品！EXP +25")
                 print(f"✅ 幫助他人，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
                 
@@ -418,24 +448,21 @@ class UI:
                 self.show_message("獲得重要線索！額外 EXP +15")
                 print(f"✅ 獲得線索，總經驗值 - EXP: {game_state.player_stats['exp']}")
             else:
-                # 🎵 播放錯誤音效
-                sound_manager.play_sfx("error")
                 self.show_message("你沒有醫療用品可以給予！先去商店購買一些吧。")
             self.end_dialogue()
             
         elif "鑰匙卡在哪" in option_text:
             game_state.add_exp(15)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
             self.show_message("研究員: 應該在二樓的某個商店裡... (EXP +15)")
             print(f"✅ 獲得線索，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
-            # 🔧 修復：移除自動瞬移，讓玩家自己探索
+            if self.player_reference:
+                self.player_reference.x = 300
+                self.player_reference.y = 150
+                self.show_message("研究員指引你到2樓搜尋！")
             self.end_dialogue()
             
         elif "實驗室在哪裡" in option_text:
             game_state.add_exp(15)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
             self.show_message("研究員: 三樓需要鑰匙卡才能進入... (EXP +15)")
             print(f"✅ 獲得資訊，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
@@ -444,58 +471,52 @@ class UI:
             if game_state.player_stats["level"] >= 2:
                 game_state.add_exp(30)
                 self.has_keycard = True
-                # 🎵 播放成功音效
-                sound_manager.play_sfx("success")
                 self.show_message("研究員感謝你的幫助，給了你鑰匙卡！EXP +30")
                 print(f"✅ 幫助成功，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             else:
                 game_state.add_exp(10)
-                # 🎵 播放錯誤音效
-                sound_manager.play_sfx("error")
                 self.show_message("研究員: 你還太弱了，先去提升實力吧... (EXP +10)")
                 print(f"✅ 經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         elif "詢問使用方法" in option_text:
             game_state.add_exp(20)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
             self.show_message("研究者: 直接使用就行了，它會拯救所有人... (EXP +20)")
             print(f"✅ 學習知識，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
+        elif "我需要多少等級" in option_text:
+            game_state.add_exp(10)
+            self.show_message("研究者: 至少需要等級4，解藥對低等級者有危險... (EXP +10)")
+            print(f"✅ 獲得重要資訊，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
+            self.end_dialogue()
+
+        elif "如何提升等級" in option_text:
+            game_state.add_exp(15)
+            self.show_message("研究者: 多與人對話、搜查物品、完成任務都能獲得經驗... (EXP +15)")
+            print(f"✅ 學習提升方法，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
+            self.end_dialogue()
+
+        elif "先去訓練" in option_text:
+            game_state.add_exp(5)
+            self.show_message("研究者: 明智的選擇，去積累更多經驗再回來吧... (EXP +5)")
+            print(f"✅ 明智選擇，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
+            self.end_dialogue()
+
+        elif "我還需要準備什麼" in option_text:
+            game_state.add_exp(20)
+            self.show_message("研究者: 你已經準備充分了！解藥在前方等著你... (EXP +20)")
+            print(f"✅ 獲得鼓勵，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
+            self.end_dialogue()
+            
         elif "如何使用解藥" in option_text:
             if self.has_antidote:
-                # 🎵 播放成功音效
-                sound_manager.play_sfx("success")
                 self.show_message("研究者: 在建築物頂樓使用，它會擴散到整個區域！")
-                # 🔧 修復：不要自動瞬移到頂樓，讓玩家選擇
-                self.show_message("你需要找到通往頂樓的路...")
+                if self.player_reference:
+                    self.player_reference.x = 500
+                    self.player_reference.y = 50
+                    self.show_message("你被帶到了頂樓！準備拯救所有人！")
                 self.check_victory_condition(game_state)
-            self.end_dialogue()
-            
-        elif "還有其他倖存者嗎" in option_text:
-            game_state.add_exp(10)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
-            self.show_message("研究者: 還有一些人躲在安全的地方，你的解藥會拯救他們... (EXP +10)")
-            print(f"✅ 獲得資訊，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
-            self.end_dialogue()
-            
-        elif "詢問情況" in option_text:
-            game_state.add_exp(5)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
-            self.show_message("情況很危險，但還有希望... (EXP +5)")
-            print(f"✅ 對話經驗值增加後 - EXP: {game_state.player_stats['exp']}")
-            self.end_dialogue()
-            
-        elif "尋求幫助" in option_text:
-            game_state.add_exp(8)
-            # 🎵 播放對話音效
-            sound_manager.play_sfx("dialogue_beep")
-            self.show_message("我會盡力幫助你的，小心行事... (EXP +8)")
-            print(f"✅ 尋求幫助，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
             
         else:
@@ -504,16 +525,10 @@ class UI:
                 self.show_message("你離開了對話。")
             else:
                 game_state.add_exp(2)
-                # 🎵 播放對話音效
-                sound_manager.play_sfx("dialogue_beep")
                 self.show_message(f"你選擇了：{option_text} (EXP +2)")
                 print(f"✅ 其他選項，經驗值增加後 - EXP: {game_state.player_stats['exp']}")
             self.end_dialogue()
-        
-        # 🎵 檢查是否有升級音效需要播放
-        if hasattr(game_state, 'just_leveled_up') and game_state.just_leveled_up:
-            sound_manager.play_sfx("level_up")
-            game_state.just_leveled_up = False  # 重置升級標記
+
     
     def check_level_up(self, game_state):
         """檢查是否升級 - 移除，改用遊戲狀態的升級系統"""
