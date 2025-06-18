@@ -1,4 +1,4 @@
-# 末世第二餐廳 - main.py (完整修復版 + 角色選擇系統 + 音樂系統)
+# 末世第二餐廳 - main.py 
 import pygame
 import sys
 import time
@@ -11,7 +11,7 @@ from combat import CombatSystem
 from inventory import Inventory
 from font_manager import font_manager
 from character_selector import CharacterSelector
-from sound_manager import sound_manager  # 🆕 導入音樂管理器
+from sound_manager import sound_manager 
 
 class Game:
     def __init__(self):
